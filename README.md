@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 🏢 MIMI CRM
 
 Sistema de gestión de clientes, pedidos y pagos para MIMI.
@@ -49,3 +50,6 @@ Para problemas técnicos, revisa `INSTRUCCIONES_INSTALACION.md` o contacta al de
 
 ---
 **MIMI CRM** - Sistema desarrollado para optimizar la gestión comercial. 
+=======
+# mimicrm
+>>>>>>> f4b322240a769c7881fdd45195eda053bf48490d
