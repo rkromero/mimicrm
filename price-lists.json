@@ -1,0 +1,21 @@
+{
+    "price_lists": [
+        {
+            "id": 1,
+            "name": "Lista General",
+            "description": "Lista de precios general para todos los clientes",
+            "created_at": "2024-03-20T10:00:00",
+            "updated_at": "2024-03-20T10:00:00",
+            "products": [
+                {
+                    "product_id": 1,
+                    "price": 100.00
+                },
+                {
+                    "product_id": 2,
+                    "price": 150.00
+                }
+            ]
+        }
+    ]
+} 

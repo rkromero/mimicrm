@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="https://cdn.jsdelivr.net/gh/twbs/icons@1.11.3/font/bootstrap-icons.svg">
+    <title>MIMI CRM</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <!-- Librería para generar archivos Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <!-- Botón de menú móvil -->
+    <button class="menu-toggle hide-on-desktop">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Overlay para móvil -->
+    <div class="sidebar-overlay"></div>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-logo">
+                <img src="img/logo-mimi.png" alt="MIMI CRM" style="height: 90px; display: block; margin-left: 0; margin-right: auto;">
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-users"></i>
+                    <span>Clientes</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span>Pedidos</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-money-bill-wave"></i>
+                    <span>Pagos</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-box"></i>
+                    <span>Productos</span>
+                </a>
+                <a href="#" class="nav-item" data-section="contactos">
+                    <i class="fas fa-address-book"></i>
+                    <span>Contactos</span>
+                </a>
+                <a href="#" class="nav-item" id="fabrica-nav">
+                    <i class="fas fa-industry"></i>
+                    <span>Fábrica</span>
+                </a>
+                <a href="#" class="nav-item" data-section="listas-precios">
+                    <i class="fas fa-tags"></i>
+                    <span>Lista de Precios</span>
+                </a>
+                <a href="#" class="nav-item" id="admin-profiles-nav" style="display:none">
+                    <i class="fas fa-users-cog"></i>
+                    <span>Administrar Perfiles</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-user">
+                <div class="user-info">
+                    <span id="sidebar-user-avatar-container">
+                        <i class="fas fa-user sidebar-user-avatar" id="sidebar-user-avatar-icon"></i>
+                    </span>
+                    <span id="current-user-name">Usuario</span>
+                </div>
+                <div class="user-menu">
+                    <a href="#" id="user-preferences">
+                        <i class="fas fa-user-cog"></i>
+                        Preferencias de Usuario
+                    </a>
+                    <a href="#" id="logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Cerrar Sesión
+                    </a>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Contenido Principal -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div class="flex items-center gap-2">
+                    <h1>Dashboard</h1>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="new-client-btn" class="btn btn-primary">
+                        <i class="fas fa-user-plus"></i> Nuevo Cliente
+                    </button>
+                    <button id="new-order-btn" class="btn btn-primary">
+                        <i class="fas fa-shopping-cart"></i> Nuevo Pedido
+                    </button>
+                    <button id="new-payment-btn" class="btn btn-primary">
+                        <i class="fas fa-money-bill-wave"></i> Nuevo Pago
+                    </button>
+                </div>
+            </header>
+
+            <!-- Contenido de la página -->
+            <div class="page-content">
+                <div class="table-container mb-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2>Clientes Recientes</h2>
+                        <div class="flex gap-2">
+                            <input type="text" class="input" placeholder="Buscar cliente..." id="client-list-search">
+                        </div>
+                    </div>
+                    <div id="clients-list"></div>
+                </div>
+            </div>
+
+            <!-- Sección de Listas de Precios -->
+            <div id="listas-precios-section" class="page-content" style="display:none;">
+                <div class="table-container">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2>Listas de Precios</h2>
+                        <div class="flex gap-2">
+                            <input type="text" class="input" placeholder="Buscar lista..." id="price-list-search">
+                            <button id="new-price-list-btn" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Nueva Lista
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="clients-table">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>CUIT</th>
+                                    <th>Email</th>
+                                    <th>Teléfono</th>
+                                    <th>Dirección</th>
+                                    <th>Provincia</th>
+                                    <th>Ciudad</th>
+                                    <th>Localidad</th>
+                                    <th>Código Postal</th>
+                                    <th>Lista de Precios</th>
+                                    <th>Saldo</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="price-lists-table-body">
+                                <!-- Las listas de precios se cargarán aquí dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal de Nuevo Cliente -->
+    <div id="new-client-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Nuevo Cliente</h2>
+                <button class="close-modal btn btn-secondary">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="new-client-form">
+                <div class="mb-4">
+                    <label for="client-name-input">Nombre Completo</label>
+                    <input type="text" id="client-name-input" class="input" required>
+                </div>
+                <div class="mb-4">
+                    <label for="client-rut-input">Documento</label>
+                    <input type="text" id="client-rut-input" class="input" required>
+                </div>
+                <div class="mb-4">
+                    <label for="client-email-input">Email</label>
+                    <input type="email" id="client-email-input" class="input" required>
+                </div>
+                <div class="mb-4">
+                    <label for="client-phone-input">Teléfono</label>
+                    <input type="tel" id="client-phone-input" class="input" required>
+                </div>
+                <div class="mb-4">
+                    <label for="client-address-input">Dirección de Entrega</label>
+                    <input type="text" id="client-address-input" class="input" required>
+                </div>
+                <div class="mb-4">
+                    <label for="client-province-input">Provincia</label>
+                    <select id="client-province-input" class="input" required>
+                        <option value="">Seleccione una provincia</option>
+                        <option value="Buenos Aires">Buenos Aires</option>
+                        <option value="Ciudad Autonoma de Buenos Aires">Ciudad Autónoma de Buenos Aires</option>
+                        <option value="Catamarca">Catamarca</option>
+                        <option value="Chaco">Chaco</option>
+                        <option value="Chubut">Chubut</option>
+                        <option value="Cordoba">Córdoba</option>
+                        <option value="Corrientes">Corrientes</option>
+                        <option value="Entre Rios">Entre Ríos</option>
+                        <option value="Formosa">Formosa</option>
+                        <option value="Jujuy">Jujuy</option>
+                        <option value="La Pampa">La Pampa</option>
+                        <option value="La Rioja">La Rioja</option>
+                        <option value="Mendoza">Mendoza</option>
+                        <option value="Misiones">Misiones</option>
+                        <option value="Neuquen">Neuquén</option>
+                        <option value="Rio Negro">Río Negro</option>
+                        <option value="Salta">Salta</option>
+                        <option value="San Juan">San Juan</option>
+                        <option value="San Luis">San Luis</option>
+                        <option value="Santa Cruz">Santa Cruz</option>
+                        <option value="Santa Fe">Santa Fe</option>
+                        <option value="Santiago del Estero">Santiago del Estero</option>
+                        <option value="Tierra del Fuego">Tierra del Fuego</option>
+                        <option value="Tucuman">Tucumán</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label for="client-city-input">Ciudad</label>
+                    <select id="client-city-input" class="input" required>
+                        <option value="">Seleccione una ciudad</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label for="client-locality-input">Localidad</label>
+                    <select id="client-locality-input" class="input" required>
+                        <option value="">Seleccione una localidad</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label for="client-zip-input">Código Postal</label>
+                    <input type="text" id="client-zip-input" class="input" required>
+                </div>
+                <div class="mb-4">
+                    <label for="client-price-list">Lista de Precios</label>
+                    <select id="client-price-list" class="input" required>
+                        <option value="">Seleccione una lista de precios</option>
+                    </select>
+                </div>
+                <div class="flex justify-between">
+                    <button type="button" class="btn btn-secondary close-modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Nuevo Pedido -->
+    <div id="new-order-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Nuevo Pedido</h2>
+                <button class="close-modal btn btn-secondary">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="new-order-form">
+                <div class="mb-4">
+                    <label for="order-client-select">Cliente</label>
+                    <select id="order-client-select" class="input" required>
+                        <option value="">Seleccione un cliente</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label for="order-amount">Monto</label>
+                    <input type="number" id="order-amount" class="input" required>
+                </div>
+                <div class="mb-4">
+                    <label for="order-description">Descripción</label>
+                    <textarea id="order-description" class="input" required></textarea>
+                </div>
+                <div class="flex justify-between">
+                    <button type="button" class="btn btn-secondary close-modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Nuevo Pago -->
+    <div id="new-payment-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Nuevo Pago</h2>
+                <button class="close-modal btn btn-secondary">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="new-payment-form">
+                <div class="mb-4">
+                    <label for="payment-client-select">Cliente</label>
+                    <select id="payment-client-select" class="input" required>
+                        <option value="">Seleccione un cliente</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label for="payment-amount">Monto</label>
+                    <input type="number" id="payment-amount" class="input" required>
+                </div>
+                <div class="mb-4">
+                    <label for="payment-method">Método de Pago</label>
+                    <select id="payment-method" class="input" required>
+                        <option value="efectivo">Efectivo</option>
+                        <option value="transferencia">Transferencia</option>
+                        <option value="tarjeta">Tarjeta</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label for="payment-reference">Referencia</label>
+                    <input type="text" id="payment-reference" class="input" required>
+                </div>
+                <div class="flex justify-between">
+                    <button type="button" class="btn btn-secondary close-modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Nuevo Contacto -->
+    <div id="new-contact-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Nuevo Contacto</h2>
+                <button class="close-modal btn btn-secondary">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="new-contact-form">
+                <div class="mb-4">
+                    <label for="contact-client-select">Cliente</label>
+                    <select id="contact-client-select" class="input" required>
+                        <option value="">Seleccione un cliente</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label for="contact-name-input">Nombre Completo</label>
+                    <input type="text" id="contact-name-input" class="input" required>
+                </div>
+                <div class="mb-4">
+                    <label for="contact-email-input">Email</label>
+                    <input type="email" id="contact-email-input" class="input" required>
+                </div>
+                <div class="mb-4">
+                    <label for="contact-phone-input">Teléfono</label>
+                    <input type="tel" id="contact-phone-input" class="input" required>
+                </div>
+                <div class="mb-4">
+                    <label for="contact-position-input">Cargo</label>
+                    <input type="text" id="contact-position-input" class="input" required>
+                </div>
+                <div class="mb-4">
+                    <label for="contact-department-input">Departamento</label>
+                    <input type="text" id="contact-department-input" class="input">
+                </div>
+                <div class="flex justify-between">
+                    <button type="button" class="btn btn-secondary close-modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" style="background-color: #FF6B00;">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Editar Cliente -->
+    <div id="edit-client-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Editar Cliente</h2>
+                <button class="close-modal btn btn-secondary">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="edit-client-form">
+                <div class="mb-4">
+                    <label for="edit-client-name">Nombre</label>
+                    <input type="text" id="edit-client-name" class="input" required>
+                </div>
+                <div class="mb-4">
+                    <label for="edit-client-cuit">Documento</label>
+                    <input type="text" id="edit-client-cuit" class="input" required>
+                </div>
+                <div class="mb-4">
+                    <label for="edit-client-email">Email</label>
+                    <input type="email" id="edit-client-email" class="input" required>
+                </div>
+                <div class="mb-4">
+                    <label for="edit-client-phone">Teléfono</label>
+                    <input type="tel" id="edit-client-phone" class="input" required>
+                </div>
+                <div class="mb-4">
+                    <label for="edit-client-address">Dirección de Entrega</label>
+                    <input type="text" id="edit-client-address" class="input" required>
+                </div>
+                <div class="mb-4">
+                    <label for="edit-client-province">Provincia</label>
+                    <select id="edit-client-province" class="input" required>
+                        <option value="">Seleccione una provincia</option>
+                        <option value="Buenos Aires">Buenos Aires</option>
+                        <option value="Ciudad Autonoma de Buenos Aires">Ciudad Autónoma de Buenos Aires</option>
+                        <option value="Catamarca">Catamarca</option>
+                        <option value="Chaco">Chaco</option>
+                        <option value="Chubut">Chubut</option>
+                        <option value="Cordoba">Córdoba</option>
+                        <option value="Corrientes">Corrientes</option>
+                        <option value="Entre Rios">Entre Ríos</option>
+                        <option value="Formosa">Formosa</option>
+                        <option value="Jujuy">Jujuy</option>
+                        <option value="La Pampa">La Pampa</option>
+                        <option value="La Rioja">La Rioja</option>
+                        <option value="Mendoza">Mendoza</option>
+                        <option value="Misiones">Misiones</option>
+                        <option value="Neuquen">Neuquén</option>
+                        <option value="Rio Negro">Río Negro</option>
+                        <option value="Salta">Salta</option>
+                        <option value="San Juan">San Juan</option>
+                        <option value="San Luis">San Luis</option>
+                        <option value="Santa Cruz">Santa Cruz</option>
+                        <option value="Santa Fe">Santa Fe</option>
+                        <option value="Santiago del Estero">Santiago del Estero</option>
+                        <option value="Tierra del Fuego">Tierra del Fuego</option>
+                        <option value="Tucuman">Tucumán</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label for="edit-client-city">Ciudad</label>
+                    <select id="edit-client-city" class="input" required>
+                        <option value="">Seleccione una ciudad</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label for="edit-client-locality">Localidad</label>
+                    <select id="edit-client-locality" class="input" required>
+                        <option value="">Seleccione una localidad</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label for="edit-client-zip">Código Postal</label>
+                    <input type="text" id="edit-client-zip" class="input" required>
+                </div>
+                <div class="mb-4">
+                    <label for="edit-client-price-list">Lista de Precios</label>
+                    <select id="edit-client-price-list" class="input" required>
+                        <option value="">Seleccione una lista de precios</option>
+                    </select>
+                </div>
+                <div class="flex justify-between">
+                    <button type="button" class="btn btn-secondary close-modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sección de Administración de Perfiles (pantalla completa, rediseñada) -->
+    <div id="admin-profiles-section" style="display:none;">
+        <header class="header">
+            <div class="flex items-center gap-2">
+                <button class="btn btn-secondary" id="back-to-dashboard-btn">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h1>Gestión de Usuarios y Perfiles</h1>
+            </div>
+        </header>
+        <div class="page-content">
+            <div class="admin-panel">
+                <div class="flex justify-between items-center mb-4">
+                    <h2>Usuarios</h2>
+                    <button class="btn btn-primary" id="new-user-btn">
+                        <i class="fas fa-user-plus"></i> Nuevo Usuario
+                    </button>
+                </div>
+                <div class="users-table-container"></div>
+                <h2>Permisos por Perfil</h2>
+                <div class="perms-table-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Nuevo Usuario -->
+    <div id="new-user-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Nuevo Usuario</h2>
+                <button class="close-modal btn btn-secondary">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="new-user-form">
+                <div class="form-group">
+                    <label for="new-user-nombre">Nombre</label>
+                    <input type="text" id="new-user-nombre" class="input" required>
+                </div>
+                <div class="form-group">
+                    <label for="new-user-email">Email</label>
+                    <input type="email" id="new-user-email" class="input" required>
+                </div>
+                <div class="form-group">
+                    <label for="new-user-perfil">Perfil</label>
+                    <select id="new-user-perfil" class="input" required>
+                        <option value="">Seleccione un perfil</option>
+                        <option value="Administrador">Administrador</option>
+                        <option value="Vendedor">Vendedor</option>
+                        <option value="Produccion">Producción</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="new-user-password">Contraseña</label>
+                    <input type="password" id="new-user-password" class="input" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn cancel-btn close-modal">Cancelar</button>
+                    <button type="submit" class="btn submit-btn">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Editar Usuario -->
+    <div id="edit-user-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Editar Usuario</h2>
+                <button class="close-modal btn btn-secondary">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="edit-user-form">
+                <div class="form-group">
+                    <label for="edit-user-nombre">Nombre</label>
+                    <input type="text" id="edit-user-nombre" class="input" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-user-email">Email</label>
+                    <input type="email" id="edit-user-email" class="input" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-user-perfil">Perfil</label>
+                    <select id="edit-user-perfil" class="input" required>
+                        <option value="">Seleccione un perfil</option>
+                        <option value="Administrador">Administrador</option>
+                        <option value="Vendedor">Vendedor</option>
+                        <option value="Produccion">Producción</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="edit-user-password">Contraseña</label>
+                    <input type="password" id="edit-user-password" class="input" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn cancel-btn close-modal">Cancelar</button>
+                    <button type="submit" class="btn submit-btn">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Preferencias de Usuario -->
+    <div id="user-config-modal" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Preferencias de Usuario</h2>
+                <button class="close-modal btn btn-secondary" title="Cerrar" aria-label="Cerrar modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="user-config-form">
+                <div class="avatar-section">
+                    <label class="avatar-label">
+                        <img id="user-avatar-preview" class="avatar-img" src="https://ui-avatars.com/api/?name=Usuario" alt="Avatar">
+                        <span class="avatar-edit-text">Cambiar avatar</span>
+                        <input type="file" id="user-avatar-input" accept="image/*" style="display:none;">
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label for="user-config-nombre">Nombre</label>
+                    <input type="text" id="user-config-nombre" class="input" required>
+                </div>
+                <div class="form-group">
+                    <label for="user-config-email">Email</label>
+                    <input type="email" id="user-config-email" class="input" required>
+                </div>
+                <div class="form-group">
+                    <label for="user-config-perfil">Perfil</label>
+                    <input type="text" id="user-config-perfil" class="input" disabled>
+                </div>
+                <div class="form-group">
+                    <label for="user-theme-select">Tema</label>
+                    <select id="user-theme-select" class="input">
+                        <option value="light">Claro</option>
+                        <option value="dark">Oscuro</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn cancel-btn close-modal">Cancelar</button>
+                    <button type="submit" class="btn submit-btn">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- Fin Modal Preferencias de Usuario -->
+
+    <!-- Modal de Nueva Lista de Precios -->
+    <div id="new-price-list-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Nueva Lista de Precios</h2>
+                <button class="close-modal btn btn-secondary">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="new-price-list-form">
+                <div class="mb-4">
+                    <label for="price-list-name">Nombre</label>
+                    <input type="text" id="price-list-name" class="input" required>
+                </div>
+                <div class="mb-4">
+                    <label for="price-list-description">Descripción</label>
+                    <textarea id="price-list-description" class="input" required></textarea>
+                </div>
+                <div class="mb-4">
+                    <label>Productos</label>
+                    <div id="price-list-products" class="border rounded p-4">
+                        <div id="price-list-product-items">
+                            <!-- Los productos se agregarán aquí dinámicamente -->
+                        </div>
+                        <button type="button" class="btn btn-secondary mt-2" id="add-price-list-product-btn">
+                            <i class="fas fa-plus"></i> Agregar Producto
+                        </button>
+                    </div>
+                </div>
+                <div class="flex justify-between">
+                    <button type="button" class="btn btn-secondary close-modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+    document.getElementById('new-client-form').addEventListener('submit', function(event) {
+        event.preventDefault(); // Evitar el envío del formulario por defecto
+
+        // Obtener los valores de los campos
+        const nombre = document.getElementById('client-name-input').value;
+        const documento = document.getElementById('client-rut-input').value;
+        const email = document.getElementById('client-email-input').value;
+        const telefono = document.getElementById('client-phone-input').value;
+        const direccion = document.getElementById('client-address-input').value;
+        const provincia = document.getElementById('client-province-input').value;
+        const ciudad = document.getElementById('client-city-input').value;
+        const codigoPostal = document.getElementById('client-zip-input').value;
+
+        // Aquí puedes agregar la lógica para guardar los datos, por ejemplo, enviarlos a un servidor
+
+        console.log('Datos del cliente:', { nombre, documento, email, telefono, direccion, provincia, ciudad, codigoPostal });
+
+        // Cerrar el modal después de guardar
+        document.getElementById('new-client-modal').style.display = 'none';
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+[
+    { "id": 1, "nombre": "Ana Admin", "email": "ana@crm.com", "perfil": "Administrador", "password": "admin123" },
+    { "id": 2, "nombre": "Vero Vendedora", "email": "vero@crm.com", "perfil": "Vendedor", "password": "vero123" },
+    { "id": 3, "nombre": "Pedro Producción", "email": "pedro@crm.com", "perfil": "Produccion", "password": "pedro123" },
+    { "id": 4, "nombre": "Gustavo Gerente", "email": "gerente@crm.com", "perfil": "Gerente de ventas", "password": "gerente123" }
+] 
