@@ -4519,8 +4519,6 @@ function setTheme(theme) {
     setTheme(theme);
 })();
 
-});
-
 // Obtener usuario actual desde localStorage
 function getCurrentUser() {
     const id = parseInt(localStorage.getItem('currentUserId'));
