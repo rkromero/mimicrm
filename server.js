@@ -190,63 +190,8 @@ async function createTables() {
 
 // Función para insertar datos iniciales
 async function insertInitialData() {
-    try {
-        // Verificar si ya hay un usuario administrador
-        const [adminUsers] = await db.execute(
-            'SELECT id FROM usuarios WHERE perfil = "Administrador" LIMIT 1'
-        );
-
-        if (adminUsers.length === 0) {
-            // Crear usuario administrador por defecto
-            const hashedPassword = await bcrypt.hash('admin123', 10);
-            await db.execute(
-                'INSERT INTO usuarios (nombre, email, password, perfil) VALUES (?, ?, ?, ?)',
-                ['Administrador', 'admin@mimi.com', hashedPassword, 'Administrador']
-            );
-            console.log('✅ Usuario administrador creado: admin@mimi.com / admin123');
-        }
-
-        // Verificar si ya hay listas de precios
-        const [priceLists] = await db.execute('SELECT id FROM listas_precios LIMIT 1');
-        
-        if (priceLists.length === 0) {
-            // Crear listas de precios por defecto
-            await db.execute(
-                'INSERT INTO listas_precios (nombre, descripcion, descuento) VALUES (?, ?, ?)',
-                ['Lista General', 'Precios generales para todos los clientes', 0]
-            );
-            await db.execute(
-                'INSERT INTO listas_precios (nombre, descripcion, descuento) VALUES (?, ?, ?)',
-                ['Lista Mayoristas', 'Precios especiales para mayoristas', 15]
-            );
-            console.log('✅ Listas de precios creadas');
-        }
-
-        // Verificar si ya hay productos
-        const [products] = await db.execute('SELECT id FROM productos LIMIT 1');
-        
-        if (products.length === 0) {
-            // Crear productos por defecto
-            const productosIniciales = [
-                ['Cemento Portland', 'Cemento de alta resistencia para construcción', 15000],
-                ['Ladrillos Cerámicos', 'Ladrillos huecos 12x18x33', 500],
-                ['Arena Fina', 'Arena fina para revoque, por m³', 25000],
-                ['Hierro 8mm', 'Hierro nervado para construcción, barra 12m', 8000],
-                ['Membrana Asfáltica', 'Membrana con aluminio 40kg x 10m', 45000]
-            ];
-
-            for (const producto of productosIniciales) {
-                await db.execute(
-                    'INSERT INTO productos (nombre, descripcion, precio) VALUES (?, ?, ?)',
-                    producto
-                );
-            }
-            console.log('✅ Productos iniciales creados');
-        }
-
-    } catch (error) {
-        console.error('❌ Error insertando datos iniciales:', error);
-    }
+    // Función vacía - no insertar datos de prueba
+    console.log('✅ Base de datos lista - sin datos de prueba');
 }
 
 // Middleware de autenticación
@@ -409,6 +354,69 @@ app.get('/dashboard', (req, res) => {
 
 // Servir archivos estáticos
 app.use(express.static(__dirname));
+
+// ENDPOINT ESPECIAL PARA LIMPIAR BASE DE DATOS (SOLO DESARROLLO)
+app.post('/api/admin/clear-database', async (req, res) => {
+    try {
+        // Verificar que sea un entorno de desarrollo o que se proporcione la clave especial
+        const { adminKey } = req.body;
+        
+        if (process.env.NODE_ENV === 'production' && adminKey !== 'CLEAR_MIMI_DB_2024') {
+            return res.status(403).json({ error: 'Operación no permitida en producción sin clave de administrador' });
+        }
+
+        console.log('🧹 Iniciando limpieza completa de la base de datos...');
+
+        // Deshabilitar verificación de claves foráneas temporalmente
+        await db.execute('SET FOREIGN_KEY_CHECKS = 0');
+
+        // Lista de todas las tablas a limpiar
+        const tables = [
+            'contactos',
+            'pagos', 
+            'pedidos_productos',
+            'pedidos',
+            'productos',
+            'listas_precios',
+            'clientes',
+            'usuarios'
+        ];
+
+        const results = {};
+
+        // Limpiar cada tabla
+        for (const table of tables) {
+            try {
+                const [result] = await db.execute(`DELETE FROM ${table}`);
+                await db.execute(`ALTER TABLE ${table} AUTO_INCREMENT = 1`);
+                results[table] = result.affectedRows;
+                console.log(`✅ Tabla ${table} limpiada (${result.affectedRows} registros eliminados)`);
+            } catch (error) {
+                console.log(`⚠️  Error limpiando tabla ${table}:`, error.message);
+                results[table] = `Error: ${error.message}`;
+            }
+        }
+
+        // Rehabilitar verificación de claves foráneas
+        await db.execute('SET FOREIGN_KEY_CHECKS = 1');
+
+        console.log('🎉 Base de datos completamente limpiada');
+
+        res.json({
+            success: true,
+            message: 'Base de datos limpiada exitosamente',
+            results: results,
+            warning: 'IMPORTANTE: No hay usuarios en el sistema. Necesitarás crear un usuario administrador.'
+        });
+
+    } catch (error) {
+        console.error('❌ Error limpiando la base de datos:', error);
+        res.status(500).json({ 
+            error: 'Error interno del servidor',
+            details: error.message 
+        });
+    }
+});
 
 // Iniciar servidor
 async function startServer() {
