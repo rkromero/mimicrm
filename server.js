@@ -394,8 +394,21 @@ app.post('/api/clientes', authenticateToken, async (req, res) => {
 
 // Ruta para servir la aplicación
 app.get('/', (req, res) => {
+    res.redirect('/login.html');
+});
+
+// Ruta para servir el login
+app.get('/login.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'login.html'));
+});
+
+// Ruta para servir el dashboard (requiere autenticación)
+app.get('/dashboard', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
+
+// Servir archivos estáticos
+app.use(express.static(__dirname));
 
 // Iniciar servidor
 async function startServer() {

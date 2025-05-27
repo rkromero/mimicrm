@@ -74,21 +74,32 @@
         e.preventDefault();
         const email = document.getElementById('login-email').value.trim();
         const password = document.getElementById('login-password').value.trim();
-        let users = [];
+        
         try {
-            const res = await fetch('users.json');
-            users = await res.json();
-        } catch (err) {
-            document.getElementById('login-error').textContent = 'No se pudo cargar la base de usuarios.';
-            document.getElementById('login-error').style.display = 'block';
-            return;
-        }
-        const user = users.find(u => u.email === email && u.password === password);
-        if (user) {
-            localStorage.setItem('currentUserId', user.id);
-            window.location.href = 'index.html';
-        } else {
-            document.getElementById('login-error').textContent = 'Usuario o contraseña incorrectos.';
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                // Guardar token y datos del usuario
+                localStorage.setItem('authToken', data.token);
+                localStorage.setItem('currentUser', JSON.stringify(data.user));
+                
+                // Redireccionar al dashboard
+                window.location.href = '/dashboard';
+            } else {
+                document.getElementById('login-error').textContent = data.error || 'Error de autenticación';
+                document.getElementById('login-error').style.display = 'block';
+            }
+        } catch (error) {
+            console.error('Error en login:', error);
+            document.getElementById('login-error').textContent = 'Error de conexión con el servidor';
             document.getElementById('login-error').style.display = 'block';
         }
     };
