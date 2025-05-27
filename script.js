@@ -3884,32 +3884,160 @@ document.body.addEventListener('click', function(e) {
     }
 });
 
-// Integración del sistema de perfiles
-document.addEventListener('DOMContentLoaded', function() {
-    // Cargar scripts del sistema de perfiles
-    // loadScript('roles.js');
-    // loadScript('users.js');
-    // loadScript('permissions.js');
+// Integración del sistema de perfiles - UNIFICADO
+document.addEventListener('DOMContentLoaded', async function() {
+    // 1. Verificar autenticación primero
+    await checkAuthentication();
     
-    // Actualizar nombre del usuario actual
+    // 2. Cargar datos de perfiles
+    await loadProfilesData();
+    
+    // 3. Actualizar nombre del usuario actual
     updateCurrentUserName();
     
-    // Configurar menú de administración de perfiles
+    // 4. Configurar menú de administración de perfiles
     const adminProfilesNav = document.getElementById('admin-profiles-nav');
     if (adminProfilesNav) {
-        adminProfilesNav.style.display = checkAccess(getCurrentUser(), 'AdminPanel', 'ver') ? '' : 'none';
+        const currentUser = getCurrentUser();
+        adminProfilesNav.style.display = checkAccess(currentUser, 'AdminPanel', 'ver') ? '' : 'none';
         adminProfilesNav.addEventListener('click', function(e) {
             e.preventDefault();
-            showAdminProfilesSection(); // Cambiado de showAdminProfilesPanel a showAdminProfilesSection
+            showAdminProfilesSection();
         });
     }
     
-    // Configurar botón de perfil de usuario
+    // 5. Configurar botón de perfil de usuario
     const userProfileBtn = document.getElementById('user-profile-btn');
     if (userProfileBtn) {
         userProfileBtn.addEventListener('click', showUserProfile);
     }
+    
+    // 6. Configurar el botón de nuevo usuario
+    const newUserBtn = document.getElementById('new-user-btn');
+    if (newUserBtn) {
+        newUserBtn.addEventListener('click', function() {
+            const modal = document.getElementById('new-user-modal');
+            if (modal) {
+                modal.style.display = 'flex';
+                modal.classList.add('active');
+            }
+        });
+    }
+
+    // 7. Configurar el formulario de nuevo usuario
+    const newUserForm = document.getElementById('new-user-form');
+    if (newUserForm) {
+        newUserForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const nombre = document.getElementById('new-user-nombre').value;
+            const email = document.getElementById('new-user-email').value;
+            const perfil = document.getElementById('new-user-perfil').value;
+            const password = document.getElementById('new-user-password').value;
+            
+            try {
+                const token = localStorage.getItem('authToken');
+                const response = await fetch('/api/users', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ nombre, email, perfil, password })
+                });
+
+                if (response.ok) {
+                    // Actualizar la tabla de usuarios
+                    renderUserTable();
+                    
+                    // Cerrar el modal
+                    const modal = document.getElementById('new-user-modal');
+                    if (modal) {
+                        modal.style.display = 'none';
+                        modal.classList.remove('active');
+                    }
+                    
+                    // Limpiar el formulario
+                    newUserForm.reset();
+                    
+                    // Mostrar notificación
+                    showNotification('Usuario creado correctamente', 'success');
+                } else {
+                    const error = await response.json();
+                    showNotification(error.message || 'Error al crear usuario', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification('Error al crear usuario', 'error');
+            }
+        });
+    }
+
+    // 8. Configurar botones de cerrar modal
+    document.querySelectorAll('#new-user-modal .close-modal').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const modal = document.getElementById('new-user-modal');
+            if (modal) {
+                modal.style.display = 'none';
+                modal.classList.remove('active');
+            }
+        });
+    });
+    
+    // 9. Configurar sidebar user menu
+    setupSidebarUserMenu();
 });
+
+// Función para configurar el menú de usuario del sidebar
+function setupSidebarUserMenu() {
+    // Actualizar el nombre del usuario logueado en el sidebar
+    function updateSidebarUserName() {
+        const user = getCurrentUser();
+        const sidebarUser = document.getElementById('sidebar-current-user');
+        if (sidebarUser) {
+            sidebarUser.textContent = user ? user.nombre : 'Usuario';
+        }
+    }
+    updateSidebarUserName();
+
+    // Lógica de despliegue del menú
+    const userBtn = document.getElementById('sidebar-user-btn');
+    const userDropdown = document.getElementById('sidebar-user-dropdown');
+    if (userBtn && userDropdown) {
+        userBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            userBtn.classList.toggle('active');
+            userDropdown.classList.toggle('show');
+        });
+        // Cerrar el menú si se hace click fuera
+        document.addEventListener('click', function(e) {
+            if (!userBtn.contains(e.target) && !userDropdown.contains(e.target)) {
+                userBtn.classList.remove('active');
+                userDropdown.classList.remove('show');
+            }
+        });
+    }
+
+    // Opción de configuración de usuario
+    const configBtn = document.getElementById('sidebar-user-config');
+    if (configBtn) {
+        configBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            userBtn.classList.remove('active');
+            userDropdown.classList.remove('show');
+            showUserProfile();
+        });
+    }
+
+    // Opción de cerrar sesión
+    const logoutBtn = document.getElementById('sidebar-logout');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            logoutUser();
+        });
+    }
+}
 
 function updateCurrentUserName() {
     const userNameSpan = document.getElementById('current-user-name');
@@ -4130,62 +4258,82 @@ let ROLES = {};
 let USERS = [];
 let currentUserId = 1;
 
-// Sistema de perfiles y permisos
+// Sistema de perfiles y permisos actualizado para usar API
 function getCurrentUser() {
-    return USERS.find(u => u.id === currentUserId);
+    const userStr = localStorage.getItem('currentUser');
+    return userStr ? JSON.parse(userStr) : null;
 }
 
 function checkAccess(user, module, action) {
     if (!user || !user.perfil) return false;
-    const role = ROLES[user.perfil];
-    if (!role) return false;
-    const allowed = role[module];
-    return allowed && allowed.includes(action);
+    
+    // Definir permisos por perfil
+    const permissions = {
+        'Administrador': {
+            'AdminPanel': ['ver', 'crear', 'editar', 'eliminar'],
+            'Clientes': ['ver', 'crear', 'editar', 'eliminar'],
+            'Pedidos': ['ver', 'crear', 'editar', 'eliminar'],
+            'Pagos': ['ver', 'crear', 'editar', 'eliminar'],
+            'Productos': ['ver', 'crear', 'editar', 'eliminar']
+        },
+        'Vendedor': {
+            'Clientes': ['ver', 'crear', 'editar'],
+            'Pedidos': ['ver', 'crear', 'editar'],
+            'Pagos': ['ver', 'crear'],
+            'Productos': ['ver']
+        },
+        'Produccion': {
+            'Pedidos': ['ver'],
+            'Productos': ['ver']
+        }
+    };
+    
+    const userPermissions = permissions[user.perfil];
+    if (!userPermissions) return false;
+    
+    const modulePermissions = userPermissions[module];
+    return modulePermissions && modulePermissions.includes(action);
 }
 
 function setUserProfile(userId, newProfile) {
-    const user = USERS.find(u => u.id === userId);
-    if (user) user.perfil = newProfile;
+    // Esta función ahora debería hacer una llamada a la API
+    console.log('setUserProfile llamada - implementar con API');
 }
 
-// Cargar datos de perfiles
+// Cargar datos de perfiles desde la API
 async function loadProfilesData() {
     try {
-        // Cargar roles
-        const rolesResponse = await fetch('roles.json');
-        ROLES = await rolesResponse.json();
+        const token = localStorage.getItem('authToken');
+        if (!token) return;
 
-        // Cargar usuarios
-        const usersResponse = await fetch('users.json');
-        USERS = await usersResponse.json();
-        
-        console.log('Datos cargados:', { ROLES, USERS }); // Para depuración
-        
-        // Asegurarse de que los usuarios tengan IDs numéricos
-        USERS = USERS.map(user => ({
-            ...user,
-            id: parseInt(user.id)
-        }));
-    } catch (error) {
-        console.error('Error cargando datos de perfiles:', error);
-        // Inicializar con datos por defecto si hay error
+        // Los roles están definidos localmente por ahora
         ROLES = {
-            admin: {
-                AdminPanel: ['ver', 'crear', 'editar', 'eliminar']
+            'Administrador': {
+                'AdminPanel': ['ver', 'crear', 'editar', 'eliminar']
             },
-            vendedor: {
-                AdminPanel: ['ver']
+            'Vendedor': {
+                'AdminPanel': ['ver']
+            },
+            'Produccion': {
+                'AdminPanel': []
             }
         };
-        USERS = [
-            {
-                id: 1,
-                nombre: 'Admin',
-                email: 'admin@example.com',
-                perfil: 'admin',
-                password: 'admin123'
+
+        // Los usuarios se cargan desde localStorage (ya autenticado)
+        const currentUser = getCurrentUser();
+        if (currentUser) {
+            USERS = [currentUser]; // Por ahora solo el usuario actual
+        }
+        
+    } catch (error) {
+        console.error('Error cargando datos de perfiles:', error);
+        // Usar datos por defecto
+        ROLES = {
+            'Administrador': {
+                'AdminPanel': ['ver', 'crear', 'editar', 'eliminar']
             }
-        ];
+        };
+        USERS = [];
     }
 }
 
