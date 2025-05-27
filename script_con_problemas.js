@@ -5632,16 +5632,9 @@ async function checkAuthentication() {
     const token = localStorage.getItem('authToken');
     const currentUser = localStorage.getItem('currentUser');
     
-    // Si estamos en login.html, no hacer verificación
-    if (window.location.pathname.includes('login.html')) {
-        return false;
-    }
-    
     if (!token || !currentUser) {
-        // Solo redirigir si no estamos ya en login
-        if (!window.location.pathname.includes('login.html')) {
-            window.location.href = '/login.html';
-        }
+        // No hay token o usuario, redirigir al login
+        window.location.href = '/login.html';
         return false;
     }
     
@@ -5656,12 +5649,10 @@ async function checkAuthentication() {
         });
         
         if (!response.ok) {
-            // Token inválido, limpiar localStorage y redirigir solo si no estamos en login
+            // Token inválido, limpiar localStorage y redirigir
             localStorage.removeItem('authToken');
             localStorage.removeItem('currentUser');
-            if (!window.location.pathname.includes('login.html')) {
-                window.location.href = '/login.html';
-            }
+            window.location.href = '/login.html';
             return false;
         }
         
@@ -5671,21 +5662,16 @@ async function checkAuthentication() {
         
         // Configurar el usuario actual para el sistema legacy
         const user = data.user;
-        const userNameElement = document.getElementById('current-user-name');
-        if (userNameElement) {
-            userNameElement.textContent = user.nombre;
-        }
+        document.getElementById('current-user-name').textContent = user.nombre;
         
         return true;
         
     } catch (error) {
         console.error('Error verificando autenticación:', error);
-        // En caso de error, solo redirigir si no estamos en login
+        // En caso de error, redirigir al login
         localStorage.removeItem('authToken');
         localStorage.removeItem('currentUser');
-        if (!window.location.pathname.includes('login.html')) {
-            window.location.href = '/login.html';
-        }
+        window.location.href = '/login.html';
         return false;
     }
 }
