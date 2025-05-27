@@ -3887,7 +3887,12 @@ document.body.addEventListener('click', function(e) {
 // Integración del sistema de perfiles - UNIFICADO
 document.addEventListener('DOMContentLoaded', async function() {
     // 1. Verificar autenticación primero
-    await checkAuthentication();
+    const isAuthenticated = await checkAuthentication();
+    
+    // Solo continuar si el usuario está autenticado
+    if (!isAuthenticated) {
+        return; // Salir si no está autenticado
+    }
     
     // 2. Cargar datos de perfiles
     await loadProfilesData();
@@ -3895,7 +3900,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     // 3. Actualizar nombre del usuario actual
     updateCurrentUserName();
     
-    // 4. Configurar menú de administración de perfiles
+    // 4. Inicializar la aplicación
+    loadPriceLists();
+    updateDashboard();
+    
+    // 5. Configurar menú de administración de perfiles
     const adminProfilesNav = document.getElementById('admin-profiles-nav');
     if (adminProfilesNav) {
         const currentUser = getCurrentUser();
@@ -3906,86 +3915,20 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
     
-    // 5. Configurar botón de perfil de usuario
+    // 6. Configurar botón de perfil de usuario
     const userProfileBtn = document.getElementById('user-profile-btn');
     if (userProfileBtn) {
         userProfileBtn.addEventListener('click', showUserProfile);
     }
     
-    // 6. Configurar el botón de nuevo usuario
-    const newUserBtn = document.getElementById('new-user-btn');
-    if (newUserBtn) {
-        newUserBtn.addEventListener('click', function() {
-            const modal = document.getElementById('new-user-modal');
-            if (modal) {
-                modal.style.display = 'flex';
-                modal.classList.add('active');
-            }
-        });
-    }
-
-    // 7. Configurar el formulario de nuevo usuario
-    const newUserForm = document.getElementById('new-user-form');
-    if (newUserForm) {
-        newUserForm.addEventListener('submit', async function(e) {
+    // 7. Configurar el botón de logout
+    const logoutBtn = document.getElementById('logout');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            
-            const nombre = document.getElementById('new-user-nombre').value;
-            const email = document.getElementById('new-user-email').value;
-            const perfil = document.getElementById('new-user-perfil').value;
-            const password = document.getElementById('new-user-password').value;
-            
-            try {
-                const token = localStorage.getItem('authToken');
-                const response = await fetch('/api/users', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ nombre, email, perfil, password })
-                });
-
-                if (response.ok) {
-                    // Actualizar la tabla de usuarios
-                    renderUserTable();
-                    
-                    // Cerrar el modal
-                    const modal = document.getElementById('new-user-modal');
-                    if (modal) {
-                        modal.style.display = 'none';
-                        modal.classList.remove('active');
-                    }
-                    
-                    // Limpiar el formulario
-                    newUserForm.reset();
-                    
-                    // Mostrar notificación
-                    showNotification('Usuario creado correctamente', 'success');
-                } else {
-                    const error = await response.json();
-                    showNotification(error.message || 'Error al crear usuario', 'error');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                showNotification('Error al crear usuario', 'error');
-            }
+            logoutUser();
         });
     }
-
-    // 8. Configurar botones de cerrar modal
-    document.querySelectorAll('#new-user-modal .close-modal').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const modal = document.getElementById('new-user-modal');
-            if (modal) {
-                modal.style.display = 'none';
-                modal.classList.remove('active');
-            }
-        });
-    });
-    
-    // 9. Configurar sidebar user menu
-    setupSidebarUserMenu();
 });
 
 // Función para configurar el menú de usuario del sidebar
@@ -5752,23 +5695,3 @@ function logoutUser() {
     localStorage.removeItem('currentUser');
     window.location.href = '/login.html';
 }
-
-// Verificar autenticación al cargar la página
-document.addEventListener('DOMContentLoaded', async function() {
-    const isAuthenticated = await checkAuthentication();
-    
-    if (isAuthenticated) {
-        // Usuario autenticado, inicializar la aplicación
-        loadPriceLists();
-        updateDashboard();
-        
-        // Configurar el botón de logout
-        const logoutBtn = document.getElementById('logout');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                logoutUser();
-            });
-        }
-    }
-});
