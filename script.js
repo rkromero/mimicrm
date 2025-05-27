@@ -5540,3 +5540,87 @@ function downloadPaymentsExcel() {
     
     showNotification('Archivo Excel de pagos descargado exitosamente', 'success');
 }
+
+// === VERIFICACIÓN DE AUTENTICACIÓN ===
+
+// Función para verificar si el usuario está autenticado
+async function checkAuthentication() {
+    const token = localStorage.getItem('authToken');
+    const currentUser = localStorage.getItem('currentUser');
+    
+    if (!token || !currentUser) {
+        // No hay token o usuario, redirigir al login
+        window.location.href = '/login.html';
+        return false;
+    }
+    
+    try {
+        // Verificar el token con el servidor
+        const response = await fetch('/api/auth/verify', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            // Token inválido, limpiar localStorage y redirigir
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('currentUser');
+            window.location.href = '/login.html';
+            return false;
+        }
+        
+        const data = await response.json();
+        // Actualizar datos del usuario si es necesario
+        localStorage.setItem('currentUser', JSON.stringify(data.user));
+        
+        // Configurar el usuario actual para el sistema legacy
+        const user = data.user;
+        document.getElementById('current-user-name').textContent = user.nombre;
+        
+        return true;
+        
+    } catch (error) {
+        console.error('Error verificando autenticación:', error);
+        // En caso de error, redirigir al login
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('currentUser');
+        window.location.href = '/login.html';
+        return false;
+    }
+}
+
+// Función para obtener el usuario actual desde localStorage
+function getCurrentUserFromAuth() {
+    const userStr = localStorage.getItem('currentUser');
+    return userStr ? JSON.parse(userStr) : null;
+}
+
+// Función para hacer logout
+function logoutUser() {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('currentUser');
+    window.location.href = '/login.html';
+}
+
+// Verificar autenticación al cargar la página
+document.addEventListener('DOMContentLoaded', async function() {
+    const isAuthenticated = await checkAuthentication();
+    
+    if (isAuthenticated) {
+        // Usuario autenticado, inicializar la aplicación
+        loadPriceLists();
+        updateDashboard();
+        
+        // Configurar el botón de logout
+        const logoutBtn = document.getElementById('logout');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                logoutUser();
+            });
+        }
+    }
+});
