@@ -3901,7 +3901,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     updateCurrentUserName();
     
     // 4. Inicializar la aplicación
-    loadPriceLists();
     updateDashboard();
     
     // 5. Configurar menú de administración de perfiles
