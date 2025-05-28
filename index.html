@@ -291,27 +291,27 @@
             <form id="new-client-form">
                 <div class="mb-4">
                     <label for="client-name-input">Nombre Completo</label>
-                    <input type="text" id="client-name-input" name="nombre" class="input" required>
+                    <input type="text" id="client-name-input" name="nombre" class="input" autocomplete="name" required>
                 </div>
                 <div class="mb-4">
                     <label for="client-rut-input">Documento</label>
-                    <input type="text" id="client-rut-input" name="documento" class="input" required>
+                    <input type="text" id="client-rut-input" name="documento" class="input" autocomplete="off" required>
                 </div>
                 <div class="mb-4">
                     <label for="client-email-input">Email</label>
-                    <input type="email" id="client-email-input" name="email" class="input" required>
+                    <input type="email" id="client-email-input" name="email" class="input" autocomplete="email" required>
                 </div>
                 <div class="mb-4">
                     <label for="client-phone-input">Teléfono</label>
-                    <input type="tel" id="client-phone-input" name="telefono" class="input" required>
+                    <input type="tel" id="client-phone-input" name="telefono" class="input" autocomplete="tel" required>
                 </div>
                 <div class="mb-4">
                     <label for="client-address-input">Dirección de Entrega</label>
-                    <input type="text" id="client-address-input" name="direccion" class="input" required>
+                    <input type="text" id="client-address-input" name="direccion" class="input" autocomplete="street-address" required>
                 </div>
                 <div class="mb-4">
                     <label for="client-province-input">Provincia</label>
-                    <select id="client-province-input" name="provincia" class="input" required>
+                    <select id="client-province-input" name="provincia" class="input" autocomplete="address-level1" required>
                         <option value="">Seleccione una provincia</option>
                         <option value="Buenos Aires">Buenos Aires</option>
                         <option value="Ciudad Autonoma de Buenos Aires">Ciudad Autónoma de Buenos Aires</option>
@@ -341,23 +341,23 @@
                 </div>
                 <div class="mb-4">
                     <label for="client-city-input">Ciudad</label>
-                    <select id="client-city-input" name="ciudad" class="input" required>
+                    <select id="client-city-input" name="ciudad" class="input" autocomplete="address-level2" required>
                         <option value="">Seleccione una ciudad</option>
                     </select>
                 </div>
                 <div class="mb-4">
                     <label for="client-locality-input">Localidad</label>
-                    <select id="client-locality-input" name="localidad" class="input" required>
+                    <select id="client-locality-input" name="localidad" class="input" autocomplete="address-level3" required>
                         <option value="">Seleccione una localidad</option>
                     </select>
                 </div>
                 <div class="mb-4">
                     <label for="client-zip-input">Código Postal</label>
-                    <input type="text" id="client-zip-input" name="codigo_postal" class="input" required>
+                    <input type="text" id="client-zip-input" name="codigo_postal" class="input" autocomplete="postal-code" required>
                 </div>
                 <div class="mb-4">
                     <label for="client-price-list">Lista de Precios</label>
-                    <select id="client-price-list" name="lista_precios_id" class="input" required>
+                    <select id="client-price-list" name="lista_precios_id" class="input" autocomplete="off" required>
                         <option value="">Seleccione una lista de precios</option>
                     </select>
                 </div>
@@ -381,17 +381,17 @@
             <form id="new-order-form">
                 <div class="mb-4">
                     <label for="order-client-select">Cliente</label>
-                    <select id="order-client-select" class="input" required>
+                    <select id="order-client-select" class="input" autocomplete="off" required>
                         <option value="">Seleccione un cliente</option>
                     </select>
                 </div>
                 <div class="mb-4">
                     <label for="order-amount">Monto</label>
-                    <input type="number" id="order-amount" class="input" required>
+                    <input type="number" id="order-amount" class="input" autocomplete="off" required>
                 </div>
                 <div class="mb-4">
                     <label for="order-description">Descripción</label>
-                    <textarea id="order-description" class="input" required></textarea>
+                    <textarea id="order-description" class="input" autocomplete="off" required></textarea>
                 </div>
                 <div class="flex justify-between">
                     <button type="button" class="btn btn-secondary close-modal">Cancelar</button>
@@ -413,17 +413,17 @@
             <form id="new-payment-form">
                 <div class="mb-4">
                     <label for="payment-client-select">Cliente</label>
-                    <select id="payment-client-select" class="input" required>
+                    <select id="payment-client-select" class="input" autocomplete="off" required>
                         <option value="">Seleccione un cliente</option>
                     </select>
                 </div>
                 <div class="mb-4">
                     <label for="payment-amount">Monto</label>
-                    <input type="number" id="payment-amount" class="input" required>
+                    <input type="number" id="payment-amount" class="input" autocomplete="off" required>
                 </div>
                 <div class="mb-4">
                     <label for="payment-method">Método de Pago</label>
-                    <select id="payment-method" class="input" required>
+                    <select id="payment-method" class="input" autocomplete="off" required>
                         <option value="efectivo">Efectivo</option>
                         <option value="transferencia">Transferencia</option>
                         <option value="tarjeta">Tarjeta</option>
@@ -431,7 +431,7 @@
                 </div>
                 <div class="mb-4">
                     <label for="payment-reference">Referencia</label>
-                    <input type="text" id="payment-reference" class="input" required>
+                    <input type="text" id="payment-reference" class="input" autocomplete="off" required>
                 </div>
                 <div class="flex justify-between">
                     <button type="button" class="btn btn-secondary close-modal">Cancelar</button>
@@ -453,29 +453,29 @@
             <form id="new-contact-form">
                 <div class="mb-4">
                     <label for="contact-client-select">Cliente</label>
-                    <select id="contact-client-select" class="input" required>
+                    <select id="contact-client-select" class="input" autocomplete="off" required>
                         <option value="">Seleccione un cliente</option>
                     </select>
                 </div>
                 <div class="mb-4">
                     <label for="contact-name-input">Nombre Completo</label>
-                    <input type="text" id="contact-name-input" class="input" required>
+                    <input type="text" id="contact-name-input" class="input" autocomplete="name" required>
                 </div>
                 <div class="mb-4">
                     <label for="contact-email-input">Email</label>
-                    <input type="email" id="contact-email-input" class="input" required>
+                    <input type="email" id="contact-email-input" class="input" autocomplete="email" required>
                 </div>
                 <div class="mb-4">
                     <label for="contact-phone-input">Teléfono</label>
-                    <input type="tel" id="contact-phone-input" class="input" required>
+                    <input type="tel" id="contact-phone-input" class="input" autocomplete="tel" required>
                 </div>
                 <div class="mb-4">
                     <label for="contact-position-input">Cargo</label>
-                    <input type="text" id="contact-position-input" class="input" required>
+                    <input type="text" id="contact-position-input" class="input" autocomplete="organization-title" required>
                 </div>
                 <div class="mb-4">
                     <label for="contact-department-input">Departamento</label>
-                    <input type="text" id="contact-department-input" class="input">
+                    <input type="text" id="contact-department-input" class="input" autocomplete="off">
                 </div>
                 <div class="flex justify-between">
                     <button type="button" class="btn btn-secondary close-modal">Cancelar</button>
