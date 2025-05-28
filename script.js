@@ -715,40 +715,67 @@ function showSection(section) {
 
 // Función para configurar formularios
 function setupForms() {
+    console.log('🔧 Configurando formularios...');
+    
     // Configurar formulario de nuevo cliente
     const newClientForm = document.getElementById('new-client-form');
     if (newClientForm) {
         newClientForm.addEventListener('submit', handleNewClientSubmit);
+        console.log('✅ Event listener del formulario configurado');
+    } else {
+        console.warn('⚠️ No se encontró el formulario new-client-form');
     }
     
     // Configurar botones de modal
     const newClientBtn = document.getElementById('new-client-btn');
     if (newClientBtn) {
-        newClientBtn.addEventListener('click', () => showModal('new-client-modal'));
+        newClientBtn.addEventListener('click', () => {
+            console.log('🖱️ Botón nuevo cliente clickeado');
+            showModal('new-client-modal');
+        });
+        console.log('✅ Event listener del botón nuevo cliente configurado');
+    } else {
+        console.warn('⚠️ No se encontró el botón new-client-btn');
     }
     
     // Configurar cierre de modales
     const closeModalBtns = document.querySelectorAll('.close-modal');
+    console.log(`🔍 Encontrados ${closeModalBtns.length} botones de cerrar modal`);
     closeModalBtns.forEach(btn => {
         btn.addEventListener('click', function() {
             const modal = this.closest('.modal');
             if (modal) {
                 modal.style.display = 'none';
+                console.log('✅ Modal cerrado');
             }
         });
     });
+    
+    console.log('✅ Configuración de formularios completada');
 }
 
 // Función para mostrar modales
 function showModal(modalId) {
+    console.log('🔍 Intentando mostrar modal:', modalId);
+    
     const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.style.display = 'block';
-        
-        // Si es el modal de nuevo cliente, cargar las listas de precios
-        if (modalId === 'new-client-modal') {
+    if (!modal) {
+        console.error('❌ No se encontró el modal:', modalId);
+        return;
+    }
+    
+    console.log('✅ Modal encontrado, mostrando...');
+    modal.style.display = 'block';
+    
+    // Si es el modal de nuevo cliente, cargar las listas de precios
+    if (modalId === 'new-client-modal') {
+        console.log('🔄 Cargando configuración para modal de nuevo cliente...');
+        try {
             loadPriceListsIntoSelect();
             setupProvinceAndCityListeners();
+            console.log('✅ Configuración del modal completada');
+        } catch (error) {
+            console.error('❌ Error al configurar modal de nuevo cliente:', error);
         }
     }
 }
@@ -756,17 +783,40 @@ function showModal(modalId) {
 // Función para cargar listas de precios en el select
 function loadPriceListsIntoSelect() {
     const priceListSelect = document.getElementById('client-price-list');
-    if (priceListSelect && priceLists.length > 0) {
-        // Limpiar opciones existentes excepto la primera
-        priceListSelect.innerHTML = '<option value="">Seleccione una lista de precios</option>';
-        
-        // Agregar las listas de precios
+    if (!priceListSelect) {
+        console.warn('No se encontró el elemento client-price-list');
+        return;
+    }
+    
+    // Limpiar opciones existentes
+    priceListSelect.innerHTML = '<option value="">Seleccione una lista de precios</option>';
+    
+    // Verificar si hay listas de precios disponibles
+    if (!priceLists || !Array.isArray(priceLists) || priceLists.length === 0) {
+        console.log('No hay listas de precios disponibles');
+        // Agregar opción por defecto
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '1';
+        defaultOption.textContent = 'Lista General';
+        priceListSelect.appendChild(defaultOption);
+        return;
+    }
+    
+    // Agregar las listas de precios
+    try {
         priceLists.forEach(priceList => {
             const option = document.createElement('option');
-            option.value = priceList.id;
-            option.textContent = priceList.nombre;
+            option.value = priceList.id || priceList.ID || '';
+            option.textContent = priceList.nombre || priceList.NOMBRE || 'Lista sin nombre';
             priceListSelect.appendChild(option);
         });
+    } catch (error) {
+        console.error('Error al cargar listas de precios en select:', error);
+        // Agregar opción por defecto en caso de error
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '1';
+        defaultOption.textContent = 'Lista General';
+        priceListSelect.appendChild(defaultOption);
     }
 }
 
@@ -774,24 +824,42 @@ function loadPriceListsIntoSelect() {
 function setupProvinceAndCityListeners() {
     const provinceSelect = document.getElementById('client-province-input');
     const citySelect = document.getElementById('client-city-input');
+    const localitySelect = document.getElementById('client-locality-input');
     
-    if (provinceSelect) {
-        provinceSelect.addEventListener('change', function() {
+    if (!provinceSelect || !citySelect || !localitySelect) {
+        console.warn('No se encontraron todos los elementos de provincia/ciudad/localidad');
+        return;
+    }
+    
+    // Remover listeners existentes para evitar duplicados
+    const newProvinceSelect = provinceSelect.cloneNode(true);
+    const newCitySelect = citySelect.cloneNode(true);
+    
+    provinceSelect.parentNode.replaceChild(newProvinceSelect, provinceSelect);
+    citySelect.parentNode.replaceChild(newCitySelect, citySelect);
+    
+    // Agregar nuevos listeners
+    newProvinceSelect.addEventListener('change', function() {
+        try {
             actualizarCiudades(this.value);
             // Limpiar localidad cuando cambia la provincia
             const localitySelect = document.getElementById('client-locality-input');
             if (localitySelect) {
                 localitySelect.innerHTML = '<option value="">Seleccione una localidad</option>';
             }
-        });
-    }
+        } catch (error) {
+            console.error('Error al actualizar ciudades:', error);
+        }
+    });
     
-    if (citySelect) {
-        citySelect.addEventListener('change', function() {
-            const provincia = provinceSelect.value;
+    newCitySelect.addEventListener('change', function() {
+        try {
+            const provincia = newProvinceSelect.value;
             actualizarLocalidades(provincia, this.value);
-        });
-    }
+        } catch (error) {
+            console.error('Error al actualizar localidades:', error);
+        }
+    });
 }
 
 // Función para manejar envío de nuevo cliente
