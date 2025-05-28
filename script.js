@@ -5,6 +5,7 @@ let payments = [];
 let products = [];
 let contacts = [];
 let orderItems = []; // Array para almacenar los productos del pedido actual
+let editOrderItems = []; // Array para almacenar los productos del pedido editado
 
 // Listado de provincias y localidades de Argentina
 const provinciasYLocalidades = {
@@ -271,6 +272,8 @@ async function loadProducts() {
         
         if (response.ok) {
             products = await response.json();
+            renderProductsTable(); // Renderizar la tabla después de cargar los datos
+            debugLog('DATA', 'Productos cargados');
         } else {
             console.error('Error cargando productos:', response.statusText);
         }
@@ -292,6 +295,8 @@ async function loadOrders() {
         
         if (response.ok) {
             orders = await response.json();
+            renderOrdersTable(); // Renderizar la tabla después de cargar los datos
+            debugLog('DATA', 'Pedidos cargados');
         } else {
             console.error('Error cargando pedidos:', response.statusText);
         }
@@ -313,6 +318,8 @@ async function loadPayments() {
         
         if (response.ok) {
             payments = await response.json();
+            renderPaymentsTable(); // Renderizar la tabla después de cargar los datos
+            debugLog('DATA', 'Pagos cargados');
         } else {
             console.error('Error cargando pagos:', response.statusText);
         }
@@ -334,6 +341,8 @@ async function loadContacts() {
         
         if (response.ok) {
             contacts = await response.json();
+            renderContactsTable(); // Renderizar la tabla después de cargar los datos
+            debugLog('DATA', 'Contactos cargados');
         } else {
             console.error('Error cargando contactos:', response.statusText);
         }
@@ -1358,7 +1367,10 @@ function showModal(modalId) {
             debugLog('MODAL', `Configurando selects de clientes para ${modalId}...`);
             try {
                 populateClientSelects(modalId);
+                clearEditOrderItems(); // Limpiar productos del pedido anterior
+                setupEditOrderProductHandlers(); // Configurar manejadores de productos
                 debugLog('MODAL', `Selects de clientes configurados para ${modalId}`);
+                debugLog('MODAL', 'Modal de editar pedido configurado con productos');
             } catch (error) {
                 console.error('❌ Error al cargar lista de clientes:', error);
                 throw error;
@@ -1840,7 +1852,6 @@ function editOrder(orderId) {
     
     // Llenar el modal con los datos del pedido
     document.getElementById('edit-order-client-select').value = order.cliente_id;
-    document.getElementById('edit-order-amount').value = order.monto;
     document.getElementById('edit-order-description').value = order.descripcion;
     document.getElementById('edit-order-status').value = order.estado;
     
@@ -2152,29 +2163,39 @@ async function handleEditOrderSubmit(e) {
         showNotification('Error: ID de pedido no encontrado', 'error');
         return;
     }
+
+    // Validar que hay productos en el pedido
+    if (editOrderItems.length === 0) {
+        showNotification('Debe tener al menos un producto en el pedido', 'error');
+        return;
+    }
+
+    // Calcular el monto total
+    const totalAmount = editOrderItems.reduce((sum, item) => sum + item.subtotal, 0);
     
     const orderData = {
         cliente_id: document.getElementById('edit-order-client-select').value,
-        monto: parseFloat(document.getElementById('edit-order-amount').value),
+        monto: totalAmount,
         descripcion: document.getElementById('edit-order-description').value,
-        estado: document.getElementById('edit-order-status').value
+        estado: document.getElementById('edit-order-status').value,
+        items: editOrderItems.map(item => ({
+            producto_id: item.producto_id,
+            cantidad: item.cantidad,
+            precio: item.precio
+        }))
     };
     
     debugLog('FORM', 'Datos del pedido a actualizar:', orderData);
     
     // Validar que los campos requeridos no estén vacíos
-    if (!orderData.cliente_id || !orderData.monto || !orderData.descripcion || !orderData.estado) {
+    if (!orderData.cliente_id || !orderData.descripcion || !orderData.estado) {
         showNotification('Todos los campos son requeridos', 'error');
-        return;
-    }
-    
-    if (orderData.monto <= 0) {
-        showNotification('El monto debe ser mayor a 0', 'error');
         return;
     }
     
     try {
         const token = localStorage.getItem('authToken');
+        
         
         debugLog('HTTP', `Enviando petición PUT a /api/pedidos/${orderId}`);
         
@@ -2189,6 +2210,7 @@ async function handleEditOrderSubmit(e) {
         
         if (response.ok) {
             showNotification('Pedido actualizado exitosamente', 'success');
+            clearEditOrderItems(); // Limpiar productos antes de cerrar el modal
             document.getElementById('edit-order-modal').classList.remove('active');
             await loadOrders(); // Recargar la lista
         } else {
@@ -3624,4 +3646,175 @@ async function updatePedidosTableStructure() {
         console.error('❌ Error de red:', error);
         showNotification('Error de conexión al actualizar base de datos', 'error');
     }
+}
+
+// === FUNCIONES PARA EDITAR PEDIDO ===
+
+function setupEditOrderProductHandlers() {
+    const addProductBtn = document.getElementById('edit-add-product-btn');
+    const confirmAddBtn = document.getElementById('edit-confirm-add-product');
+    const cancelAddBtn = document.getElementById('edit-cancel-add-product');
+    const productSelect = document.getElementById('edit-product-select');
+
+    if (addProductBtn) {
+        addProductBtn.onclick = () => {
+            document.getElementById('edit-product-selector').style.display = 'block';
+            populateEditProductSelect();
+        };
+    }
+
+    if (confirmAddBtn) {
+        confirmAddBtn.onclick = addProductToEditOrder;
+    }
+
+    if (cancelAddBtn) {
+        cancelAddBtn.onclick = cancelEditAddProduct;
+    }
+
+    if (productSelect) {
+        productSelect.onchange = (e) => {
+            const selectedProduct = products.find(p => p.id == e.target.value);
+            if (selectedProduct) {
+                document.getElementById('edit-product-price').value = selectedProduct.precio;
+            }
+        };
+    }
+}
+
+function populateEditProductSelect() {
+    const productSelect = document.getElementById('edit-product-select');
+    if (!productSelect) return;
+
+    productSelect.innerHTML = '<option value="">Seleccione un producto</option>';
+    
+    products.forEach(product => {
+        const option = document.createElement('option');
+        option.value = product.id;
+        option.textContent = product.nombre;
+        productSelect.appendChild(option);
+    });
+}
+
+function addProductToEditOrder() {
+    const productId = document.getElementById('edit-product-select').value;
+    const quantity = parseInt(document.getElementById('edit-product-quantity').value);
+    const price = parseFloat(document.getElementById('edit-product-price').value);
+
+    if (!productId || !quantity || !price) {
+        showNotification('Por favor complete todos los campos del producto', 'error');
+        return;
+    }
+
+    const selectedProduct = products.find(p => p.id == productId);
+    if (!selectedProduct) {
+        showNotification('Producto no encontrado', 'error');
+        return;
+    }
+
+    // Verificar si el producto ya está en la lista
+    const existingIndex = editOrderItems.findIndex(item => item.producto_id == productId);
+    if (existingIndex !== -1) {
+        // Si ya existe, actualizar cantidad y precio
+        editOrderItems[existingIndex].cantidad += quantity;
+        editOrderItems[existingIndex].precio = price;
+        editOrderItems[existingIndex].subtotal = editOrderItems[existingIndex].cantidad * price;
+    } else {
+        // Si no existe, agregar nuevo
+        const newItem = {
+            producto_id: productId,
+            producto_nombre: selectedProduct.nombre,
+            cantidad: quantity,
+            precio: price,
+            subtotal: quantity * price
+        };
+        editOrderItems.push(newItem);
+    }
+
+    renderEditOrderProducts();
+    updateEditOrderTotal();
+    cancelEditAddProduct();
+    showNotification('Producto agregado al pedido', 'success');
+}
+
+function cancelEditAddProduct() {
+    document.getElementById('edit-product-selector').style.display = 'none';
+    document.getElementById('edit-product-select').value = '';
+    document.getElementById('edit-product-quantity').value = '1';
+    document.getElementById('edit-product-price').value = '';
+}
+
+function renderEditOrderProducts() {
+    const productsList = document.getElementById('edit-order-products-list');
+    const noProductsMessage = document.getElementById('edit-no-products-message');
+
+    // Validar que los elementos existan
+    if (!productsList || !noProductsMessage) {
+        console.log('⚠️ Elementos del modal de editar pedido no encontrados');
+        return;
+    }
+
+    if (editOrderItems.length === 0) {
+        noProductsMessage.style.display = 'block';
+        return;
+    }
+
+    noProductsMessage.style.display = 'none';
+
+    const productsTable = `
+        <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead style="background: #f9fafb;">
+                    <tr>
+                        <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Producto</th>
+                        <th style="padding: 0.75rem; text-align: center; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Cantidad</th>
+                        <th style="padding: 0.75rem; text-align: right; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Precio Unit.</th>
+                        <th style="padding: 0.75rem; text-align: right; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Subtotal</th>
+                        <th style="padding: 0.75rem; text-align: center; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${editOrderItems.map((item, index) => `
+                        <tr style="background: ${index % 2 === 0 ? '#ffffff' : '#f9fafb'};">
+                            <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">${item.producto_nombre}</td>
+                            <td style="padding: 0.75rem; text-align: center; border-bottom: 1px solid #e5e7eb;">${item.cantidad}</td>
+                            <td style="padding: 0.75rem; text-align: right; border-bottom: 1px solid #e5e7eb;">${formatCurrency(item.precio)}</td>
+                            <td style="padding: 0.75rem; text-align: right; font-weight: 600; color: #10b981; border-bottom: 1px solid #e5e7eb;">${formatCurrency(item.subtotal)}</td>
+                            <td style="padding: 0.75rem; text-align: center; border-bottom: 1px solid #e5e7eb;">
+                                <button type="button" onclick="removeProductFromEditOrder(${index})" class="btn-icon" style="color: #ef4444;" title="Eliminar">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    productsList.innerHTML = productsTable;
+}
+
+function removeProductFromEditOrder(index) {
+    if (confirm('¿Está seguro de que desea eliminar este producto del pedido?')) {
+        editOrderItems.splice(index, 1);
+        renderEditOrderProducts();
+        updateEditOrderTotal();
+        showNotification('Producto eliminado del pedido', 'success');
+    }
+}
+
+function updateEditOrderTotal() {
+    const total = editOrderItems.reduce((sum, item) => sum + item.subtotal, 0);
+    const orderTotalElement = document.getElementById('edit-order-total');
+    if (orderTotalElement) {
+        orderTotalElement.textContent = formatCurrency(total);
+    } else {
+        console.log('⚠️ Elemento edit-order-total no encontrado');
+    }
+}
+
+function clearEditOrderItems() {
+    editOrderItems = [];
+    renderEditOrderProducts();
+    updateEditOrderTotal();
 }
