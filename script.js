@@ -544,26 +544,40 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 // Función para configurar la navegación
 function setupNavigation() {
+    console.log('🔧 Configurando navegación...');
+    
     // Configurar navegación del sidebar
     const navItems = document.querySelectorAll('.nav-item');
-    navItems.forEach(item => {
-        item.addEventListener('click', function(e) {
+    console.log(`🔍 Encontrados ${navItems.length} elementos de navegación`);
+    
+    navItems.forEach((item, index) => {
+        // Remover listeners existentes clonando el elemento
+        const newItem = item.cloneNode(true);
+        item.parentNode.replaceChild(newItem, item);
+        
+        newItem.addEventListener('click', function(e) {
             e.preventDefault();
+            console.log('🖱️ Click en navegación:', this.textContent.trim());
             
-            // Remover clase active de todos los items
-            navItems.forEach(nav => nav.classList.remove('active'));
-            
-            // Agregar clase active al item clickeado
-            this.classList.add('active');
-            
-            // Obtener la sección desde el data-section o el texto
-            const section = this.getAttribute('data-section') || this.textContent.trim().toLowerCase();
-            
-            // Actualizar el título del header
-            updateHeaderTitle(section);
-            
-            // Mostrar la sección correspondiente
-            showSection(section);
+            try {
+                // Remover clase active de todos los items
+                document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+                
+                // Agregar clase active al item clickeado
+                this.classList.add('active');
+                
+                // Obtener la sección desde el data-section o el texto
+                const section = this.getAttribute('data-section') || this.textContent.trim().toLowerCase();
+                console.log('📍 Navegando a sección:', section);
+                
+                // Actualizar el título del header
+                updateHeaderTitle(section);
+                
+                // Mostrar la sección correspondiente
+                showSection(section);
+            } catch (error) {
+                console.error('❌ Error en navegación:', error);
+            }
         });
     });
     
@@ -572,9 +586,13 @@ function setupNavigation() {
     if (logoutBtn) {
         logoutBtn.addEventListener('click', function(e) {
             e.preventDefault();
+            console.log('🚪 Cerrando sesión...');
             logoutUser();
         });
+        console.log('✅ Event listener de logout configurado');
     }
+    
+    console.log('✅ Navegación configurada correctamente');
 }
 
 // Función para actualizar el título del header
@@ -611,6 +629,8 @@ function updateHeaderTitle(section) {
 
 // Función para mostrar secciones
 function showSection(section) {
+    console.log('🔄 Cambiando a sección:', section);
+    
     // Ocultar todas las secciones
     const sections = document.querySelectorAll('.page-content, #admin-profiles-section, #pedidos-section, #pagos-section, #productos-section, #contactos-section');
     sections.forEach(sec => sec.style.display = 'none');
@@ -619,31 +639,45 @@ function showSection(section) {
     switch(section) {
         case 'dashboard':
             document.querySelector('.page-content').style.display = 'block';
-            loadClients();
+            // Solo renderizar si ya tenemos datos
+            if (clients.length > 0) {
+                renderClientsTable();
+            }
             break;
         case 'clientes':
             document.querySelector('.page-content').style.display = 'block';
-            loadClients();
+            // Solo renderizar si ya tenemos datos
+            if (clients.length > 0) {
+                renderClientsTable();
+            }
             break;
         case 'pedidos':
             document.getElementById('pedidos-section').style.display = 'block';
-            loadOrders();
-            renderOrdersTable();
+            // Solo renderizar si ya tenemos datos
+            if (orders.length > 0) {
+                renderOrdersTable();
+            }
             break;
         case 'pagos':
             document.getElementById('pagos-section').style.display = 'block';
-            loadPayments();
-            renderPaymentsTable();
+            // Solo renderizar si ya tenemos datos
+            if (payments.length > 0) {
+                renderPaymentsTable();
+            }
             break;
         case 'productos':
             document.getElementById('productos-section').style.display = 'block';
-            loadProducts();
-            renderProductsTable();
+            // Solo renderizar si ya tenemos datos
+            if (products.length > 0) {
+                renderProductsTable();
+            }
             break;
         case 'contactos':
             document.getElementById('contactos-section').style.display = 'block';
-            loadContacts();
-            renderContactsTable();
+            // Solo renderizar si ya tenemos datos
+            if (contacts.length > 0) {
+                renderContactsTable();
+            }
             break;
         case 'fábrica':
             // Implementar vista de fábrica
@@ -652,47 +686,61 @@ function showSection(section) {
         default:
             document.querySelector('.page-content').style.display = 'block';
     }
+    
+    console.log('✅ Sección mostrada:', section);
 }
 
 // Función para configurar formularios
 function setupForms() {
     console.log('🔧 Configurando formularios...');
     
-    // Configurar formulario de nuevo cliente
-    const newClientForm = document.getElementById('new-client-form');
-    if (newClientForm) {
-        newClientForm.addEventListener('submit', handleNewClientSubmit);
-        console.log('✅ Event listener del formulario configurado');
-    } else {
-        console.warn('⚠️ No se encontró el formulario new-client-form');
-    }
-    
-    // Configurar botones de modal
-    const newClientBtn = document.getElementById('new-client-btn');
-    if (newClientBtn) {
-        newClientBtn.addEventListener('click', () => {
-            console.log('🖱️ Botón nuevo cliente clickeado');
-            showModal('new-client-modal');
+    try {
+        // Configurar formulario de nuevo cliente
+        const newClientForm = document.getElementById('new-client-form');
+        if (newClientForm) {
+            // Remover listeners existentes
+            const newForm = newClientForm.cloneNode(true);
+            newClientForm.parentNode.replaceChild(newForm, newClientForm);
+            
+            newForm.addEventListener('submit', handleNewClientSubmit);
+            console.log('✅ Event listener del formulario configurado');
+        } else {
+            console.warn('⚠️ No se encontró el formulario new-client-form');
+        }
+        
+        // Configurar botones de modal
+        const newClientBtn = document.getElementById('new-client-btn');
+        if (newClientBtn) {
+            // Remover listeners existentes
+            const newBtn = newClientBtn.cloneNode(true);
+            newClientBtn.parentNode.replaceChild(newBtn, newClientBtn);
+            
+            newBtn.addEventListener('click', () => {
+                console.log('🖱️ Botón nuevo cliente clickeado');
+                showModal('new-client-modal');
+            });
+            console.log('✅ Event listener del botón nuevo cliente configurado');
+        } else {
+            console.warn('⚠️ No se encontró el botón new-client-btn');
+        }
+        
+        // Configurar cierre de modales
+        const closeModalBtns = document.querySelectorAll('.close-modal');
+        console.log(`🔍 Encontrados ${closeModalBtns.length} botones de cerrar modal`);
+        closeModalBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const modal = this.closest('.modal');
+                if (modal) {
+                    modal.style.display = 'none';
+                    console.log('✅ Modal cerrado');
+                }
+            });
         });
-        console.log('✅ Event listener del botón nuevo cliente configurado');
-    } else {
-        console.warn('⚠️ No se encontró el botón new-client-btn');
+        
+        console.log('✅ Configuración de formularios completada');
+    } catch (error) {
+        console.error('❌ Error configurando formularios:', error);
     }
-    
-    // Configurar cierre de modales
-    const closeModalBtns = document.querySelectorAll('.close-modal');
-    console.log(`🔍 Encontrados ${closeModalBtns.length} botones de cerrar modal`);
-    closeModalBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            const modal = this.closest('.modal');
-            if (modal) {
-                modal.style.display = 'none';
-                console.log('✅ Modal cerrado');
-            }
-        });
-    });
-    
-    console.log('✅ Configuración de formularios completada');
 }
 
 // Función para mostrar modales
