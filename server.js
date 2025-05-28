@@ -1059,6 +1059,152 @@ app.delete('/api/usuarios/:id', authenticateToken, async (req, res) => {
     }
 });
 
+// Obtener permisos por perfil
+app.get('/api/permisos', authenticateToken, async (req, res) => {
+    try {
+        console.log('📋 Solicitud de permisos recibida por usuario:', req.user.perfil);
+        
+        // Solo administradores pueden ver permisos
+        if (req.user.perfil !== 'Administrador') {
+            return res.status(403).json({ error: 'Acceso denegado. Solo administradores pueden ver permisos.' });
+        }
+
+        // Intentar obtener permisos de la base de datos
+        try {
+            const [rows] = await db.execute('SELECT * FROM permisos_perfil ORDER BY perfil, modulo');
+            
+            if (rows.length > 0) {
+                // Convertir filas a estructura anidada
+                const permisos = {};
+                rows.forEach(row => {
+                    if (!permisos[row.perfil]) {
+                        permisos[row.perfil] = {};
+                    }
+                    permisos[row.perfil][row.modulo] = {
+                        crear: Boolean(row.crear),
+                        leer: Boolean(row.leer),
+                        editar: Boolean(row.editar),
+                        eliminar: Boolean(row.eliminar)
+                    };
+                });
+                
+                console.log('✅ Permisos cargados desde base de datos');
+                return res.json({ permisos });
+            }
+        } catch (dbError) {
+            console.log('⚠️ Tabla permisos_perfil no existe, usando permisos por defecto');
+        }
+
+        // Si no hay datos en BD o no existe la tabla, usar permisos por defecto
+        const permisosDefecto = {
+            'Administrador': {
+                clientes: { crear: true, leer: true, editar: true, eliminar: true },
+                pedidos: { crear: true, leer: true, editar: true, eliminar: true },
+                pagos: { crear: true, leer: true, editar: true, eliminar: true },
+                productos: { crear: true, leer: true, editar: true, eliminar: true },
+                contactos: { crear: true, leer: true, editar: true, eliminar: true },
+                usuarios: { crear: true, leer: true, editar: true, eliminar: true }
+            },
+            'Vendedor': {
+                clientes: { crear: true, leer: true, editar: true, eliminar: false },
+                pedidos: { crear: true, leer: true, editar: true, eliminar: true },
+                pagos: { crear: true, leer: true, editar: true, eliminar: true },
+                productos: { crear: false, leer: true, editar: false, eliminar: false },
+                contactos: { crear: true, leer: true, editar: true, eliminar: true },
+                usuarios: { crear: false, leer: false, editar: false, eliminar: false }
+            },
+            'Produccion': {
+                clientes: { crear: false, leer: true, editar: false, eliminar: false },
+                pedidos: { crear: false, leer: true, editar: true, eliminar: false },
+                pagos: { crear: false, leer: true, editar: false, eliminar: false },
+                productos: { crear: true, leer: true, editar: true, eliminar: false },
+                contactos: { crear: false, leer: true, editar: false, eliminar: false },
+                usuarios: { crear: false, leer: false, editar: false, eliminar: false }
+            }
+        };
+
+        console.log('✅ Enviando permisos por defecto');
+        res.json({ permisos: permisosDefecto });
+
+    } catch (error) {
+        console.error('❌ Error obteniendo permisos:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Guardar permisos por perfil
+app.put('/api/permisos', authenticateToken, async (req, res) => {
+    try {
+        console.log('💾 Solicitud de guardado de permisos recibida por usuario:', req.user.perfil);
+        
+        // Solo administradores pueden modificar permisos
+        if (req.user.perfil !== 'Administrador') {
+            return res.status(403).json({ error: 'Acceso denegado. Solo administradores pueden modificar permisos.' });
+        }
+
+        const { permisos } = req.body;
+        
+        if (!permisos) {
+            return res.status(400).json({ error: 'Datos de permisos requeridos' });
+        }
+
+        console.log('📊 Permisos a guardar:', JSON.stringify(permisos, null, 2));
+
+        try {
+            // Intentar crear la tabla si no existe
+            await db.execute(`
+                CREATE TABLE IF NOT EXISTS permisos_perfil (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    perfil VARCHAR(50) NOT NULL,
+                    modulo VARCHAR(50) NOT NULL,
+                    crear BOOLEAN DEFAULT FALSE,
+                    leer BOOLEAN DEFAULT FALSE,
+                    editar BOOLEAN DEFAULT FALSE,
+                    eliminar BOOLEAN DEFAULT FALSE,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    UNIQUE KEY unique_perfil_modulo (perfil, modulo)
+                )
+            `);
+            
+            console.log('✅ Tabla permisos_perfil verificada/creada');
+
+            // Limpiar permisos existentes
+            await db.execute('DELETE FROM permisos_perfil');
+            console.log('🗑️ Permisos anteriores eliminados');
+
+            // Insertar nuevos permisos
+            const insertPromises = [];
+            Object.keys(permisos).forEach(perfil => {
+                Object.keys(permisos[perfil]).forEach(modulo => {
+                    const permisoModulo = permisos[perfil][modulo];
+                    insertPromises.push(
+                        db.execute(
+                            'INSERT INTO permisos_perfil (perfil, modulo, crear, leer, editar, eliminar) VALUES (?, ?, ?, ?, ?, ?)',
+                            [perfil, modulo, permisoModulo.crear, permisoModulo.leer, permisoModulo.editar, permisoModulo.eliminar]
+                        )
+                    );
+                });
+            });
+
+            await Promise.all(insertPromises);
+            console.log(`✅ ${insertPromises.length} permisos guardados en base de datos`);
+
+            res.json({ 
+                message: 'Permisos guardados exitosamente',
+                count: insertPromises.length
+            });
+
+        } catch (dbError) {
+            console.error('❌ Error de base de datos guardando permisos:', dbError);
+            res.status(500).json({ error: 'Error de base de datos al guardar permisos' });
+        }
+
+    } catch (error) {
+        console.error('❌ Error guardando permisos:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
 // Eliminar producto
 app.delete('/api/productos/:id', authenticateToken, async (req, res) => {
     try {

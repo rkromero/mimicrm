@@ -4809,6 +4809,8 @@ async function savePermissions() {
             saveButton.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 0.5rem;"></i>Guardando...';
         }
         
+        console.log('📤 Enviando permisos al servidor:', window.permisosPorPerfil);
+        
         const response = await fetch('/api/permisos', {
             method: 'PUT',
             headers: {
@@ -4820,18 +4822,35 @@ async function savePermissions() {
             })
         });
         
+        console.log('📥 Respuesta del servidor:', response.status, response.statusText);
+        
         if (response.ok) {
-            showNotification('Permisos guardados exitosamente', 'success');
-            console.log('✅ Permisos guardados en el servidor');
+            const result = await response.json();
+            showNotification(`Permisos guardados exitosamente (${result.count} registros)`, 'success');
+            console.log('✅ Permisos guardados en el servidor:', result);
         } else {
-            const errorData = await response.json();
+            // Intentar leer la respuesta como JSON
+            let errorData;
+            const contentType = response.headers.get('content-type');
+            
+            if (contentType && contentType.includes('application/json')) {
+                errorData = await response.json();
+            } else {
+                // Si no es JSON, leer como texto (probablemente HTML de error)
+                const textResponse = await response.text();
+                console.error('❌ Respuesta no-JSON del servidor:', textResponse.substring(0, 200) + '...');
+                errorData = { message: `Error del servidor: ${response.status}` };
+            }
+            
             console.error('❌ Error guardando permisos:', response.status, errorData);
             
             // Si no existe el endpoint, simular guardado local
             if (response.status === 404) {
                 console.log('ℹ️ Endpoint de permisos no implementado, guardando localmente...');
                 localStorage.setItem('permisosPorPerfil', JSON.stringify(window.permisosPorPerfil));
-                showNotification('Permisos guardados localmente (funcionalidad en desarrollo)', 'info');
+                showNotification('Permisos guardados localmente (endpoint en desarrollo)', 'warning');
+            } else if (response.status === 403) {
+                showNotification('Error: No tienes permisos para guardar configuraciones', 'error');
             } else {
                 showNotification(errorData.message || `Error del servidor: ${response.status}`, 'error');
             }
