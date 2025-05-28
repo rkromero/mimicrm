@@ -405,24 +405,26 @@ app.get('/api/pedidos', authenticateToken, async (req, res) => {
 // Crear pedido
 app.post('/api/pedidos', authenticateToken, async (req, res) => {
     try {
-        const { cliente_id, descripcion, monto, items } = req.body;
+        const { cliente_id, descripcion, monto, estado = 'pendiente', items = [] } = req.body;
 
         // Generar número de pedido único
-        const numero_pedido = `PED-${Date.now()}`;
+        const numeroPedido = `PED-${Date.now()}`;
 
+        // Insertar el pedido
         const [result] = await db.execute(
-            'INSERT INTO pedidos (numero_pedido, cliente_id, descripcion, monto, fecha, creado_por) VALUES (?, ?, ?, ?, ?, ?)',
-            [numero_pedido, cliente_id, descripcion, monto, new Date().toISOString().split('T')[0], req.user.id]
+            'INSERT INTO pedidos (numero_pedido, cliente_id, descripcion, monto, estado, fecha, creado_por) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [numeroPedido, cliente_id, descripcion, monto, estado, new Date().toISOString().split('T')[0], req.user.id]
         );
 
         const pedidoId = result.insertId;
 
-        // Si hay items, insertarlos en la tabla de pedido_items
+        // Insertar los items del pedido si existen
         if (items && items.length > 0) {
             for (const item of items) {
+                const subtotal = item.cantidad * item.precio;
                 await db.execute(
                     'INSERT INTO pedido_items (pedido_id, producto_id, cantidad, precio, subtotal) VALUES (?, ?, ?, ?, ?)',
-                    [pedidoId, item.producto_id, item.cantidad, item.precio, item.cantidad * item.precio]
+                    [pedidoId, item.producto_id, item.cantidad, item.precio, subtotal]
                 );
             }
         }
@@ -430,6 +432,26 @@ app.post('/api/pedidos', authenticateToken, async (req, res) => {
         res.status(201).json({ id: pedidoId, message: 'Pedido creado exitosamente' });
     } catch (error) {
         console.error('Error creando pedido:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Obtener items de un pedido específico
+app.get('/api/pedidos/:id/items', authenticateToken, async (req, res) => {
+    try {
+        const pedidoId = req.params.id;
+        
+        const [items] = await db.execute(`
+            SELECT pi.*, p.nombre as producto_nombre, p.descripcion as producto_descripcion
+            FROM pedido_items pi
+            LEFT JOIN productos p ON pi.producto_id = p.id
+            WHERE pi.pedido_id = ?
+            ORDER BY pi.id
+        `, [pedidoId]);
+        
+        res.json(items);
+    } catch (error) {
+        console.error('Error obteniendo items del pedido:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });

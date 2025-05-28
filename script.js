@@ -4,6 +4,7 @@ let orders = [];
 let payments = [];
 let products = [];
 let contacts = [];
+let orderItems = []; // Array para almacenar los productos del pedido actual
 
 // Listado de provincias y localidades de Argentina
 const provinciasYLocalidades = {
@@ -1100,6 +1101,181 @@ function setupForms() {
     }
 }
 
+// Funciones para manejar productos en pedidos
+function setupOrderProductHandlers() {
+    const addProductBtn = document.getElementById('add-product-btn');
+    const productSelector = document.getElementById('product-selector');
+    const confirmAddBtn = document.getElementById('confirm-add-product');
+    const cancelAddBtn = document.getElementById('cancel-add-product');
+    const productSelect = document.getElementById('product-select');
+    const productPrice = document.getElementById('product-price');
+
+    if (addProductBtn) {
+        addProductBtn.onclick = function() {
+            productSelector.style.display = 'block';
+            populateProductSelect();
+            this.style.display = 'none';
+        };
+    }
+
+    if (confirmAddBtn) {
+        confirmAddBtn.onclick = function() {
+            addProductToOrder();
+        };
+    }
+
+    if (cancelAddBtn) {
+        cancelAddBtn.onclick = function() {
+            cancelAddProduct();
+        };
+    }
+
+    if (productSelect) {
+        productSelect.onchange = function() {
+            const selectedProduct = products.find(p => p.id == this.value);
+            if (selectedProduct) {
+                productPrice.value = selectedProduct.precio;
+            } else {
+                productPrice.value = '';
+            }
+        };
+    }
+}
+
+function populateProductSelect() {
+    const productSelect = document.getElementById('product-select');
+    if (!productSelect) return;
+
+    productSelect.innerHTML = '<option value="">Seleccione un producto</option>';
+    
+    products.forEach(product => {
+        const option = document.createElement('option');
+        option.value = product.id;
+        option.textContent = `${product.nombre} - ${formatCurrency(product.precio)}`;
+        productSelect.appendChild(option);
+    });
+}
+
+function addProductToOrder() {
+    const productId = document.getElementById('product-select').value;
+    const quantity = parseInt(document.getElementById('product-quantity').value);
+    const price = parseFloat(document.getElementById('product-price').value);
+
+    if (!productId || !quantity || !price || quantity <= 0 || price <= 0) {
+        showNotification('Por favor complete todos los campos correctamente', 'error');
+        return;
+    }
+
+    // Verificar si el producto ya está en el pedido
+    const existingItemIndex = orderItems.findIndex(item => item.producto_id == productId);
+    if (existingItemIndex !== -1) {
+        showNotification('Este producto ya está agregado al pedido', 'error');
+        return;
+    }
+
+    const selectedProduct = products.find(p => p.id == productId);
+    const subtotal = quantity * price;
+
+    const orderItem = {
+        producto_id: productId,
+        producto_nombre: selectedProduct.nombre,
+        cantidad: quantity,
+        precio: price,
+        subtotal: subtotal
+    };
+
+    orderItems.push(orderItem);
+    renderOrderProducts();
+    updateOrderTotal();
+    cancelAddProduct();
+    
+    showNotification('Producto agregado al pedido', 'success');
+}
+
+function cancelAddProduct() {
+    const productSelector = document.getElementById('product-selector');
+    const addProductBtn = document.getElementById('add-product-btn');
+    
+    productSelector.style.display = 'none';
+    addProductBtn.style.display = 'inline-flex';
+    
+    // Limpiar campos
+    document.getElementById('product-select').value = '';
+    document.getElementById('product-quantity').value = '1';
+    document.getElementById('product-price').value = '';
+}
+
+function renderOrderProducts() {
+    const productsList = document.getElementById('order-products-list');
+    const noProductsMessage = document.getElementById('no-products-message');
+    const submitBtn = document.getElementById('submit-order-btn');
+
+    if (orderItems.length === 0) {
+        noProductsMessage.style.display = 'block';
+        submitBtn.disabled = true;
+        return;
+    }
+
+    noProductsMessage.style.display = 'none';
+    submitBtn.disabled = false;
+
+    const productsTable = `
+        <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead style="background: #f9fafb;">
+                    <tr>
+                        <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Producto</th>
+                        <th style="padding: 0.75rem; text-align: center; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Cantidad</th>
+                        <th style="padding: 0.75rem; text-align: right; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Precio Unit.</th>
+                        <th style="padding: 0.75rem; text-align: right; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Subtotal</th>
+                        <th style="padding: 0.75rem; text-align: center; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${orderItems.map((item, index) => `
+                        <tr style="background: ${index % 2 === 0 ? '#ffffff' : '#f9fafb'};">
+                            <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">${item.producto_nombre}</td>
+                            <td style="padding: 0.75rem; text-align: center; border-bottom: 1px solid #e5e7eb;">${item.cantidad}</td>
+                            <td style="padding: 0.75rem; text-align: right; border-bottom: 1px solid #e5e7eb;">${formatCurrency(item.precio)}</td>
+                            <td style="padding: 0.75rem; text-align: right; font-weight: 600; color: #10b981; border-bottom: 1px solid #e5e7eb;">${formatCurrency(item.subtotal)}</td>
+                            <td style="padding: 0.75rem; text-align: center; border-bottom: 1px solid #e5e7eb;">
+                                <button type="button" onclick="removeProductFromOrder(${index})" class="btn-icon" style="color: #ef4444;" title="Eliminar">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    productsList.innerHTML = productsTable;
+}
+
+function removeProductFromOrder(index) {
+    if (confirm('¿Está seguro de que desea eliminar este producto del pedido?')) {
+        orderItems.splice(index, 1);
+        renderOrderProducts();
+        updateOrderTotal();
+        showNotification('Producto eliminado del pedido', 'success');
+    }
+}
+
+function updateOrderTotal() {
+    const total = orderItems.reduce((sum, item) => sum + item.subtotal, 0);
+    const orderTotalElement = document.getElementById('order-total');
+    if (orderTotalElement) {
+        orderTotalElement.textContent = formatCurrency(total);
+    }
+}
+
+function clearOrderItems() {
+    orderItems = [];
+    renderOrderProducts();
+    updateOrderTotal();
+}
+
 // Función para mostrar modales con debugging mejorado
 function showModal(modalId) {
     try {
@@ -1145,6 +1321,13 @@ function showModal(modalId) {
             try {
                 populateClientSelects(modalId);
                 debugLog('MODAL', `Selects de clientes configurados para ${modalId}`);
+                
+                // Configuración específica para el modal de nuevo pedido
+                if (modalId === 'new-order-modal') {
+                    clearOrderItems(); // Limpiar productos del pedido anterior
+                    setupOrderProductHandlers(); // Configurar manejadores de productos
+                    debugLog('MODAL', 'Modal de nuevo pedido configurado con productos');
+                }
             } catch (error) {
                 console.error('❌ Error al cargar lista de clientes:', error);
                 throw error;
@@ -1350,13 +1533,31 @@ async function handleNewClientSubmit(e) {
 async function handleNewOrderSubmit(e) {
     e.preventDefault();
     
-    const formData = new FormData(e.target);
+    const clientId = document.getElementById('order-client-select').value;
+    const description = document.getElementById('order-description').value;
+    
+    // Validar que hay productos en el pedido
+    if (orderItems.length === 0) {
+        showNotification('Debe agregar al menos un producto al pedido', 'error');
+        return;
+    }
+    
+    // Calcular el monto total
+    const totalAmount = orderItems.reduce((sum, item) => sum + item.subtotal, 0);
+    
     const orderData = {
-        cliente_id: document.getElementById('order-client-select').value,
-        monto: parseFloat(document.getElementById('order-amount').value),
-        descripcion: document.getElementById('order-description').value,
-        estado: 'pendiente'
+        cliente_id: clientId,
+        descripcion: description,
+        monto: totalAmount,
+        estado: 'pendiente',
+        items: orderItems.map(item => ({
+            producto_id: item.producto_id,
+            cantidad: item.cantidad,
+            precio: item.precio
+        }))
     };
+    
+    debugLog('ORDER', 'Datos del pedido a enviar:', orderData);
     
     try {
         const token = localStorage.getItem('authToken');
@@ -1373,6 +1574,7 @@ async function handleNewOrderSubmit(e) {
             showNotification('Pedido creado exitosamente', 'success');
             document.getElementById('new-order-modal').classList.remove('active');
             e.target.reset();
+            clearOrderItems(); // Limpiar productos
             await loadOrders();
         } else {
             const error = await response.json();
@@ -3182,47 +3384,110 @@ function viewOrderDetails(orderId) {
         background-color: rgba(0, 0, 0, 0.7) !important;
     `;
     
-    detailsModal.innerHTML = `
-        <div class="modal-content" style="max-width: 600px; z-index: 12001 !important;">
-            <div class="modal-header">
-                <h2 class="modal-title">Detalles del Pedido #${order.numero_pedido}</h2>
-                <button class="close-modal btn btn-secondary" onclick="this.closest('.modal').remove()">
-                    <i class="fas fa-times"></i>
-                </button>
+    // Cargar items del pedido y mostrar el modal
+    loadOrderItems(orderId).then(items => {
+        const itemsTable = items.length > 0 ? `
+            <div style="margin-bottom: 1.5rem;">
+                <h3 style="margin: 0 0 1rem 0; color: #1f2937; display: flex; align-items: center;">
+                    <i class="fas fa-box" style="margin-right: 0.5rem; color: #6366f1;"></i>
+                    Productos del Pedido (${items.length})
+                </h3>
+                <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead style="background: #f9fafb;">
+                            <tr>
+                                <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Producto</th>
+                                <th style="padding: 0.75rem; text-align: center; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Cantidad</th>
+                                <th style="padding: 0.75rem; text-align: right; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Precio Unit.</th>
+                                <th style="padding: 0.75rem; text-align: right; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${items.map((item, index) => `
+                                <tr style="background: ${index % 2 === 0 ? '#ffffff' : '#f9fafb'};">
+                                    <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
+                                        <div>
+                                            <div style="font-weight: 600;">${item.producto_nombre || 'Producto no encontrado'}</div>
+                                            ${item.producto_descripcion ? `<div style="font-size: 0.875rem; color: #6b7280;">${item.producto_descripcion}</div>` : ''}
+                                        </div>
+                                    </td>
+                                    <td style="padding: 0.75rem; text-align: center; border-bottom: 1px solid #e5e7eb;">${item.cantidad}</td>
+                                    <td style="padding: 0.75rem; text-align: right; border-bottom: 1px solid #e5e7eb;">${formatCurrency(item.precio)}</td>
+                                    <td style="padding: 0.75rem; text-align: right; font-weight: 600; color: #10b981; border-bottom: 1px solid #e5e7eb;">${formatCurrency(item.subtotal)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                        <tfoot style="background: #f0f9ff;">
+                            <tr>
+                                <td colspan="3" style="padding: 0.75rem; text-align: right; font-weight: 600; color: #0c4a6e; border-top: 2px solid #0ea5e9;">Total del Pedido:</td>
+                                <td style="padding: 0.75rem; text-align: right; font-weight: bold; font-size: 1.1rem; color: #0ea5e9; border-top: 2px solid #0ea5e9;">${formatCurrency(order.monto)}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
             </div>
-            <div style="padding: 1rem;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                    <div>
-                        <strong>Cliente:</strong><br>
-                        ${order.cliente_nombre || 'N/A'}
-                    </div>
-                    <div>
-                        <strong>Monto:</strong><br>
-                        <span style="font-size: 1.2rem; font-weight: bold; color: #10b981;">
-                            ${formatCurrency(order.monto)}
-                        </span>
-                    </div>
-                    <div>
-                        <strong>Estado:</strong><br>
-                        <span class="status-badge status-${order.estado}">${order.estado}</span>
-                    </div>
-                    <div>
-                        <strong>Fecha:</strong><br>
-                        ${formatDate(order.fecha)}
-                    </div>
+        ` : `
+            <div style="margin-bottom: 1.5rem;">
+                <h3 style="margin: 0 0 1rem 0; color: #1f2937;">Productos del Pedido</h3>
+                <div style="background: #f9fafb; padding: 2rem; text-align: center; border-radius: 8px; color: #6b7280;">
+                    <i class="fas fa-box-open" style="font-size: 2rem; margin-bottom: 0.5rem; display: block; color: #d1d5db;"></i>
+                    <p style="margin: 0;">No hay productos registrados para este pedido</p>
                 </div>
-                <div style="margin-bottom: 1rem;">
-                    <strong>Descripción:</strong><br>
-                    ${order.descripcion || 'Sin descripción'}
-                </div>
-                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
-                    <button class="btn btn-secondary" onclick="this.closest('.modal').remove()">
-                        Cerrar
+            </div>
+        `;
+
+        detailsModal.innerHTML = `
+            <div class="modal-content" style="max-width: 800px; z-index: 12001 !important;">
+                <div class="modal-header">
+                    <h2 class="modal-title">Detalles del Pedido #${order.numero_pedido}</h2>
+                    <button class="close-modal btn btn-secondary" onclick="this.closest('.modal').remove()">
+                        <i class="fas fa-times"></i>
                     </button>
                 </div>
+                <div style="padding: 1rem;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; background: #f8f9fa; padding: 1rem; border-radius: 8px;">
+                        <div>
+                            <strong>Cliente:</strong><br>
+                            ${order.cliente_nombre || 'N/A'}
+                        </div>
+                        <div>
+                            <strong>Estado:</strong><br>
+                            <span class="status-badge status-${order.estado}" style="padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.875rem; font-weight: 500;">
+                                ${order.estado}
+                            </span>
+                        </div>
+                        <div>
+                            <strong>Fecha:</strong><br>
+                            ${formatDate(order.fecha)}
+                        </div>
+                        <div>
+                            <strong>Monto Total:</strong><br>
+                            <span style="font-size: 1.2rem; font-weight: bold; color: #10b981;">
+                                ${formatCurrency(order.monto)}
+                            </span>
+                        </div>
+                    </div>
+                    ${order.descripcion ? `
+                        <div style="margin-bottom: 1.5rem;">
+                            <strong>Descripción:</strong><br>
+                            <div style="background: white; padding: 1rem; border-radius: 6px; border-left: 4px solid #6366f1; margin-top: 0.5rem;">
+                                ${order.descripcion}
+                            </div>
+                        </div>
+                    ` : ''}
+                    ${itemsTable}
+                    <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+                        <button class="btn btn-primary" onclick="editOrder(${order.id}); this.closest('.modal').remove();" style="background: #4f46e5; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;">
+                            <i class="fas fa-edit"></i> Editar Pedido
+                        </button>
+                        <button class="btn btn-secondary" onclick="this.closest('.modal').remove()" style="background: #6b7280; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;">
+                            <i class="fas fa-times"></i> Cerrar
+                        </button>
+                    </div>
+                </div>
             </div>
-        </div>
-    `;
+        `;
+    });
     
     document.body.appendChild(detailsModal);
 }
@@ -3288,4 +3553,27 @@ function viewPaymentDetails(paymentId) {
     `;
     
     document.body.appendChild(detailsModal);
+}
+
+// Función para cargar items de un pedido específico
+async function loadOrderItems(orderId) {
+    try {
+        const token = localStorage.getItem('authToken');
+        const response = await fetch(`/api/pedidos/${orderId}/items`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (response.ok) {
+            const items = await response.json();
+            return items;
+        } else {
+            console.error('Error cargando items del pedido:', response.status);
+            return [];
+        }
+    } catch (error) {
+        console.error('Error de red cargando items:', error);
+        return [];
+    }
 }
