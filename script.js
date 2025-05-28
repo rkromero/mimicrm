@@ -1111,6 +1111,8 @@ function setupForms() {
                 const modal = this.closest('.modal');
                 if (modal) {
                     modal.classList.remove('active');
+                    // Limpiar estilos inline forzados
+                    modal.style.cssText = '';
                     console.log('✅ Modal cerrado');
                 }
             };
@@ -1120,9 +1122,61 @@ function setupForms() {
         document.addEventListener('click', function(e) {
             if (e.target.classList.contains('modal')) {
                 e.target.classList.remove('active');
+                // Limpiar estilos inline forzados
+                e.target.style.cssText = '';
                 console.log('✅ Modal cerrado al hacer clic fuera');
             }
         });
+        
+        // Configuración específica para el modal de nuevo usuario
+        const newUserModal = document.getElementById('new-user-modal');
+        if (newUserModal) {
+            console.log('🔧 Configurando eventos específicos para modal de nuevo usuario...');
+            
+            // Configurar todos los botones de cierre del modal de nuevo usuario
+            const closeButtons = newUserModal.querySelectorAll('.close-modal, .cancel-btn');
+            console.log(`🔍 Encontrados ${closeButtons.length} botones de cierre en modal de nuevo usuario`);
+            
+            closeButtons.forEach(btn => {
+                btn.onclick = function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('🔧 Cerrando modal de nuevo usuario...');
+                    
+                    newUserModal.classList.remove('active');
+                    newUserModal.style.cssText = 'display: none !important;';
+                    
+                    // Limpiar formulario
+                    const form = newUserModal.querySelector('#new-user-form');
+                    if (form) {
+                        form.reset();
+                    }
+                    
+                    console.log('✅ Modal de nuevo usuario cerrado exitosamente');
+                };
+            });
+            
+            // Configurar cierre al hacer clic fuera del modal
+            newUserModal.onclick = function(e) {
+                if (e.target === newUserModal) {
+                    console.log('🔧 Cerrando modal de nuevo usuario (clic fuera)...');
+                    newUserModal.classList.remove('active');
+                    newUserModal.style.cssText = 'display: none !important;';
+                    
+                    // Limpiar formulario
+                    const form = newUserModal.querySelector('#new-user-form');
+                    if (form) {
+                        form.reset();
+                    }
+                    
+                    console.log('✅ Modal de nuevo usuario cerrado exitosamente (clic fuera)');
+                }
+            };
+            
+            console.log('✅ Eventos específicos del modal de nuevo usuario configurados');
+        } else {
+            console.warn('⚠️ Modal de nuevo usuario no encontrado para configurar eventos');
+        }
         
         console.log('✅ Configuración de formularios completada');
     } catch (error) {
@@ -3077,6 +3131,7 @@ async function loadUsersForAdmin() {
             const users = await response.json();
             debugLog('ADMIN', `Usuarios recibidos:`, users);
             renderUsersTable(users);
+            renderPermissionsTable(); // Agregar tabla de permisos
             debugLog('ADMIN', `✅ ${users.length} usuarios cargados exitosamente`);
         } else {
             const errorData = await response.text();
@@ -4361,4 +4416,165 @@ function clearEditOrderItems() {
     editOrderItems = [];
     renderEditOrderProducts();
     updateEditOrderTotal();
+}
+
+// Función para renderizar la tabla de permisos por perfil
+function renderPermissionsTable() {
+    debugLog('ADMIN', 'Iniciando renderizado de tabla de permisos...');
+    
+    let container = document.querySelector('.perms-table-container');
+    if (!container) {
+        console.error('❌ No se encontró el contenedor .perms-table-container');
+        
+        // Intentar encontrar contenedores alternativos
+        const altContainer = document.querySelector('#admin-profiles-section .admin-panel');
+        if (altContainer) {
+            console.log('🔄 Creando contenedor de tabla de permisos...');
+            const newContainer = document.createElement('div');
+            newContainer.className = 'perms-table-container';
+            newContainer.style.minHeight = '200px';
+            newContainer.style.border = '1px solid #e5e7eb';
+            newContainer.style.borderRadius = '8px';
+            newContainer.style.padding = '1rem';
+            newContainer.style.marginTop = '2rem';
+            
+            // Buscar si ya existe un h2 de "Permisos por Perfil"
+            let permsHeader = Array.from(altContainer.querySelectorAll('h2')).find(h => h.textContent.includes('Permisos'));
+            if (permsHeader) {
+                // Insertar después del header
+                permsHeader.parentNode.insertBefore(newContainer, permsHeader.nextSibling);
+            } else {
+                // Crear header y contenedor
+                const header = document.createElement('h2');
+                header.textContent = 'Permisos por Perfil';
+                header.style.color = '#4f46e5';
+                header.style.marginBottom = '1rem';
+                header.style.marginTop = '2rem';
+                altContainer.appendChild(header);
+                altContainer.appendChild(newContainer);
+            }
+            
+            container = newContainer;
+            debugLog('ADMIN', 'Contenedor de permisos creado exitosamente');
+        } else {
+            console.error('❌ No se pudo encontrar ningún contenedor para la tabla de permisos');
+            showNotification('Error: No se encontró el contenedor de permisos', 'error');
+            return;
+        }
+    }
+    
+    // Definir permisos por perfil
+    const permisosPorPerfil = {
+        'Administrador': {
+            clientes: { crear: true, leer: true, editar: true, eliminar: true },
+            pedidos: { crear: true, leer: true, editar: true, eliminar: true },
+            pagos: { crear: true, leer: true, editar: true, eliminar: true },
+            productos: { crear: true, leer: true, editar: true, eliminar: true },
+            contactos: { crear: true, leer: true, editar: true, eliminar: true },
+            usuarios: { crear: true, leer: true, editar: true, eliminar: true }
+        },
+        'Vendedor': {
+            clientes: { crear: true, leer: true, editar: true, eliminar: false },
+            pedidos: { crear: true, leer: true, editar: true, eliminar: true },
+            pagos: { crear: true, leer: true, editar: true, eliminar: true },
+            productos: { crear: false, leer: true, editar: false, eliminar: false },
+            contactos: { crear: true, leer: true, editar: true, eliminar: true },
+            usuarios: { crear: false, leer: false, editar: false, eliminar: false }
+        },
+        'Produccion': {
+            clientes: { crear: false, leer: true, editar: false, eliminar: false },
+            pedidos: { crear: false, leer: true, editar: true, eliminar: false },
+            pagos: { crear: false, leer: true, editar: false, eliminar: false },
+            productos: { crear: true, leer: true, editar: true, eliminar: false },
+            contactos: { crear: false, leer: true, editar: false, eliminar: false },
+            usuarios: { crear: false, leer: false, editar: false, eliminar: false }
+        }
+    };
+    
+    debugLog('ADMIN', 'Renderizando tabla de permisos por perfil');
+    
+    // Agregar indicador visual de que el contenedor existe
+    container.style.backgroundColor = '#f9fafb';
+    container.style.border = '2px solid #8b5cf6';
+    
+    const table = document.createElement('table');
+    table.className = 'clients-table admin-permissions-table';
+    table.style.width = '100%';
+    table.style.backgroundColor = 'white';
+    table.style.borderRadius = '8px';
+    table.style.overflow = 'hidden';
+    table.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)';
+    
+    // Crear encabezados
+    const modulos = ['clientes', 'pedidos', 'pagos', 'productos', 'contactos', 'usuarios'];
+    const acciones = ['crear', 'leer', 'editar', 'eliminar'];
+    
+    let headerHTML = `
+        <thead>
+            <tr style="background-color: #f3f4f6;">
+                <th style="padding: 1rem; text-align: left; font-weight: 600; color: #374151; border-right: 1px solid #e5e7eb;">Perfil</th>
+                <th style="padding: 1rem; text-align: left; font-weight: 600; color: #374151; border-right: 1px solid #e5e7eb;">Módulo</th>
+                <th style="padding: 0.5rem; text-align: center; font-weight: 600; color: #374151; border-right: 1px solid #e5e7eb;">Crear</th>
+                <th style="padding: 0.5rem; text-align: center; font-weight: 600; color: #374151; border-right: 1px solid #e5e7eb;">Leer</th>
+                <th style="padding: 0.5rem; text-align: center; font-weight: 600; color: #374151; border-right: 1px solid #e5e7eb;">Editar</th>
+                <th style="padding: 0.5rem; text-align: center; font-weight: 600; color: #374151;">Eliminar</th>
+            </tr>
+        </thead>
+    `;
+    
+    let bodyHTML = '<tbody>';
+    let rowIndex = 0;
+    
+    Object.keys(permisosPorPerfil).forEach(perfil => {
+        modulos.forEach((modulo, moduloIndex) => {
+            const permisos = permisosPorPerfil[perfil][modulo];
+            const isFirstModuleOfProfile = moduloIndex === 0;
+            
+            bodyHTML += `
+                <tr style="background-color: ${rowIndex % 2 === 0 ? '#ffffff' : '#f9fafb'}; border-bottom: 1px solid #e5e7eb;">
+                    ${isFirstModuleOfProfile ? 
+                        `<td rowspan="${modulos.length}" style="padding: 1rem; color: #111827; font-weight: 600; border-right: 1px solid #e5e7eb; vertical-align: top;">
+                            <span class="badge badge-${perfil.toLowerCase()}" style="padding: 0.5rem 1rem; border-radius: 9999px; font-size: 0.875rem; font-weight: 500;">${perfil}</span>
+                        </td>` : ''
+                    }
+                    <td style="padding: 1rem; color: #6b7280; text-transform: capitalize; border-right: 1px solid #e5e7eb;">${modulo}</td>
+                    <td style="padding: 0.5rem; text-align: center; border-right: 1px solid #e5e7eb;">
+                        <i class="fas ${permisos.crear ? 'fa-check text-green-600' : 'fa-times text-red-600'}" style="color: ${permisos.crear ? '#10b981' : '#ef4444'};"></i>
+                    </td>
+                    <td style="padding: 0.5rem; text-align: center; border-right: 1px solid #e5e7eb;">
+                        <i class="fas ${permisos.leer ? 'fa-check text-green-600' : 'fa-times text-red-600'}" style="color: ${permisos.leer ? '#10b981' : '#ef4444'};"></i>
+                    </td>
+                    <td style="padding: 0.5rem; text-align: center; border-right: 1px solid #e5e7eb;">
+                        <i class="fas ${permisos.editar ? 'fa-check text-green-600' : 'fa-times text-red-600'}" style="color: ${permisos.editar ? '#10b981' : '#ef4444'};"></i>
+                    </td>
+                    <td style="padding: 0.5rem; text-align: center;">
+                        <i class="fas ${permisos.eliminar ? 'fa-check text-green-600' : 'fa-times text-red-600'}" style="color: ${permisos.eliminar ? '#10b981' : '#ef4444'};"></i>
+                    </td>
+                </tr>
+            `;
+            rowIndex++;
+        });
+    });
+    
+    bodyHTML += '</tbody>';
+    
+    table.innerHTML = headerHTML + bodyHTML;
+    
+    container.innerHTML = '';
+    container.appendChild(table);
+    
+    // Agregar mensaje de confirmación visual
+    const confirmationMsg = document.createElement('div');
+    confirmationMsg.style.cssText = 'background: #8b5cf6; color: white; padding: 0.5rem 1rem; border-radius: 4px; margin-top: 1rem; text-align: center; font-weight: 500;';
+    confirmationMsg.textContent = `✅ Tabla de permisos por perfil cargada exitosamente`;
+    container.appendChild(confirmationMsg);
+    
+    // Remover el mensaje después de 3 segundos
+    setTimeout(() => {
+        if (confirmationMsg.parentNode) {
+            confirmationMsg.parentNode.removeChild(confirmationMsg);
+        }
+    }, 3000);
+    
+    debugLog('ADMIN', '✅ Tabla de permisos renderizada exitosamente');
 }
