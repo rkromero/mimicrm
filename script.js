@@ -2708,6 +2708,17 @@ function viewClientDetails(clientId) {
         return;
     }
     
+    // Buscar pedidos del cliente
+    const clientOrders = orders.filter(order => order.cliente_id == clientId);
+    
+    // Buscar pagos del cliente
+    const clientPayments = payments.filter(payment => payment.cliente_id == clientId);
+    
+    // Calcular totales
+    const totalPedidos = clientOrders.reduce((sum, order) => sum + (order.monto || 0), 0);
+    const totalPagos = clientPayments.reduce((sum, payment) => sum + (payment.monto || 0), 0);
+    const saldoPendiente = totalPedidos - totalPagos;
+    
     // Crear modal de detalles dinámicamente
     const detailsModal = document.createElement('div');
     detailsModal.className = 'modal active';
@@ -2718,7 +2729,7 @@ function viewClientDetails(clientId) {
     `;
     
     detailsModal.innerHTML = `
-        <div class="modal-content" style="max-width: 600px; z-index: 12001 !important;">
+        <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto; z-index: 12001 !important;">
             <div class="modal-header">
                 <h2 class="modal-title">Detalles del Cliente</h2>
                 <button class="close-modal btn btn-secondary" onclick="this.closest('.modal').remove()">
@@ -2726,45 +2737,160 @@ function viewClientDetails(clientId) {
                 </button>
             </div>
             <div style="padding: 1rem;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                    <div>
-                        <strong>Nombre:</strong><br>
-                        ${client.nombre || 'N/A'}
-                    </div>
-                    <div>
-                        <strong>CUIT/Documento:</strong><br>
-                        ${client.cuit || client.documento || 'N/A'}
-                    </div>
-                    <div>
-                        <strong>Email:</strong><br>
-                        ${client.email || 'N/A'}
-                    </div>
-                    <div>
-                        <strong>Teléfono:</strong><br>
-                        ${client.telefono || 'N/A'}
-                    </div>
-                    <div>
-                        <strong>Dirección:</strong><br>
-                        ${client.direccion || 'N/A'}
-                    </div>
-                    <div>
-                        <strong>Saldo:</strong><br>
-                        <span style="font-size: 1.2rem; font-weight: bold; color: ${(client.saldo || 0) >= 0 ? '#10b981' : '#ef4444'};">
-                            ${formatCurrency(client.saldo || 0)}
-                        </span>
+                <!-- Información básica del cliente -->
+                <div style="background: #f8fafc; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                    <h3 style="margin: 0 0 1rem 0; color: #1f2937;">Información Personal</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div>
+                            <strong>Nombre:</strong><br>
+                            ${client.nombre || 'N/A'}
+                        </div>
+                        <div>
+                            <strong>CUIT/Documento:</strong><br>
+                            ${client.cuit || client.documento || 'N/A'}
+                        </div>
+                        <div>
+                            <strong>Email:</strong><br>
+                            ${client.email || 'N/A'}
+                        </div>
+                        <div>
+                            <strong>Teléfono:</strong><br>
+                            ${client.telefono || 'N/A'}
+                        </div>
+                        <div>
+                            <strong>Dirección:</strong><br>
+                            ${client.direccion || 'N/A'}
+                        </div>
+                        <div>
+                            <strong>Ubicación:</strong><br>
+                            ${[client.localidad, client.ciudad, client.provincia].filter(Boolean).join(', ') || 'N/A'}
+                            ${client.codigo_postal ? ` (CP: ${client.codigo_postal})` : ''}
+                        </div>
                     </div>
                 </div>
-                <div style="margin-bottom: 1rem;">
-                    <strong>Ubicación:</strong><br>
-                    ${[client.localidad, client.ciudad, client.provincia].filter(Boolean).join(', ') || 'N/A'}
-                    ${client.codigo_postal ? ` (CP: ${client.codigo_postal})` : ''}
+
+                <!-- Resumen financiero -->
+                <div style="background: #f0f9ff; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid #0ea5e9;">
+                    <h3 style="margin: 0 0 1rem 0; color: #1f2937;">Resumen Financiero</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem; text-align: center;">
+                        <div>
+                            <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">Total Pedidos</div>
+                            <div style="font-size: 1.25rem; font-weight: bold; color: #0ea5e9;">
+                                ${formatCurrency(totalPedidos)}
+                            </div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">Total Pagos</div>
+                            <div style="font-size: 1.25rem; font-weight: bold; color: #10b981;">
+                                ${formatCurrency(totalPagos)}
+                            </div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">Saldo Pendiente</div>
+                            <div style="font-size: 1.25rem; font-weight: bold; color: ${saldoPendiente >= 0 ? '#ef4444' : '#10b981'};">
+                                ${formatCurrency(saldoPendiente)}
+                            </div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">Saldo Actual</div>
+                            <div style="font-size: 1.25rem; font-weight: bold; color: ${(client.saldo || 0) >= 0 ? '#10b981' : '#ef4444'};">
+                                ${formatCurrency(client.saldo || 0)}
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
-                    <button class="btn btn-primary" onclick="editClient(${client.id}); this.closest('.modal').remove();">
-                        <i class="fas fa-edit"></i> Editar
+
+                <!-- Listado de pedidos -->
+                <div style="margin-bottom: 1.5rem;">
+                    <h3 style="margin: 0 0 1rem 0; color: #1f2937; display: flex; align-items: center;">
+                        <i class="fas fa-shopping-cart" style="margin-right: 0.5rem; color: #0ea5e9;"></i>
+                        Pedidos (${clientOrders.length})
+                    </h3>
+                    ${clientOrders.length > 0 ? `
+                        <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <thead style="background: #f9fafb;">
+                                    <tr>
+                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Número</th>
+                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Descripción</th>
+                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Monto</th>
+                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Estado</th>
+                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Fecha</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${clientOrders.map((order, index) => `
+                                        <tr style="background: ${index % 2 === 0 ? '#ffffff' : '#f9fafb'};">
+                                            <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">${order.numero_pedido}</td>
+                                            <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">${order.descripcion || 'Sin descripción'}</td>
+                                            <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #0ea5e9;">${formatCurrency(order.monto)}</td>
+                                            <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
+                                                <span class="status-badge status-${order.estado}" style="padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 500;">${order.estado}</span>
+                                            </td>
+                                            <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; color: #6b7280;">${formatDate(order.fecha)}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    ` : `
+                        <div style="background: #f9fafb; padding: 2rem; text-align: center; border-radius: 8px; color: #6b7280;">
+                            <i class="fas fa-shopping-cart" style="font-size: 2rem; margin-bottom: 0.5rem; display: block; color: #d1d5db;"></i>
+                            <p style="margin: 0;">No hay pedidos registrados para este cliente</p>
+                        </div>
+                    `}
+                </div>
+
+                <!-- Listado de pagos -->
+                <div style="margin-bottom: 1.5rem;">
+                    <h3 style="margin: 0 0 1rem 0; color: #1f2937; display: flex; align-items: center;">
+                        <i class="fas fa-credit-card" style="margin-right: 0.5rem; color: #10b981;"></i>
+                        Pagos (${clientPayments.length})
+                    </h3>
+                    ${clientPayments.length > 0 ? `
+                        <div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <thead style="background: #f9fafb;">
+                                    <tr>
+                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Monto</th>
+                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Método</th>
+                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Referencia</th>
+                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Fecha</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${clientPayments.map((payment, index) => `
+                                        <tr style="background: ${index % 2 === 0 ? '#ffffff' : '#f9fafb'};">
+                                            <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #10b981;">${formatCurrency(payment.monto)}</td>
+                                            <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">${payment.metodo || 'N/A'}</td>
+                                            <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; color: #6b7280;">${payment.referencia || 'Sin referencia'}</td>
+                                            <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; color: #6b7280;">${formatDate(payment.fecha)}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    ` : `
+                        <div style="background: #f9fafb; padding: 2rem; text-align: center; border-radius: 8px; color: #6b7280;">
+                            <i class="fas fa-credit-card" style="font-size: 2rem; margin-bottom: 0.5rem; display: block; color: #d1d5db;"></i>
+                            <p style="margin: 0;">No hay pagos registrados para este cliente</p>
+                        </div>
+                    `}
+                </div>
+
+                <!-- Botones de acción -->
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+                    <button class="btn btn-primary" onclick="editClient(${client.id}); this.closest('.modal').remove();" style="background: #4f46e5; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;">
+                        <i class="fas fa-edit"></i> Editar Cliente
                     </button>
-                    <button class="btn btn-secondary" onclick="this.closest('.modal').remove()">
-                        Cerrar
+                    <button class="btn btn-success" onclick="showModal('new-order-modal'); document.getElementById('order-client-select').value='${client.id}'; this.closest('.modal').remove();" style="background: #10b981; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;">
+                        <i class="fas fa-plus"></i> Nuevo Pedido
+                    </button>
+                    <button class="btn btn-info" onclick="showModal('new-payment-modal'); document.getElementById('payment-client-select').value='${client.id}'; this.closest('.modal').remove();" style="background: #0ea5e9; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;">
+                        <i class="fas fa-credit-card"></i> Nuevo Pago
+                    </button>
+                    <button class="btn btn-secondary" onclick="this.closest('.modal').remove()" style="background: #6b7280; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;">
+                        <i class="fas fa-times"></i> Cerrar
                     </button>
                 </div>
             </div>
