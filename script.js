@@ -1098,8 +1098,25 @@ async function handleNewClientSubmit(e) {
         codigo_postal: formData.get('codigo_postal') || document.getElementById('client-zip-input').value
     };
     
+    debugLog('FORM', 'Datos del cliente a enviar:', clientData);
+    
+    // Validar que los campos requeridos no estén vacíos
+    const requiredFields = ['nombre', 'documento', 'email', 'telefono', 'direccion'];
+    const missingFields = requiredFields.filter(field => !clientData[field] || clientData[field].trim() === '');
+    
+    if (missingFields.length > 0) {
+        console.error('❌ Campos requeridos faltantes:', missingFields);
+        showNotification(`Campos requeridos faltantes: ${missingFields.join(', ')}`, 'error');
+        return;
+    }
+    
     try {
         const token = localStorage.getItem('authToken');
+        
+        debugLog('HTTP', 'Enviando petición POST a /api/clientes');
+        debugLog('HTTP', 'Token de autorización:', token ? 'Presente' : 'Ausente');
+        debugLog('HTTP', 'Cuerpo de la petición:', JSON.stringify(clientData, null, 2));
+        
         const response = await fetch('/api/clientes', {
             method: 'POST',
             headers: {
@@ -1109,18 +1126,33 @@ async function handleNewClientSubmit(e) {
             body: JSON.stringify(clientData)
         });
         
+        debugLog('HTTP', 'Respuesta recibida:', {
+            status: response.status,
+            statusText: response.statusText,
+            headers: Object.fromEntries(response.headers.entries())
+        });
+        
         if (response.ok) {
             showNotification('Cliente creado exitosamente', 'success');
             document.getElementById('new-client-modal').classList.remove('active');
             e.target.reset();
             await loadClients(); // Recargar la lista
         } else {
-            const error = await response.json();
-            showNotification(error.message || 'Error al crear cliente', 'error');
+            console.error('❌ Error del servidor al crear cliente:', response.status, response.statusText);
+            try {
+                const errorData = await response.json();
+                console.error('❌ Detalles del error:', errorData);
+                showNotification(errorData.message || `Error del servidor: ${response.status}`, 'error');
+            } catch (parseError) {
+                console.error('❌ No se pudo parsear la respuesta de error:', parseError);
+                const errorText = await response.text();
+                console.error('❌ Respuesta del servidor:', errorText);
+                showNotification(`Error del servidor: ${response.status} - ${response.statusText}`, 'error');
+            }
         }
     } catch (error) {
-        console.error('Error:', error);
-        showNotification('Error al crear cliente', 'error');
+        console.error('❌ Error de red o conexión:', error);
+        showNotification(`Error de conexión: ${error.message}`, 'error');
     }
 }
 
@@ -1613,4 +1645,69 @@ window.enableClickMonitoring = function() {
     }, true);
     
     console.log('✅ Monitoreo de clicks habilitado');
+};
+
+// Función para probar la conectividad con el servidor
+window.testServerConnection = async function() {
+    console.log('🔧 DEBUG: Probando conexión con el servidor...');
+    
+    const token = localStorage.getItem('authToken');
+    
+    try {
+        // Probar endpoint de verificación de auth
+        console.log('1. Probando /api/auth/verify...');
+        const authResponse = await fetch('/api/auth/verify', {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        console.log('Auth response:', authResponse.status, authResponse.statusText);
+        
+        // Probar endpoint de clientes (GET)
+        console.log('2. Probando GET /api/clientes...');
+        const clientsResponse = await fetch('/api/clientes', {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        console.log('Clients GET response:', clientsResponse.status, clientsResponse.statusText);
+        
+        // Probar con datos de prueba
+        console.log('3. Probando POST /api/clientes con datos de prueba...');
+        const testData = {
+            nombre: 'Cliente de Prueba',
+            documento: '12345678',
+            email: 'test@test.com',
+            telefono: '123456789',
+            direccion: 'Dirección de prueba',
+            provincia: 'Buenos Aires',
+            ciudad: 'La Plata',
+            localidad: 'La Plata',
+            codigo_postal: '1900'
+        };
+        
+        const testResponse = await fetch('/api/clientes', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(testData)
+        });
+        
+        console.log('Test POST response:', testResponse.status, testResponse.statusText);
+        
+        if (!testResponse.ok) {
+            const errorText = await testResponse.text();
+            console.error('Error details:', errorText);
+        } else {
+            const result = await testResponse.json();
+            console.log('Success result:', result);
+        }
+        
+    } catch (error) {
+        console.error('❌ Error en test de conexión:', error);
+    }
 };
