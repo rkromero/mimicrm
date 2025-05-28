@@ -1698,7 +1698,7 @@ async function handleNewOrderSubmit(e) {
         cliente_id: clientId,
         descripcion: description,
         monto: totalAmount,
-        estado: 'active', // Cambiar a 'active' para compatibilidad con BD actual
+        estado: 'pendiente de pago', // Estado por defecto según los nuevos requerimientos
         items: orderItems.map(item => ({
             producto_id: item.producto_id,
             cantidad: item.cantidad,
@@ -4402,15 +4402,32 @@ function cancelEditAddProduct() {
 }
 
 function renderEditOrderProducts() {
-    const productsList = document.getElementById('edit-order-products-list');
-    const noProductsMessage = document.getElementById('edit-no-products-message');
+    // Agregar un pequeño delay para asegurar que el modal esté completamente cargado
+    setTimeout(() => {
+        const productsList = document.getElementById('edit-order-products-list');
+        const noProductsMessage = document.getElementById('edit-no-products-message');
 
-    // Validar que los elementos existan
-    if (!productsList || !noProductsMessage) {
-        console.log('⚠️ Elementos del modal de editar pedido no encontrados');
-        return;
-    }
+        // Validar que los elementos existan
+        if (!productsList || !noProductsMessage) {
+            console.log('⚠️ Elementos del modal de editar pedido no encontrados, reintentando...');
+            // Intentar de nuevo después de otro pequeño delay
+            setTimeout(() => {
+                const productsList2 = document.getElementById('edit-order-products-list');
+                const noProductsMessage2 = document.getElementById('edit-no-products-message');
+                if (!productsList2 || !noProductsMessage2) {
+                    console.log('⚠️ Elementos del modal de editar pedido definitivamente no encontrados');
+                    return;
+                }
+                renderEditOrderProductsInternal(productsList2, noProductsMessage2);
+            }, 100);
+            return;
+        }
 
+        renderEditOrderProductsInternal(productsList, noProductsMessage);
+    }, 50);
+}
+
+function renderEditOrderProductsInternal(productsList, noProductsMessage) {
     if (editOrderItems.length === 0) {
         noProductsMessage.style.display = 'block';
         return;
