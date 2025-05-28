@@ -1925,43 +1925,86 @@ window.debugAdminPanel = function() {
 window.forceShowAdminPanel = function() {
     console.log('🔧 FORZANDO VISIBILIDAD DEL PANEL DE ADMINISTRACIÓN...');
     
+    // Primero, ocultar TODAS las otras secciones
+    const allSections = document.querySelectorAll('#dashboard-section, #clientes-section, #pedidos-section, #pagos-section, #productos-section, #contactos-section, .page-content');
+    allSections.forEach(section => {
+        if (section.id !== 'admin-profiles-section' && !section.closest('#admin-profiles-section')) {
+            section.style.display = 'none !important';
+        }
+    });
+    
     const adminSection = document.getElementById('admin-profiles-section');
     if (adminSection) {
-        adminSection.style.display = 'block';
-        adminSection.style.visibility = 'visible';
-        adminSection.style.opacity = '1';
-        adminSection.style.position = 'relative';
-        adminSection.style.zIndex = '1';
-        console.log('✅ Sección admin forzada a visible');
+        // Forzar estilos de posicionamiento absoluto
+        adminSection.style.cssText = `
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 9999 !important;
+            background: #f3f4f6 !important;
+            overflow-y: auto !important;
+        `;
+        console.log('✅ Sección admin forzada a pantalla completa');
+    }
+    
+    const pageContent = adminSection?.querySelector('.page-content');
+    if (pageContent) {
+        pageContent.style.cssText = `
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            padding: 1rem 2rem !important;
+            max-width: 1200px !important;
+            margin: 0 auto !important;
+            background: transparent !important;
+        `;
+        console.log('✅ Page content forzado a visible');
     }
     
     const adminPanel = document.querySelector('.admin-panel');
     if (adminPanel) {
-        adminPanel.style.display = 'block';
-        adminPanel.style.visibility = 'visible';
-        adminPanel.style.opacity = '1';
-        adminPanel.style.backgroundColor = '#ffffff';
-        adminPanel.style.border = '2px solid #10b981';
-        adminPanel.style.padding = '2rem';
-        adminPanel.style.margin = '1rem';
-        adminPanel.style.borderRadius = '8px';
+        adminPanel.style.cssText = `
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            background: #ffffff !important;
+            border: 3px solid #10b981 !important;
+            padding: 2rem !important;
+            margin: 1rem auto !important;
+            border-radius: 8px !important;
+            max-width: 1200px !important;
+            width: 95% !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+        `;
         console.log('✅ Panel admin forzado a visible');
     }
     
     const usersContainer = document.querySelector('.users-table-container');
     if (usersContainer) {
-        usersContainer.style.display = 'block';
-        usersContainer.style.visibility = 'visible';
-        usersContainer.style.opacity = '1';
-        usersContainer.style.backgroundColor = '#f9fafb';
-        usersContainer.style.border = '2px solid #3b82f6';
-        usersContainer.style.padding = '1rem';
-        usersContainer.style.margin = '1rem 0';
-        usersContainer.style.borderRadius = '8px';
-        usersContainer.style.minHeight = '200px';
+        usersContainer.style.cssText = `
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            background: #ffffff !important;
+            border: 3px solid #3b82f6 !important;
+            padding: 1rem !important;
+            margin: 1rem 0 !important;
+            border-radius: 8px !important;
+            min-height: 200px !important;
+            width: 100% !important;
+            overflow: visible !important;
+        `;
         console.log('✅ Contenedor usuarios forzado a visible');
         
-        // Si no hay contenido, agregar mensaje de prueba
+        // Verificar contenido
+        console.log('📋 Contenido del contenedor:', usersContainer.innerHTML.length, 'caracteres');
+        
+        // Si no hay contenido visible, agregar mensaje de prueba
         if (!usersContainer.innerHTML || usersContainer.innerHTML.trim() === '') {
             usersContainer.innerHTML = `
                 <div style="background: #fef3c7; border: 2px solid #f59e0b; padding: 1rem; border-radius: 8px; text-align: center;">
@@ -1974,32 +2017,65 @@ window.forceShowAdminPanel = function() {
             setTimeout(() => {
                 loadUsersForAdmin();
             }, 1000);
+        } else {
+            // Si hay contenido, asegurar que la tabla sea visible
+            const table = usersContainer.querySelector('table');
+            if (table) {
+                table.style.cssText = `
+                    display: table !important;
+                    visibility: visible !important;
+                    opacity: 1 !important;
+                    width: 100% !important;
+                    background: white !important;
+                    border-collapse: collapse !important;
+                `;
+                console.log('✅ Tabla forzada a visible');
+            }
         }
     }
     
     const newUserBtn = document.getElementById('new-user-btn');
     if (newUserBtn) {
-        newUserBtn.style.display = 'inline-block';
-        newUserBtn.style.visibility = 'visible';
-        newUserBtn.style.opacity = '1';
-        newUserBtn.style.backgroundColor = '#4f46e5';
-        newUserBtn.style.color = 'white';
-        newUserBtn.style.padding = '0.75rem 1.5rem';
-        newUserBtn.style.border = 'none';
-        newUserBtn.style.borderRadius = '6px';
-        newUserBtn.style.cursor = 'pointer';
+        newUserBtn.style.cssText = `
+            display: inline-block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            background-color: #4f46e5 !important;
+            color: white !important;
+            padding: 0.75rem 1.5rem !important;
+            border: none !important;
+            border-radius: 6px !important;
+            cursor: pointer !important;
+            font-weight: 500 !important;
+        `;
         console.log('✅ Botón nuevo usuario forzado a visible');
     }
     
-    // Ocultar otras secciones para evitar conflictos
-    const otherSections = document.querySelectorAll('#dashboard-section, #clientes-section, #pedidos-section, #pagos-section, #productos-section, #contactos-section, .page-content');
-    otherSections.forEach(section => {
-        if (section.id !== 'admin-profiles-section') {
-            section.style.display = 'none';
-        }
-    });
+    // Agregar mensaje de confirmación visual en pantalla
+    const confirmationDiv = document.createElement('div');
+    confirmationDiv.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #10b981;
+        color: white;
+        padding: 1rem;
+        border-radius: 8px;
+        z-index: 10000;
+        font-weight: bold;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    `;
+    confirmationDiv.textContent = '✅ Panel de administración forzado a mostrar';
+    document.body.appendChild(confirmationDiv);
     
-    console.log('🎯 Panel de administración forzado a mostrar');
+    // Remover mensaje después de 5 segundos
+    setTimeout(() => {
+        if (confirmationDiv.parentNode) {
+            confirmationDiv.parentNode.removeChild(confirmationDiv);
+        }
+    }, 5000);
+    
+    console.log('🎯 Panel de administración forzado a pantalla completa');
 };
 
 // === FUNCIONES DE DEBUGGING GLOBALES ===
