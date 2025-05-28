@@ -1689,7 +1689,17 @@ function runDOMDiagnostic() {
 // Función para cargar usuarios para el panel de administración
 async function loadUsersForAdmin() {
     try {
+        debugLog('ADMIN', 'Iniciando carga de usuarios...');
+        
         const token = localStorage.getItem('authToken');
+        if (!token) {
+            console.error('❌ No hay token de autenticación');
+            showNotification('Error: No hay token de autenticación', 'error');
+            return;
+        }
+        
+        debugLog('ADMIN', 'Enviando petición GET a /api/usuarios');
+        
         const response = await fetch('/api/usuarios', {
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -1697,35 +1707,82 @@ async function loadUsersForAdmin() {
             }
         });
         
+        debugLog('ADMIN', `Respuesta recibida: ${response.status} ${response.statusText}`);
+        
         if (response.ok) {
             const users = await response.json();
+            debugLog('ADMIN', `Usuarios recibidos:`, users);
             renderUsersTable(users);
-            debugLog('ADMIN', `Usuarios cargados: ${users.length}`);
+            debugLog('ADMIN', `✅ ${users.length} usuarios cargados exitosamente`);
         } else {
-            console.error('Error cargando usuarios:', response.statusText);
-            showNotification('Error al cargar usuarios', 'error');
+            const errorData = await response.text();
+            console.error('❌ Error cargando usuarios:', response.status, response.statusText);
+            console.error('❌ Detalles del error:', errorData);
+            
+            if (response.status === 403) {
+                showNotification('Error: No tienes permisos para ver usuarios', 'error');
+            } else {
+                showNotification(`Error al cargar usuarios: ${response.status}`, 'error');
+            }
         }
     } catch (error) {
-        console.error('Error cargando usuarios:', error);
+        console.error('❌ Error de conexión cargando usuarios:', error);
         showNotification('Error de conexión al cargar usuarios', 'error');
     }
 }
 
 // Función para renderizar la tabla de usuarios
 function renderUsersTable(users) {
+    debugLog('ADMIN', 'Iniciando renderizado de tabla de usuarios...');
+    
     const container = document.querySelector('.users-table-container');
     if (!container) {
-        console.warn('⚠️ No se encontró el contenedor de la tabla de usuarios');
-        return;
+        console.error('❌ No se encontró el contenedor .users-table-container');
+        
+        // Intentar encontrar contenedores alternativos
+        const altContainer = document.querySelector('#admin-profiles-section .admin-panel');
+        if (altContainer) {
+            console.log('🔄 Creando contenedor de tabla de usuarios...');
+            const newContainer = document.createElement('div');
+            newContainer.className = 'users-table-container';
+            
+            // Buscar si ya existe un h2 de "Usuarios"
+            let usersHeader = altContainer.querySelector('h2');
+            if (usersHeader && usersHeader.textContent.includes('Usuarios')) {
+                // Insertar después del header
+                usersHeader.parentNode.insertBefore(newContainer, usersHeader.nextSibling);
+            } else {
+                // Crear header y contenedor
+                const header = document.createElement('h2');
+                header.textContent = 'Usuarios';
+                altContainer.appendChild(header);
+                altContainer.appendChild(newContainer);
+            }
+            
+            // Llamar recursivamente con el nuevo contenedor
+            return renderUsersTable(users);
+        } else {
+            console.error('❌ No se pudo encontrar ningún contenedor para la tabla de usuarios');
+            showNotification('Error: No se encontró el contenedor de usuarios', 'error');
+            return;
+        }
     }
     
+    debugLog('ADMIN', `Renderizando ${users.length} usuarios`);
+    
     if (users.length === 0) {
-        container.innerHTML = '<p class="text-center text-gray-500">No hay usuarios registrados</p>';
+        container.innerHTML = `
+            <div style="text-align: center; padding: 2rem; color: #6b7280;">
+                <i class="fas fa-users" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
+                <p>No hay usuarios registrados</p>
+                <p style="font-size: 0.875rem;">Usa el botón "Nuevo Usuario" para crear el primer usuario.</p>
+            </div>
+        `;
         return;
     }
     
     const table = document.createElement('table');
-    table.className = 'clients-table';
+    table.className = 'clients-table admin-users-table';
     
     table.innerHTML = `
         <thead>
@@ -1734,6 +1791,7 @@ function renderUsersTable(users) {
                 <th>Email</th>
                 <th>Perfil</th>
                 <th>Estado</th>
+                <th>Fecha Creación</th>
                 <th>Acciones</th>
             </tr>
         </thead>
@@ -1744,11 +1802,12 @@ function renderUsersTable(users) {
                     <td>${user.email}</td>
                     <td><span class="badge badge-${user.perfil.toLowerCase()}">${user.perfil}</span></td>
                     <td><span class="badge ${user.activo ? 'badge-yes' : 'badge-no'}">${user.activo ? 'Activo' : 'Inactivo'}</span></td>
+                    <td>${user.created_at ? formatDate(user.created_at) : 'N/A'}</td>
                     <td>
-                        <button onclick="editUser(${user.id})" class="btn-edit" title="Editar usuario">
+                        <button onclick="editUser(${user.id})" class="btn btn-secondary" title="Editar usuario" style="margin-right: 0.5rem;">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button onclick="deleteUser(${user.id})" class="btn-delete" title="Eliminar usuario">
+                        <button onclick="deleteUser(${user.id})" class="btn btn-secondary" title="Eliminar usuario" style="background-color: #dc2626; color: white;">
                             <i class="fas fa-trash"></i>
                         </button>
                     </td>
@@ -1760,7 +1819,7 @@ function renderUsersTable(users) {
     container.innerHTML = '';
     container.appendChild(table);
     
-    console.log('✅ Tabla de usuarios renderizada');
+    debugLog('ADMIN', '✅ Tabla de usuarios renderizada exitosamente');
 }
 
 // Funciones placeholder para administración de usuarios
@@ -1775,6 +1834,39 @@ function deleteUser(userId) {
         showNotification('Función de eliminación de usuarios en desarrollo', 'info');
     }
 }
+
+// Función de debugging específica para el panel de administración
+window.debugAdminPanel = function() {
+    console.log('🔧 DEBUG PANEL DE ADMINISTRACIÓN:');
+    
+    // Verificar si el usuario es administrador
+    const currentUser = getCurrentUserFromAuth();
+    console.log('👤 Usuario actual:', currentUser);
+    console.log('🔑 Es administrador:', currentUser?.perfil === 'Administrador');
+    
+    // Verificar elementos del DOM
+    const adminSection = document.getElementById('admin-profiles-section');
+    console.log('📄 Sección admin existe:', !!adminSection);
+    console.log('📄 Sección admin visible:', adminSection?.style.display !== 'none');
+    
+    const adminPanel = document.querySelector('.admin-panel');
+    console.log('📦 Panel admin existe:', !!adminPanel);
+    
+    const usersContainer = document.querySelector('.users-table-container');
+    console.log('📋 Contenedor usuarios existe:', !!usersContainer);
+    
+    const newUserBtn = document.getElementById('new-user-btn');
+    console.log('🆕 Botón nuevo usuario existe:', !!newUserBtn);
+    console.log('🆕 Botón nuevo usuario tiene onclick:', typeof newUserBtn?.onclick === 'function');
+    
+    // Verificar token
+    const token = localStorage.getItem('authToken');
+    console.log('🔐 Token presente:', !!token);
+    
+    // Intentar cargar usuarios manualmente
+    console.log('🔄 Intentando cargar usuarios...');
+    loadUsersForAdmin();
+};
 
 // === FUNCIONES DE DEBUGGING GLOBALES ===
 
