@@ -1800,7 +1800,7 @@ function editClient(clientId) {
     
     // Llenar el formulario de edición con los datos del cliente
     document.getElementById('edit-client-name').value = client.nombre || '';
-    document.getElementById('edit-client-rut').value = client.cuit || client.documento || '';
+    document.getElementById('edit-client-cuit').value = client.cuit || client.documento || '';
     document.getElementById('edit-client-email').value = client.email || '';
     document.getElementById('edit-client-phone').value = client.telefono || '';
     document.getElementById('edit-client-address').value = client.direccion || '';
@@ -2144,7 +2144,7 @@ async function handleEditClientSubmit(e) {
     const formData = new FormData(e.target);
     const clientData = {
         nombre: document.getElementById('edit-client-name').value,
-        cuit: document.getElementById('edit-client-rut').value,
+        cuit: document.getElementById('edit-client-cuit').value,
         email: document.getElementById('edit-client-email').value,
         telefono: document.getElementById('edit-client-phone').value,
         direccion: document.getElementById('edit-client-address').value,

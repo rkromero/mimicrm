@@ -572,14 +572,49 @@ app.post('/api/pagos', authenticateToken, async (req, res) => {
     try {
         const { cliente_id, pedido_id, monto, metodo, referencia } = req.body;
 
+        // Validar campos requeridos
+        if (!cliente_id || !monto || !metodo) {
+            return res.status(400).json({ error: 'Cliente, monto y método son campos requeridos' });
+        }
+
         const [result] = await db.execute(
             'INSERT INTO pagos (cliente_id, pedido_id, monto, metodo, referencia, fecha, creado_por) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [cliente_id, pedido_id, monto, metodo, referencia, new Date().toISOString().split('T')[0], req.user.id]
+            [cliente_id, pedido_id || null, monto, metodo, referencia, new Date().toISOString().split('T')[0], req.user.id]
         );
 
         res.status(201).json({ id: result.insertId, message: 'Pago registrado exitosamente' });
     } catch (error) {
         console.error('Error registrando pago:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Eliminar pago
+app.delete('/api/pagos/:id', authenticateToken, async (req, res) => {
+    try {
+        const pagoId = req.params.id;
+
+        // Verificar que el pago existe y el usuario tiene permisos
+        const [existingPago] = await db.execute(
+            'SELECT * FROM pagos WHERE id = ?',
+            [pagoId]
+        );
+
+        if (existingPago.length === 0) {
+            return res.status(404).json({ error: 'Pago no encontrado' });
+        }
+
+        // Si es vendedor, verificar que sea el creador del pago
+        if (req.user.perfil === 'Vendedor' && existingPago[0].creado_por !== req.user.id) {
+            return res.status(403).json({ error: 'No tienes permisos para eliminar este pago' });
+        }
+
+        // Eliminar el pago
+        await db.execute('DELETE FROM pagos WHERE id = ?', [pagoId]);
+
+        res.json({ message: 'Pago eliminado exitosamente' });
+    } catch (error) {
+        console.error('Error eliminando pago:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
@@ -624,6 +659,31 @@ app.post('/api/contactos', authenticateToken, async (req, res) => {
         res.status(201).json({ id: result.insertId, message: 'Contacto creado exitosamente' });
     } catch (error) {
         console.error('Error creando contacto:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Eliminar contacto
+app.delete('/api/contactos/:id', authenticateToken, async (req, res) => {
+    try {
+        const contactoId = req.params.id;
+
+        // Verificar que el contacto existe
+        const [existingContacto] = await db.execute(
+            'SELECT * FROM contactos WHERE id = ?',
+            [contactoId]
+        );
+
+        if (existingContacto.length === 0) {
+            return res.status(404).json({ error: 'Contacto no encontrado' });
+        }
+
+        // Eliminar el contacto
+        await db.execute('DELETE FROM contactos WHERE id = ?', [contactoId]);
+
+        res.json({ message: 'Contacto eliminado exitosamente' });
+    } catch (error) {
+        console.error('Error eliminando contacto:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
@@ -793,6 +853,41 @@ app.delete('/api/usuarios/:id', authenticateToken, async (req, res) => {
         res.json({ message: 'Usuario desactivado exitosamente' });
     } catch (error) {
         console.error('Error eliminando usuario:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Eliminar producto
+app.delete('/api/productos/:id', authenticateToken, async (req, res) => {
+    try {
+        const productoId = req.params.id;
+
+        // Verificar que el producto existe
+        const [existingProducto] = await db.execute(
+            'SELECT * FROM productos WHERE id = ?',
+            [productoId]
+        );
+
+        if (existingProducto.length === 0) {
+            return res.status(404).json({ error: 'Producto no encontrado' });
+        }
+
+        // Verificar que no esté siendo usado en pedidos
+        const [pedidosConProducto] = await db.execute(
+            'SELECT COUNT(*) as count FROM pedido_items WHERE producto_id = ?',
+            [productoId]
+        );
+
+        if (pedidosConProducto[0].count > 0) {
+            return res.status(400).json({ error: 'No se puede eliminar el producto porque está siendo usado en pedidos' });
+        }
+
+        // Eliminar el producto
+        await db.execute('DELETE FROM productos WHERE id = ?', [productoId]);
+
+        res.json({ message: 'Producto eliminado exitosamente' });
+    } catch (error) {
+        console.error('Error eliminando producto:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
