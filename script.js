@@ -183,6 +183,15 @@ async function checkAuthentication() {
             userNameElement.textContent = user.nombre;
         }
         
+        // Mostrar panel de administración si el usuario es administrador
+        if (user.perfil === 'Administrador') {
+            const adminNav = document.getElementById('admin-profiles-nav');
+            if (adminNav) {
+                adminNav.style.display = 'block';
+                debugLog('AUTH', 'Panel de administración habilitado para usuario administrador');
+            }
+        }
+        
         return true;
         
     } catch (error) {
@@ -766,6 +775,10 @@ function updateHeaderTitle(section) {
             case 'fábrica':
                 headerTitle.textContent = 'Fábrica';
                 break;
+            case 'administrar perfiles':
+            case 'admin':
+                headerTitle.textContent = 'Administrar Perfiles';
+                break;
             default:
                 headerTitle.textContent = 'MIMI CRM';
         }
@@ -838,6 +851,15 @@ function showSection(section) {
             // Implementar vista de fábrica
             document.querySelector('.page-content').style.display = 'block';
             break;
+        case 'administrar perfiles':
+        case 'admin':
+            const adminSection = document.getElementById('admin-profiles-section');
+            if (adminSection) {
+                adminSection.style.display = 'block';
+                // Cargar datos de usuarios si es necesario
+                loadUsersForAdmin();
+            }
+            break;
         default:
             // Por defecto mostrar dashboard
             const defaultDashboard = document.getElementById('dashboard-section');
@@ -900,6 +922,15 @@ function setupForms() {
             console.log('✅ Event listener del formulario de producto configurado');
         } else {
             console.warn('⚠️ No se encontró el formulario new-product-form');
+        }
+        
+        // Configurar formulario de nuevo usuario
+        const newUserForm = document.getElementById('new-user-form');
+        if (newUserForm) {
+            newUserForm.onsubmit = handleNewUserSubmit;
+            console.log('✅ Event listener del formulario de usuario configurado');
+        } else {
+            console.warn('⚠️ No se encontró el formulario new-user-form');
         }
         
         // Configurar cierre de modales
@@ -1307,6 +1338,60 @@ async function handleNewProductSubmit(e) {
     }
 }
 
+// Función para manejar envío de nuevo usuario
+async function handleNewUserSubmit(e) {
+    e.preventDefault();
+    
+    const userData = {
+        nombre: document.getElementById('new-user-nombre').value,
+        email: document.getElementById('new-user-email').value,
+        perfil: document.getElementById('new-user-perfil').value,
+        password: document.getElementById('new-user-password').value
+    };
+    
+    debugLog('FORM', 'Datos del usuario a enviar:', { ...userData, password: '[OCULTA]' });
+    
+    // Validar que los campos requeridos no estén vacíos
+    const requiredFields = ['nombre', 'email', 'perfil', 'password'];
+    const missingFields = requiredFields.filter(field => !userData[field] || userData[field].trim() === '');
+    
+    if (missingFields.length > 0) {
+        console.error('❌ Campos requeridos faltantes:', missingFields);
+        showNotification(`Campos requeridos faltantes: ${missingFields.join(', ')}`, 'error');
+        return;
+    }
+    
+    try {
+        const token = localStorage.getItem('authToken');
+        
+        debugLog('HTTP', 'Enviando petición POST a /api/usuarios');
+        
+        const response = await fetch('/api/usuarios', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(userData)
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            showNotification('Usuario creado exitosamente', 'success');
+            document.getElementById('new-user-modal').classList.remove('active');
+            e.target.reset();
+            await loadUsersForAdmin(); // Recargar la lista de usuarios
+        } else {
+            const errorData = await response.json();
+            console.error('❌ Error del servidor al crear usuario:', response.status, errorData);
+            showNotification(errorData.error || `Error del servidor: ${response.status}`, 'error');
+        }
+    } catch (error) {
+        console.error('❌ Error de red o conexión:', error);
+        showNotification(`Error de conexión: ${error.message}`, 'error');
+    }
+}
+
 // Funciones placeholder para compatibilidad
 function editClient(clientId) {
     console.log('Editar cliente:', clientId);
@@ -1381,7 +1466,8 @@ function setupHeaderButtons() {
             { id: 'new-order-btn-section', modal: 'new-order-modal', name: 'Nuevo Pedido (Sección)' },
             { id: 'new-payment-btn-section', modal: 'new-payment-modal', name: 'Nuevo Pago (Sección)' },
             { id: 'new-contact-btn-section', modal: 'new-contact-modal', name: 'Nuevo Contacto (Sección)' },
-            { id: 'new-product-btn', modal: 'new-product-modal', name: 'Nuevo Producto' }
+            { id: 'new-product-btn', modal: 'new-product-modal', name: 'Nuevo Producto' },
+            { id: 'new-user-btn', modal: 'new-user-modal', name: 'Nuevo Usuario' }
         ];
         
         buttonsConfig.forEach(config => {
@@ -1425,6 +1511,24 @@ function setupHeaderButtons() {
                 console.warn(`⚠️ Modal no encontrado: ${modalId}`);
             }
         });
+        
+        // Configurar botón de volver al dashboard
+        const backToDashboardBtn = document.getElementById('back-to-dashboard-btn');
+        if (backToDashboardBtn) {
+            backToDashboardBtn.onclick = function() {
+                debugLog('CLICK', 'Volver al Dashboard clickeado');
+                showSection('dashboard');
+                updateHeaderTitle('dashboard');
+                
+                // Actualizar navegación activa
+                document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+                const dashboardNav = document.querySelector('.nav-item');
+                if (dashboardNav) {
+                    dashboardNav.classList.add('active');
+                }
+            };
+            debugLog('BUTTONS', '✅ Botón "Volver al Dashboard" configurado');
+        }
         
         debugLog('BUTTONS', 'Configuración de botones completada exitosamente');
         
@@ -1577,6 +1681,98 @@ function runDOMDiagnostic() {
         console.error('🚨 Error durante el diagnóstico:', error);
         report.issues.push(`Error en diagnóstico: ${error.message}`);
         return report;
+    }
+}
+
+// === FUNCIONES DEL PANEL DE ADMINISTRACIÓN ===
+
+// Función para cargar usuarios para el panel de administración
+async function loadUsersForAdmin() {
+    try {
+        const token = localStorage.getItem('authToken');
+        const response = await fetch('/api/usuarios', {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const users = await response.json();
+            renderUsersTable(users);
+            debugLog('ADMIN', `Usuarios cargados: ${users.length}`);
+        } else {
+            console.error('Error cargando usuarios:', response.statusText);
+            showNotification('Error al cargar usuarios', 'error');
+        }
+    } catch (error) {
+        console.error('Error cargando usuarios:', error);
+        showNotification('Error de conexión al cargar usuarios', 'error');
+    }
+}
+
+// Función para renderizar la tabla de usuarios
+function renderUsersTable(users) {
+    const container = document.querySelector('.users-table-container');
+    if (!container) {
+        console.warn('⚠️ No se encontró el contenedor de la tabla de usuarios');
+        return;
+    }
+    
+    if (users.length === 0) {
+        container.innerHTML = '<p class="text-center text-gray-500">No hay usuarios registrados</p>';
+        return;
+    }
+    
+    const table = document.createElement('table');
+    table.className = 'clients-table';
+    
+    table.innerHTML = `
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Email</th>
+                <th>Perfil</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${users.map(user => `
+                <tr>
+                    <td>${user.nombre}</td>
+                    <td>${user.email}</td>
+                    <td><span class="badge badge-${user.perfil.toLowerCase()}">${user.perfil}</span></td>
+                    <td><span class="badge ${user.activo ? 'badge-yes' : 'badge-no'}">${user.activo ? 'Activo' : 'Inactivo'}</span></td>
+                    <td>
+                        <button onclick="editUser(${user.id})" class="btn-edit" title="Editar usuario">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deleteUser(${user.id})" class="btn-delete" title="Eliminar usuario">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('')}
+        </tbody>
+    `;
+    
+    container.innerHTML = '';
+    container.appendChild(table);
+    
+    console.log('✅ Tabla de usuarios renderizada');
+}
+
+// Funciones placeholder para administración de usuarios
+function editUser(userId) {
+    console.log('Editar usuario:', userId);
+    showNotification('Función de edición de usuarios en desarrollo', 'info');
+}
+
+function deleteUser(userId) {
+    if (confirm('¿Está seguro de que desea eliminar este usuario?')) {
+        console.log('Eliminar usuario:', userId);
+        showNotification('Función de eliminación de usuarios en desarrollo', 'info');
     }
 }
 

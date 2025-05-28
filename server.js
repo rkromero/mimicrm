@@ -527,6 +527,175 @@ app.post('/api/contactos', authenticateToken, async (req, res) => {
     }
 });
 
+// RUTAS DE ADMINISTRACIÓN DE USUARIOS
+
+// Obtener todos los usuarios (solo para administradores)
+app.get('/api/usuarios', authenticateToken, async (req, res) => {
+    try {
+        // Verificar que el usuario sea administrador
+        if (req.user.perfil !== 'Administrador') {
+            return res.status(403).json({ error: 'Acceso denegado. Solo administradores pueden ver usuarios.' });
+        }
+
+        const [usuarios] = await db.execute(
+            'SELECT id, nombre, email, perfil, activo, created_at FROM usuarios ORDER BY nombre'
+        );
+        
+        res.json(usuarios);
+    } catch (error) {
+        console.error('Error obteniendo usuarios:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Crear nuevo usuario (solo para administradores)
+app.post('/api/usuarios', authenticateToken, async (req, res) => {
+    try {
+        // Verificar que el usuario sea administrador
+        if (req.user.perfil !== 'Administrador') {
+            return res.status(403).json({ error: 'Acceso denegado. Solo administradores pueden crear usuarios.' });
+        }
+
+        const { nombre, email, perfil, password } = req.body;
+
+        // Validar campos requeridos
+        if (!nombre || !email || !perfil || !password) {
+            return res.status(400).json({ error: 'Todos los campos son requeridos' });
+        }
+
+        // Verificar que el email no exista
+        const [existingUsers] = await db.execute(
+            'SELECT id FROM usuarios WHERE email = ?',
+            [email]
+        );
+
+        if (existingUsers.length > 0) {
+            return res.status(400).json({ error: 'Ya existe un usuario con este email' });
+        }
+
+        // Encriptar contraseña
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Crear usuario
+        const [result] = await db.execute(
+            'INSERT INTO usuarios (nombre, email, perfil, password) VALUES (?, ?, ?, ?)',
+            [nombre, email, perfil, hashedPassword]
+        );
+
+        res.status(201).json({ 
+            id: result.insertId, 
+            message: 'Usuario creado exitosamente',
+            usuario: { id: result.insertId, nombre, email, perfil }
+        });
+    } catch (error) {
+        console.error('Error creando usuario:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Actualizar usuario (solo para administradores)
+app.put('/api/usuarios/:id', authenticateToken, async (req, res) => {
+    try {
+        // Verificar que el usuario sea administrador
+        if (req.user.perfil !== 'Administrador') {
+            return res.status(403).json({ error: 'Acceso denegado. Solo administradores pueden editar usuarios.' });
+        }
+
+        const userId = req.params.id;
+        const { nombre, email, perfil, password, activo } = req.body;
+
+        // Verificar que el usuario existe
+        const [existingUsers] = await db.execute(
+            'SELECT id FROM usuarios WHERE id = ?',
+            [userId]
+        );
+
+        if (existingUsers.length === 0) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+
+        // Construir query de actualización dinámicamente
+        let updateFields = [];
+        let updateValues = [];
+
+        if (nombre) {
+            updateFields.push('nombre = ?');
+            updateValues.push(nombre);
+        }
+        if (email) {
+            updateFields.push('email = ?');
+            updateValues.push(email);
+        }
+        if (perfil) {
+            updateFields.push('perfil = ?');
+            updateValues.push(perfil);
+        }
+        if (password) {
+            const hashedPassword = await bcrypt.hash(password, 10);
+            updateFields.push('password = ?');
+            updateValues.push(hashedPassword);
+        }
+        if (activo !== undefined) {
+            updateFields.push('activo = ?');
+            updateValues.push(activo);
+        }
+
+        if (updateFields.length === 0) {
+            return res.status(400).json({ error: 'No hay campos para actualizar' });
+        }
+
+        updateValues.push(userId);
+
+        await db.execute(
+            `UPDATE usuarios SET ${updateFields.join(', ')} WHERE id = ?`,
+            updateValues
+        );
+
+        res.json({ message: 'Usuario actualizado exitosamente' });
+    } catch (error) {
+        console.error('Error actualizando usuario:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Eliminar usuario (solo para administradores)
+app.delete('/api/usuarios/:id', authenticateToken, async (req, res) => {
+    try {
+        // Verificar que el usuario sea administrador
+        if (req.user.perfil !== 'Administrador') {
+            return res.status(403).json({ error: 'Acceso denegado. Solo administradores pueden eliminar usuarios.' });
+        }
+
+        const userId = req.params.id;
+
+        // Verificar que no se esté eliminando a sí mismo
+        if (parseInt(userId) === req.user.id) {
+            return res.status(400).json({ error: 'No puedes eliminar tu propio usuario' });
+        }
+
+        // Verificar que el usuario existe
+        const [existingUsers] = await db.execute(
+            'SELECT id FROM usuarios WHERE id = ?',
+            [userId]
+        );
+
+        if (existingUsers.length === 0) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+
+        // En lugar de eliminar, marcar como inactivo para preservar integridad referencial
+        await db.execute(
+            'UPDATE usuarios SET activo = false WHERE id = ?',
+            [userId]
+        );
+
+        res.json({ message: 'Usuario desactivado exitosamente' });
+    } catch (error) {
+        console.error('Error eliminando usuario:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
 // Ruta para servir la aplicación
 app.get('/', (req, res) => {
     res.redirect('/login.html');

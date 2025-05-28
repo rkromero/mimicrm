@@ -1350,6 +1350,22 @@ tr:hover {
     background: #e57373;
 }
 
+/* Badges específicos para perfiles de usuario */
+.badge-administrador {
+    background: #dc2626;
+    color: white;
+}
+
+.badge-vendedor {
+    background: #059669;
+    color: white;
+}
+
+.badge-produccion {
+    background: #7c3aed;
+    color: white;
+}
+
 /* Estilos para el sistema de perfiles */
 .user-profile {
     padding: 1.5rem;
