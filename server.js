@@ -1288,11 +1288,22 @@ app.post('/api/admin/update-pedidos-table', async (req, res) => {
     try {
         console.log('🔧 Actualizando estructura de tabla pedidos...');
 
-        // Primero actualizar registros existentes con estados antiguos a los nuevos
-        console.log('📝 Actualizando estados existentes...');
+        // Primero agregar una columna temporal
+        console.log('📝 Agregando columna temporal...');
+        try {
+            await db.execute(`ALTER TABLE pedidos ADD COLUMN estado_nuevo VARCHAR(50)`);
+        } catch (error) {
+            if (!error.message.includes('Duplicate column name')) {
+                throw error;
+            }
+            console.log('📝 Columna temporal ya existe');
+        }
+
+        // Actualizar la columna temporal con los nuevos valores
+        console.log('📝 Actualizando columna temporal...');
         await db.execute(`
             UPDATE pedidos 
-            SET estado = CASE 
+            SET estado_nuevo = CASE 
                 WHEN estado = 'pendiente' THEN 'pendiente de pago'
                 WHEN estado = 'en_proceso' THEN 'fabricar'
                 WHEN estado = 'completado' THEN 'completado'
@@ -1301,18 +1312,31 @@ app.post('/api/admin/update-pedidos-table', async (req, res) => {
             END
         `);
 
-        // Ahora actualizar el ENUM del campo estado con los nuevos valores
-        console.log('🔧 Actualizando estructura ENUM...');
+        // Eliminar la columna original
+        console.log('🗑️ Eliminando columna original...');
+        await db.execute(`ALTER TABLE pedidos DROP COLUMN estado`);
+
+        // Renombrar la columna temporal y agregarle el ENUM
+        console.log('🔧 Creando nueva columna con ENUM...');
         await db.execute(`
             ALTER TABLE pedidos 
-            MODIFY COLUMN estado ENUM('pendiente de pago', 'fabricar', 'sale fabrica', 'completado') DEFAULT 'pendiente de pago'
+            ADD COLUMN estado ENUM('pendiente de pago', 'fabricar', 'sale fabrica', 'completado') 
+            DEFAULT 'pendiente de pago' AFTER numero_pedido
         `);
+
+        // Copiar los datos de la columna temporal a la nueva columna
+        console.log('📋 Copiando datos...');
+        await db.execute(`UPDATE pedidos SET estado = estado_nuevo`);
+
+        // Eliminar la columna temporal
+        console.log('🗑️ Eliminando columna temporal...');
+        await db.execute(`ALTER TABLE pedidos DROP COLUMN estado_nuevo`);
 
         console.log('✅ Tabla pedidos actualizada correctamente');
         res.json({ 
             success: true, 
             message: 'Tabla pedidos actualizada correctamente',
-            details: 'Estados migrados y estructura ENUM actualizada'
+            details: 'Estados migrados y estructura ENUM actualizada con método robusto'
         });
 
     } catch (error) {
