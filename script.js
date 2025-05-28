@@ -513,47 +513,181 @@ function showNotification(message, type = 'success') {
 
 // === INICIALIZACIÓN ===
 
-// Event listener principal
+// === SISTEMA DE DEBUGGING Y MANEJO DE ERRORES ===
+
+// Configurar manejo global de errores
+window.addEventListener('error', function(e) {
+    console.error('🚨 ERROR GLOBAL CAPTURADO:', {
+        message: e.message,
+        filename: e.filename,
+        lineno: e.lineno,
+        colno: e.colno,
+        error: e.error,
+        stack: e.error?.stack
+    });
+    
+    // Mostrar notificación al usuario
+    showNotification(`Error: ${e.message}`, 'error');
+    
+    // Enviar error a consola con más detalles
+    console.trace('Stack trace del error:');
+});
+
+// Configurar manejo de promesas rechazadas
+window.addEventListener('unhandledrejection', function(e) {
+    console.error('🚨 PROMESA RECHAZADA NO MANEJADA:', {
+        reason: e.reason,
+        promise: e.promise
+    });
+    
+    showNotification(`Error de promesa: ${e.reason}`, 'error');
+    console.trace('Stack trace de la promesa rechazada:');
+});
+
+// Función para logging detallado
+function debugLog(context, message, data = null) {
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] 🔍 ${context}: ${message}`, data || '');
+}
+
+// Función para capturar errores en funciones específicas
+function safeExecute(fn, context = 'Unknown') {
+    return function(...args) {
+        try {
+            debugLog(context, 'Ejecutando función', { args });
+            const result = fn.apply(this, args);
+            
+            // Si es una promesa, manejar errores async
+            if (result && typeof result.catch === 'function') {
+                return result.catch(error => {
+                    console.error(`🚨 Error en ${context}:`, error);
+                    showNotification(`Error en ${context}: ${error.message}`, 'error');
+                    throw error;
+                });
+            }
+            
+            debugLog(context, 'Función ejecutada exitosamente');
+            return result;
+        } catch (error) {
+            console.error(`🚨 Error en ${context}:`, error);
+            console.trace('Stack trace:');
+            showNotification(`Error en ${context}: ${error.message}`, 'error');
+            throw error;
+        }
+    };
+}
+
+// Event listener principal con manejo de errores mejorado
 document.addEventListener('DOMContentLoaded', async function() {
-    console.log('🚀 Iniciando aplicación MIMI CRM...');
-    
-    // Verificar autenticación
-    const isAuthenticated = await checkAuthentication();
-    if (!isAuthenticated) {
-        console.log('❌ Usuario no autenticado');
-        return;
+    try {
+        console.log('🚀 Iniciando aplicación MIMI CRM...');
+        debugLog('INIT', 'Comenzando inicialización de la aplicación');
+        
+        // Verificar autenticación
+        debugLog('AUTH', 'Verificando autenticación...');
+        const isAuthenticated = await checkAuthentication();
+        if (!isAuthenticated) {
+            console.log('❌ Usuario no autenticado');
+            return;
+        }
+        debugLog('AUTH', 'Usuario autenticado correctamente');
+        
+        // Cargar datos desde la API con manejo de errores individual
+        debugLog('DATA', 'Iniciando carga de datos...');
+        
+        try {
+            await loadClients();
+            debugLog('DATA', 'Clientes cargados');
+        } catch (error) {
+            console.error('Error cargando clientes:', error);
+        }
+        
+        try {
+            await loadProducts();
+            debugLog('DATA', 'Productos cargados');
+        } catch (error) {
+            console.error('Error cargando productos:', error);
+        }
+        
+        try {
+            await loadOrders();
+            debugLog('DATA', 'Pedidos cargados');
+        } catch (error) {
+            console.error('Error cargando pedidos:', error);
+        }
+        
+        try {
+            await loadPayments();
+            debugLog('DATA', 'Pagos cargados');
+        } catch (error) {
+            console.error('Error cargando pagos:', error);
+        }
+        
+        try {
+            await loadContacts();
+            debugLog('DATA', 'Contactos cargados');
+        } catch (error) {
+            console.error('Error cargando contactos:', error);
+        }
+        
+        // Configurar componentes con manejo de errores
+        debugLog('SETUP', 'Configurando navegación...');
+        setupNavigation();
+        
+        debugLog('SETUP', 'Configurando formularios...');
+        setupForms();
+        
+        debugLog('SETUP', 'Configurando botones del header...');
+        setupHeaderButtons();
+        
+        // Mostrar dashboard por defecto
+        debugLog('UI', 'Mostrando dashboard por defecto...');
+        showSection('dashboard');
+        updateHeaderTitle('dashboard');
+        
+        // Marcar dashboard como activo en la navegación
+        debugLog('UI', 'Configurando navegación activa...');
+        document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+        const dashboardNav = document.querySelector('.nav-item');
+        if (dashboardNav) {
+            dashboardNav.classList.add('active');
+        }
+        
+        console.log('✅ Aplicación inicializada correctamente');
+        debugLog('INIT', 'Inicialización completada exitosamente');
+        
+        // Ejecutar diagnóstico final
+        setTimeout(() => {
+            debugLog('INIT', 'Ejecutando diagnóstico post-inicialización...');
+            const diagnosticReport = runDOMDiagnostic();
+            
+            // Hacer el reporte disponible globalmente para debugging
+            window.MIMI_DIAGNOSTIC = diagnosticReport;
+            console.log('💡 Tip: Usa window.MIMI_DIAGNOSTIC para ver el reporte completo');
+            console.log('💡 Tip: Usa window.debugModal("modal-id") para probar modales');
+            console.log('💡 Tip: Usa window.runDiagnostic() para ejecutar diagnóstico manual');
+        }, 1000);
+        
+    } catch (error) {
+        console.error('🚨 ERROR CRÍTICO EN INICIALIZACIÓN:', error);
+        console.trace('Stack trace completo:');
+        showNotification('Error crítico al inicializar la aplicación', 'error');
+        
+        // Intentar mostrar al menos una interfaz básica
+        try {
+            document.body.innerHTML += `
+                <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                           background: red; color: white; padding: 20px; border-radius: 8px; z-index: 9999;">
+                    <h3>Error Crítico</h3>
+                    <p>La aplicación no pudo inicializarse correctamente.</p>
+                    <p>Error: ${error.message}</p>
+                    <button onclick="location.reload()">Recargar Página</button>
+                </div>
+            `;
+        } catch (e) {
+            console.error('No se pudo mostrar el mensaje de error:', e);
+        }
     }
-    
-    console.log('✅ Usuario autenticado');
-    
-    // Cargar datos desde la API
-    await loadClients();
-    await loadProducts();
-    await loadOrders();
-    await loadPayments();
-    await loadContacts();
-    
-    // Configurar navegación
-    setupNavigation();
-    
-    // Configurar formularios
-    setupForms();
-    
-    // Configurar botones del header
-    setupHeaderButtons();
-    
-    // Mostrar dashboard por defecto
-    showSection('dashboard');
-    updateHeaderTitle('dashboard');
-    
-    // Marcar dashboard como activo en la navegación
-    document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
-    const dashboardNav = document.querySelector('.nav-item'); // El primer nav-item es dashboard
-    if (dashboardNav) {
-        dashboardNav.classList.add('active');
-    }
-    
-    console.log('✅ Aplicación inicializada correctamente');
 });
 
 // Función para configurar la navegación
@@ -795,36 +929,71 @@ function setupForms() {
     }
 }
 
-// Función para mostrar modales
+// Función para mostrar modales con debugging mejorado
 function showModal(modalId) {
-    console.log('🔍 Intentando mostrar modal:', modalId);
-    
-    const modal = document.getElementById(modalId);
-    if (!modal) {
-        console.error('❌ No se encontró el modal:', modalId);
-        return;
-    }
-    
-    console.log('✅ Modal encontrado, mostrando...');
-    modal.style.display = 'block';
-    
-    // Configuraciones específicas por modal
-    if (modalId === 'new-client-modal') {
-        console.log('🔄 Cargando configuración para modal de nuevo cliente...');
-        try {
-            setupProvinceAndCityListeners();
-            console.log('✅ Configuración del modal completada');
-        } catch (error) {
-            console.error('❌ Error al configurar modal de nuevo cliente:', error);
+    try {
+        debugLog('MODAL', `Intentando mostrar modal: ${modalId}`);
+        
+        // Verificar que modalId sea válido
+        if (!modalId || typeof modalId !== 'string') {
+            throw new Error(`ID de modal inválido: ${modalId}`);
         }
-    } else if (modalId === 'new-order-modal' || modalId === 'new-payment-modal' || modalId === 'new-contact-modal') {
-        console.log('🔄 Cargando lista de clientes para modal...');
-        try {
-            populateClientSelects(modalId);
-            console.log('✅ Lista de clientes cargada');
-        } catch (error) {
-            console.error('❌ Error al cargar lista de clientes:', error);
+        
+        const modal = document.getElementById(modalId);
+        if (!modal) {
+            throw new Error(`No se encontró el modal con ID: ${modalId}`);
         }
+        
+        debugLog('MODAL', `Modal encontrado: ${modalId}`, {
+            element: modal,
+            currentDisplay: modal.style.display,
+            classList: Array.from(modal.classList)
+        });
+        
+        // Verificar que el modal tenga la clase correcta
+        if (!modal.classList.contains('modal')) {
+            console.warn(`⚠️ El elemento ${modalId} no tiene la clase 'modal'`);
+        }
+        
+        // Mostrar el modal
+        modal.style.display = 'block';
+        debugLog('MODAL', `Modal ${modalId} mostrado exitosamente`);
+        
+        // Configuraciones específicas por modal
+        if (modalId === 'new-client-modal') {
+            debugLog('MODAL', 'Configurando modal de nuevo cliente...');
+            try {
+                setupProvinceAndCityListeners();
+                debugLog('MODAL', 'Configuración de provincia/ciudad completada');
+            } catch (error) {
+                console.error('❌ Error al configurar modal de nuevo cliente:', error);
+                throw error;
+            }
+        } else if (modalId === 'new-order-modal' || modalId === 'new-payment-modal' || modalId === 'new-contact-modal') {
+            debugLog('MODAL', `Configurando selects de clientes para ${modalId}...`);
+            try {
+                populateClientSelects(modalId);
+                debugLog('MODAL', `Selects de clientes configurados para ${modalId}`);
+            } catch (error) {
+                console.error('❌ Error al cargar lista de clientes:', error);
+                throw error;
+            }
+        }
+        
+        debugLog('MODAL', `Modal ${modalId} configurado completamente`);
+        
+    } catch (error) {
+        console.error(`🚨 ERROR EN showModal(${modalId}):`, error);
+        console.trace('Stack trace del error en showModal:');
+        showNotification(`Error al abrir modal: ${error.message}`, 'error');
+        
+        // Intentar diagnóstico adicional
+        console.log('🔍 DIAGNÓSTICO DEL ERROR:');
+        console.log('- Todos los modales en el DOM:', document.querySelectorAll('.modal'));
+        console.log('- Modal específico buscado:', document.getElementById(modalId));
+        console.log('- Estado actual del DOM:', document.readyState);
+        
+        throw error;
     }
 }
 
@@ -1167,77 +1336,70 @@ function deleteContact(contactId) {
     }
 }
 
-// Función para configurar botones del header
+// Función para configurar botones del header con debugging mejorado
 function setupHeaderButtons() {
-    console.log('🔧 Configurando botones del header...');
+    debugLog('BUTTONS', 'Iniciando configuración de botones del header...');
     
     try {
-        // Configurar botón "Nuevo Cliente" del header
-        const newClientBtnHeader = document.getElementById('new-client-btn');
-        if (newClientBtnHeader) {
-            newClientBtnHeader.onclick = function() {
-                console.log('🖱️ Botón nuevo cliente (header) clickeado');
-                showModal('new-client-modal');
-            };
-            console.log('✅ Botón nuevo cliente del header configurado');
-        }
+        // Lista de botones a configurar
+        const buttonsConfig = [
+            { id: 'new-client-btn', modal: 'new-client-modal', name: 'Nuevo Cliente (Header)' },
+            { id: 'new-order-btn', modal: 'new-order-modal', name: 'Nuevo Pedido (Header)' },
+            { id: 'new-payment-btn', modal: 'new-payment-modal', name: 'Nuevo Pago (Header)' },
+            { id: 'new-order-btn-section', modal: 'new-order-modal', name: 'Nuevo Pedido (Sección)' },
+            { id: 'new-payment-btn-section', modal: 'new-payment-modal', name: 'Nuevo Pago (Sección)' },
+            { id: 'new-contact-btn-section', modal: 'new-contact-modal', name: 'Nuevo Contacto (Sección)' },
+            { id: 'new-product-btn', modal: 'new-product-modal', name: 'Nuevo Producto' }
+        ];
         
-        // Configurar botón "Nuevo Pedido" del header
-        const newOrderBtnHeader = document.getElementById('new-order-btn');
-        if (newOrderBtnHeader) {
-            newOrderBtnHeader.onclick = function() {
-                console.log('🖱️ Botón nuevo pedido (header) clickeado');
-                showModal('new-order-modal');
-            };
-            console.log('✅ Botón nuevo pedido del header configurado');
-        }
+        buttonsConfig.forEach(config => {
+            try {
+                debugLog('BUTTONS', `Configurando botón: ${config.name} (${config.id})`);
+                
+                const button = document.getElementById(config.id);
+                if (!button) {
+                    debugLog('BUTTONS', `⚠️ Botón no encontrado: ${config.id}`);
+                    return;
+                }
+                
+                debugLog('BUTTONS', `Botón encontrado: ${config.name}`, {
+                    element: button,
+                    tagName: button.tagName,
+                    className: button.className,
+                    innerHTML: button.innerHTML.substring(0, 50) + '...'
+                });
+                
+                // Crear función onclick con manejo de errores
+                button.onclick = safeExecute(function() {
+                    debugLog('CLICK', `Botón clickeado: ${config.name}`);
+                    showModal(config.modal);
+                }, `Click ${config.name}`);
+                
+                debugLog('BUTTONS', `✅ Botón configurado exitosamente: ${config.name}`);
+                
+            } catch (error) {
+                console.error(`❌ Error configurando botón ${config.name}:`, error);
+            }
+        });
         
-        // Configurar botón "Nuevo Pago" del header
-        const newPaymentBtnHeader = document.getElementById('new-payment-btn');
-        if (newPaymentBtnHeader) {
-            newPaymentBtnHeader.onclick = function() {
-                console.log('🖱️ Botón nuevo pago (header) clickeado');
-                showModal('new-payment-modal');
-            };
-            console.log('✅ Botón nuevo pago del header configurado');
-        }
+        // Verificar que todos los modales existan
+        debugLog('BUTTONS', 'Verificando existencia de modales...');
+        const modalIds = ['new-client-modal', 'new-order-modal', 'new-payment-modal', 'new-contact-modal', 'new-product-modal'];
+        modalIds.forEach(modalId => {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                debugLog('BUTTONS', `✅ Modal encontrado: ${modalId}`);
+            } else {
+                console.warn(`⚠️ Modal no encontrado: ${modalId}`);
+            }
+        });
         
-        // Configurar botones adicionales de las secciones
-        const newOrderBtnSection = document.getElementById('new-order-btn-section');
-        if (newOrderBtnSection) {
-            newOrderBtnSection.onclick = function() {
-                console.log('🖱️ Botón nuevo pedido (sección) clickeado');
-                showModal('new-order-modal');
-            };
-        }
+        debugLog('BUTTONS', 'Configuración de botones completada exitosamente');
         
-        const newPaymentBtnSection = document.getElementById('new-payment-btn-section');
-        if (newPaymentBtnSection) {
-            newPaymentBtnSection.onclick = function() {
-                console.log('🖱️ Botón nuevo pago (sección) clickeado');
-                showModal('new-payment-modal');
-            };
-        }
-        
-        const newContactBtnSection = document.getElementById('new-contact-btn-section');
-        if (newContactBtnSection) {
-            newContactBtnSection.onclick = function() {
-                console.log('🖱️ Botón nuevo contacto (sección) clickeado');
-                showModal('new-contact-modal');
-            };
-        }
-        
-        const newProductBtn = document.getElementById('new-product-btn');
-        if (newProductBtn) {
-            newProductBtn.onclick = function() {
-                console.log('🖱️ Botón nuevo producto clickeado');
-                showModal('new-product-modal');
-            };
-        }
-        
-        console.log('✅ Configuración de botones del header completada');
     } catch (error) {
-        console.error('❌ Error configurando botones del header:', error);
+        console.error('🚨 ERROR CRÍTICO en setupHeaderButtons:', error);
+        console.trace('Stack trace:');
+        throw error;
     }
 }
 
@@ -1269,3 +1431,185 @@ function updateDashboardStats() {
         console.error('❌ Error actualizando estadísticas:', error);
     }
 }
+
+// Función de diagnóstico completo del DOM
+function runDOMDiagnostic() {
+    debugLog('DIAGNOSTIC', 'Iniciando diagnóstico completo del DOM...');
+    
+    const report = {
+        timestamp: new Date().toISOString(),
+        domReady: document.readyState,
+        elements: {},
+        modals: {},
+        buttons: {},
+        forms: {},
+        issues: []
+    };
+    
+    try {
+        // Verificar elementos críticos
+        const criticalElements = [
+            'sidebar', 'main-content', 'header', 'dashboard-section',
+            'clientes-section', 'pedidos-section', 'pagos-section',
+            'productos-section', 'contactos-section'
+        ];
+        
+        criticalElements.forEach(id => {
+            const element = document.getElementById(id);
+            report.elements[id] = {
+                exists: !!element,
+                visible: element ? element.style.display !== 'none' : false,
+                classList: element ? Array.from(element.classList) : []
+            };
+            
+            if (!element) {
+                report.issues.push(`Elemento crítico faltante: ${id}`);
+            }
+        });
+        
+        // Verificar modales
+        const modalIds = ['new-client-modal', 'new-order-modal', 'new-payment-modal', 'new-contact-modal', 'new-product-modal'];
+        modalIds.forEach(id => {
+            const modal = document.getElementById(id);
+            report.modals[id] = {
+                exists: !!modal,
+                hasModalClass: modal ? modal.classList.contains('modal') : false,
+                display: modal ? modal.style.display : 'N/A'
+            };
+            
+            if (!modal) {
+                report.issues.push(`Modal faltante: ${id}`);
+            }
+        });
+        
+        // Verificar botones
+        const buttonIds = [
+            'new-client-btn', 'new-order-btn', 'new-payment-btn',
+            'new-order-btn-section', 'new-payment-btn-section',
+            'new-contact-btn-section', 'new-product-btn'
+        ];
+        
+        buttonIds.forEach(id => {
+            const button = document.getElementById(id);
+            report.buttons[id] = {
+                exists: !!button,
+                hasOnclick: button ? typeof button.onclick === 'function' : false,
+                tagName: button ? button.tagName : 'N/A'
+            };
+            
+            if (!button) {
+                report.issues.push(`Botón faltante: ${id}`);
+            }
+        });
+        
+        // Verificar formularios
+        const formIds = [
+            'new-client-form', 'new-order-form', 'new-payment-form',
+            'new-contact-form', 'new-product-form'
+        ];
+        
+        formIds.forEach(id => {
+            const form = document.getElementById(id);
+            report.forms[id] = {
+                exists: !!form,
+                hasOnsubmit: form ? typeof form.onsubmit === 'function' : false,
+                tagName: form ? form.tagName : 'N/A'
+            };
+            
+            if (!form) {
+                report.issues.push(`Formulario faltante: ${id}`);
+            }
+        });
+        
+        // Verificar datos cargados
+        report.dataStatus = {
+            clients: clients.length,
+            orders: orders.length,
+            payments: payments.length,
+            products: products.length,
+            contacts: contacts.length
+        };
+        
+        console.log('🔍 REPORTE DE DIAGNÓSTICO COMPLETO:', report);
+        
+        if (report.issues.length > 0) {
+            console.warn('⚠️ PROBLEMAS DETECTADOS:', report.issues);
+        } else {
+            debugLog('DIAGNOSTIC', 'No se detectaron problemas críticos');
+        }
+        
+        return report;
+        
+    } catch (error) {
+        console.error('🚨 Error durante el diagnóstico:', error);
+        report.issues.push(`Error en diagnóstico: ${error.message}`);
+        return report;
+    }
+}
+
+// === FUNCIONES DE DEBUGGING GLOBALES ===
+
+// Hacer funciones disponibles globalmente para debugging manual
+window.debugModal = function(modalId) {
+    console.log(`🔧 DEBUG: Intentando abrir modal ${modalId}`);
+    try {
+        showModal(modalId);
+        console.log(`✅ Modal ${modalId} abierto exitosamente`);
+    } catch (error) {
+        console.error(`❌ Error abriendo modal ${modalId}:`, error);
+    }
+};
+
+window.runDiagnostic = function() {
+    console.log('🔧 DEBUG: Ejecutando diagnóstico manual...');
+    return runDOMDiagnostic();
+};
+
+window.testAllModals = function() {
+    console.log('🔧 DEBUG: Probando todos los modales...');
+    const modalIds = ['new-client-modal', 'new-order-modal', 'new-payment-modal', 'new-contact-modal', 'new-product-modal'];
+    
+    modalIds.forEach((modalId, index) => {
+        setTimeout(() => {
+            console.log(`Probando modal: ${modalId}`);
+            try {
+                showModal(modalId);
+                setTimeout(() => {
+                    const modal = document.getElementById(modalId);
+                    if (modal) modal.style.display = 'none';
+                }, 1000);
+            } catch (error) {
+                console.error(`Error con modal ${modalId}:`, error);
+            }
+        }, index * 2000);
+    });
+};
+
+window.showDebugInfo = function() {
+    console.log('🔧 DEBUG INFO:');
+    console.log('- Clientes cargados:', clients.length);
+    console.log('- Pedidos cargados:', orders.length);
+    console.log('- Pagos cargados:', payments.length);
+    console.log('- Productos cargados:', products.length);
+    console.log('- Contactos cargados:', contacts.length);
+    console.log('- Estado del DOM:', document.readyState);
+    console.log('- Modales en DOM:', document.querySelectorAll('.modal').length);
+    console.log('- Botones con onclick:', document.querySelectorAll('button[onclick], button').length);
+};
+
+// Función para monitorear clicks en tiempo real
+window.enableClickMonitoring = function() {
+    console.log('🔧 DEBUG: Habilitando monitoreo de clicks...');
+    
+    document.addEventListener('click', function(e) {
+        console.log('👆 CLICK DETECTADO:', {
+            target: e.target,
+            tagName: e.target.tagName,
+            id: e.target.id,
+            className: e.target.className,
+            innerHTML: e.target.innerHTML.substring(0, 50) + '...'
+        });
+    }, true);
+    
+    console.log('✅ Monitoreo de clicks habilitado');
+};
