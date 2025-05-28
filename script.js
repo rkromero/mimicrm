@@ -1262,6 +1262,13 @@ async function handleNewClientSubmit(e) {
         return;
     }
     
+    // Validar que no exista un cliente con el mismo documento
+    const existingClient = clients.find(client => client.cuit === clientData.cuit.trim());
+    if (existingClient) {
+        showNotification(`Ya existe un cliente con el documento ${clientData.cuit}. Cliente: ${existingClient.nombre}`, 'error');
+        return;
+    }
+    
     try {
         const token = localStorage.getItem('authToken');
         
@@ -1682,6 +1689,13 @@ async function handleEditClientSubmit(e) {
     if (missingFields.length > 0) {
         console.error('❌ Campos requeridos faltantes:', missingFields);
         showNotification(`Campos requeridos faltantes: ${missingFields.join(', ')}`, 'error');
+        return;
+    }
+    
+    // Validar que no exista otro cliente con el mismo documento (excepto el cliente actual)
+    const existingClient = clients.find(client => client.cuit === clientData.cuit.trim() && client.id !== parseInt(clientId));
+    if (existingClient) {
+        showNotification(`Ya existe otro cliente con el documento ${clientData.cuit}. Cliente: ${existingClient.nombre}`, 'error');
         return;
     }
     
