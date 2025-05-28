@@ -55,10 +55,6 @@
                     <i class="fas fa-industry"></i>
                     <span>Fábrica</span>
                 </a>
-                <a href="#" class="nav-item" data-section="listas-precios">
-                    <i class="fas fa-tags"></i>
-                    <span>Lista de Precios</span>
-                </a>
                 <a href="#" class="nav-item" id="admin-profiles-nav" style="display:none">
                     <i class="fas fa-users-cog"></i>
                     <span>Administrar Perfiles</span>
@@ -115,36 +111,6 @@
                         </div>
                     </div>
                     <div id="clients-list"></div>
-                </div>
-            </div>
-
-            <!-- Sección de Listas de Precios -->
-            <div id="listas-precios-section" class="page-content" style="display:none;">
-                <div class="table-container">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2>Listas de Precios</h2>
-                        <div class="flex gap-2">
-                            <input type="text" class="input" placeholder="Buscar lista..." id="price-list-search">
-                            <button id="new-price-list-btn" class="btn btn-primary">
-                                <i class="fas fa-plus"></i> Nueva Lista
-                            </button>
-                        </div>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="clients-table">
-                            <thead>
-                                <tr>
-                                    <th>Nombre</th>
-                                    <th>Descripción</th>
-                                    <th>Descuento</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody id="price-lists-table-body">
-                                <!-- Las listas de precios se cargarán aquí dinámicamente -->
-                            </tbody>
-                        </table>
-                    </div>
                 </div>
             </div>
 
@@ -355,12 +321,6 @@
                     <label for="client-zip-input">Código Postal</label>
                     <input type="text" id="client-zip-input" name="codigo_postal" class="input" autocomplete="postal-code" required>
                 </div>
-                <div class="mb-4">
-                    <label for="client-price-list">Lista de Precios</label>
-                    <select id="client-price-list" name="lista_precios_id" class="input" autocomplete="off" required>
-                        <option value="">Seleccione una lista de precios</option>
-                    </select>
-                </div>
                 <div class="flex justify-between">
                     <button type="button" class="btn btn-secondary close-modal">Cancelar</button>
                     <button type="submit" class="btn btn-primary">Guardar</button>
@@ -561,12 +521,6 @@
                     <label for="edit-client-zip">Código Postal</label>
                     <input type="text" id="edit-client-zip" class="input" required>
                 </div>
-                <div class="mb-4">
-                    <label for="edit-client-price-list">Lista de Precios</label>
-                    <select id="edit-client-price-list" class="input" required>
-                        <option value="">Seleccione una lista de precios</option>
-                    </select>
-                </div>
                 <div class="flex justify-between">
                     <button type="button" class="btn btn-secondary close-modal">Cancelar</button>
                     <button type="submit" class="btn btn-primary">Guardar Cambios</button>
@@ -722,43 +676,6 @@
         </div>
     </div>
     <!-- Fin Modal Preferencias de Usuario -->
-
-    <!-- Modal de Nueva Lista de Precios -->
-    <div id="new-price-list-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 class="modal-title">Nueva Lista de Precios</h2>
-                <button class="close-modal btn btn-secondary">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <form id="new-price-list-form">
-                <div class="mb-4">
-                    <label for="price-list-name">Nombre</label>
-                    <input type="text" id="price-list-name" class="input" required>
-                </div>
-                <div class="mb-4">
-                    <label for="price-list-description">Descripción</label>
-                    <textarea id="price-list-description" class="input" required></textarea>
-                </div>
-                <div class="mb-4">
-                    <label>Productos</label>
-                    <div id="price-list-products" class="border rounded p-4">
-                        <div id="price-list-product-items">
-                            <!-- Los productos se agregarán aquí dinámicamente -->
-                        </div>
-                        <button type="button" class="btn btn-secondary mt-2" id="add-price-list-product-btn">
-                            <i class="fas fa-plus"></i> Agregar Producto
-                        </button>
-                    </div>
-                </div>
-                <div class="flex justify-between">
-                    <button type="button" class="btn btn-secondary close-modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Guardar</button>
-                </div>
-            </form>
-        </div>
-    </div>
 
     <script src="script.js"></script>
 </body>

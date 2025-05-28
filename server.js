@@ -91,12 +91,10 @@ async function createTables() {
                 localidad VARCHAR(100),
                 codigo_postal VARCHAR(20),
                 saldo DECIMAL(15,2) DEFAULT 0,
-                lista_precios_id INT,
                 creado_por INT,
                 activo BOOLEAN DEFAULT true,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                FOREIGN KEY (lista_precios_id) REFERENCES listas_precios(id),
                 FOREIGN KEY (creado_por) REFERENCES usuarios(id)
             )
         `);
@@ -289,9 +287,8 @@ app.get('/api/auth/verify', authenticateToken, async (req, res) => {
 app.get('/api/clientes', authenticateToken, async (req, res) => {
     try {
         let query = `
-            SELECT c.*, lp.nombre as lista_precios_nombre, u.nombre as creado_por_nombre
+            SELECT c.*, u.nombre as creado_por_nombre
             FROM clientes c
-            LEFT JOIN listas_precios lp ON c.lista_precios_id = lp.id
             LEFT JOIN usuarios u ON c.creado_por = u.id
             WHERE c.activo = true
         `;
@@ -321,17 +318,17 @@ app.post('/api/clientes', authenticateToken, async (req, res) => {
     try {
         const {
             nombre, cuit, email, telefono, direccion, provincia,
-            ciudad, localidad, codigo_postal, lista_precios_id
+            ciudad, localidad, codigo_postal
         } = req.body;
 
         const [result] = await db.execute(
             `INSERT INTO clientes (
                 nombre, cuit, email, telefono, direccion, provincia,
-                ciudad, localidad, codigo_postal, lista_precios_id, creado_por
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                ciudad, localidad, codigo_postal, creado_por
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 nombre, cuit, email, telefono, direccion, provincia,
-                ciudad, localidad, codigo_postal, lista_precios_id, req.user.id
+                ciudad, localidad, codigo_postal, req.user.id
             ]
         );
 
@@ -482,38 +479,6 @@ app.post('/api/pagos', authenticateToken, async (req, res) => {
         res.status(201).json({ id: result.insertId, message: 'Pago registrado exitosamente' });
     } catch (error) {
         console.error('Error registrando pago:', error);
-        res.status(500).json({ error: 'Error interno del servidor' });
-    }
-});
-
-// RUTAS DE LISTAS DE PRECIOS
-
-// Obtener todas las listas de precios
-app.get('/api/listas-precios', authenticateToken, async (req, res) => {
-    try {
-        const [listas] = await db.execute(
-            'SELECT * FROM listas_precios WHERE activa = true ORDER BY nombre'
-        );
-        res.json(listas);
-    } catch (error) {
-        console.error('Error obteniendo listas de precios:', error);
-        res.status(500).json({ error: 'Error interno del servidor' });
-    }
-});
-
-// Crear lista de precios
-app.post('/api/listas-precios', authenticateToken, async (req, res) => {
-    try {
-        const { nombre, descripcion, descuento } = req.body;
-
-        const [result] = await db.execute(
-            'INSERT INTO listas_precios (nombre, descripcion, descuento) VALUES (?, ?, ?)',
-            [nombre, descripcion, descuento || 0]
-        );
-
-        res.status(201).json({ id: result.insertId, message: 'Lista de precios creada exitosamente' });
-    } catch (error) {
-        console.error('Error creando lista de precios:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });

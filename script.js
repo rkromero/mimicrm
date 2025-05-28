@@ -4,30 +4,6 @@ let orders = [];
 let payments = [];
 let products = [];
 let contacts = [];
-let priceLists = [];
-
-// Función para cargar las listas de precios
-async function loadPriceLists() {
-    try {
-        const token = localStorage.getItem('authToken');
-        const response = await fetch('/api/listas-precios', {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        if (response.ok) {
-            priceLists = await response.json();
-        } else {
-            console.error('Error cargando listas de precios:', response.statusText);
-        }
-    } catch (error) {
-        console.error('Error cargando listas de precios:', error);
-    }
-    
-    renderPriceListsTable();
-}
 
 // Listado de provincias y localidades de Argentina
 const provinciasYLocalidades = {
@@ -393,33 +369,6 @@ function renderClientsTable() {
     container.appendChild(table);
 }
 
-// Función para renderizar la tabla de listas de precios
-function renderPriceListsTable() {
-    const tbody = document.getElementById('price-lists-table-body');
-    if (!tbody) return;
-    
-    if (priceLists.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="text-center">No hay listas de precios registradas</td></tr>';
-        return;
-    }
-    
-    tbody.innerHTML = priceLists.map(list => `
-        <tr>
-            <td>${list.nombre || list.name}</td>
-            <td>${list.descripcion || list.description}</td>
-            <td>${list.descuento || list.discount || 0}%</td>
-            <td>
-                <button onclick="editPriceList(${list.id})" class="btn-edit">
-                    <i class="fas fa-edit"></i>
-                </button>
-                <button onclick="deletePriceList(${list.id})" class="btn-delete">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </td>
-        </tr>
-    `).join('');
-}
-
 // Función para renderizar la tabla de pedidos
 function renderOrdersTable() {
     const tbody = document.getElementById('orders-table-body');
@@ -582,7 +531,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     await loadProducts();
     await loadOrders();
     await loadPayments();
-    await loadPriceLists();
     await loadContacts();
     
     // Configurar navegación
@@ -652,9 +600,6 @@ function updateHeaderTitle(section) {
             case 'contactos':
                 headerTitle.textContent = 'Contactos';
                 break;
-            case 'listas-precios':
-                headerTitle.textContent = 'Listas de Precios';
-                break;
             case 'fábrica':
                 headerTitle.textContent = 'Fábrica';
                 break;
@@ -667,7 +612,7 @@ function updateHeaderTitle(section) {
 // Función para mostrar secciones
 function showSection(section) {
     // Ocultar todas las secciones
-    const sections = document.querySelectorAll('.page-content, #listas-precios-section, #admin-profiles-section, #pedidos-section, #pagos-section, #productos-section, #contactos-section');
+    const sections = document.querySelectorAll('.page-content, #admin-profiles-section, #pedidos-section, #pagos-section, #productos-section, #contactos-section');
     sections.forEach(sec => sec.style.display = 'none');
     
     // Mostrar la sección correspondiente
@@ -699,10 +644,6 @@ function showSection(section) {
             document.getElementById('contactos-section').style.display = 'block';
             loadContacts();
             renderContactsTable();
-            break;
-        case 'listas-precios':
-            document.getElementById('listas-precios-section').style.display = 'block';
-            loadPriceLists();
             break;
         case 'fábrica':
             // Implementar vista de fábrica
@@ -767,56 +708,15 @@ function showModal(modalId) {
     console.log('✅ Modal encontrado, mostrando...');
     modal.style.display = 'block';
     
-    // Si es el modal de nuevo cliente, cargar las listas de precios
+    // Si es el modal de nuevo cliente, configurar listeners de provincia y ciudad
     if (modalId === 'new-client-modal') {
         console.log('🔄 Cargando configuración para modal de nuevo cliente...');
         try {
-            loadPriceListsIntoSelect();
             setupProvinceAndCityListeners();
             console.log('✅ Configuración del modal completada');
         } catch (error) {
             console.error('❌ Error al configurar modal de nuevo cliente:', error);
         }
-    }
-}
-
-// Función para cargar listas de precios en el select
-function loadPriceListsIntoSelect() {
-    const priceListSelect = document.getElementById('client-price-list');
-    if (!priceListSelect) {
-        console.warn('No se encontró el elemento client-price-list');
-        return;
-    }
-    
-    // Limpiar opciones existentes
-    priceListSelect.innerHTML = '<option value="">Seleccione una lista de precios</option>';
-    
-    // Verificar si hay listas de precios disponibles
-    if (!priceLists || !Array.isArray(priceLists) || priceLists.length === 0) {
-        console.log('No hay listas de precios disponibles');
-        // Agregar opción por defecto
-        const defaultOption = document.createElement('option');
-        defaultOption.value = '1';
-        defaultOption.textContent = 'Lista General';
-        priceListSelect.appendChild(defaultOption);
-        return;
-    }
-    
-    // Agregar las listas de precios
-    try {
-        priceLists.forEach(priceList => {
-            const option = document.createElement('option');
-            option.value = priceList.id || priceList.ID || '';
-            option.textContent = priceList.nombre || priceList.NOMBRE || 'Lista sin nombre';
-            priceListSelect.appendChild(option);
-        });
-    } catch (error) {
-        console.error('Error al cargar listas de precios en select:', error);
-        // Agregar opción por defecto en caso de error
-        const defaultOption = document.createElement('option');
-        defaultOption.value = '1';
-        defaultOption.textContent = 'Lista General';
-        priceListSelect.appendChild(defaultOption);
     }
 }
 
@@ -876,8 +776,7 @@ async function handleNewClientSubmit(e) {
         provincia: formData.get('provincia') || document.getElementById('client-province-input').value,
         ciudad: formData.get('ciudad') || document.getElementById('client-city-input').value,
         localidad: formData.get('localidad') || document.getElementById('client-locality-input').value,
-        codigo_postal: formData.get('codigo_postal') || document.getElementById('client-zip-input').value,
-        lista_precios_id: formData.get('lista_precios_id') || document.getElementById('client-price-list').value
+        codigo_postal: formData.get('codigo_postal') || document.getElementById('client-zip-input').value
     };
     
     try {
@@ -915,18 +814,6 @@ function editClient(clientId) {
 function deleteClient(clientId) {
     if (confirm('¿Está seguro de que desea eliminar este cliente?')) {
         console.log('Eliminar cliente:', clientId);
-        showNotification('Función de eliminación en desarrollo', 'info');
-    }
-}
-
-function editPriceList(listId) {
-    console.log('Editar lista de precios:', listId);
-    showNotification('Función de edición en desarrollo', 'info');
-}
-
-function deletePriceList(listId) {
-    if (confirm('¿Está seguro de que desea eliminar esta lista de precios?')) {
-        console.log('Eliminar lista de precios:', listId);
         showNotification('Función de eliminación en desarrollo', 'info');
     }
 }
