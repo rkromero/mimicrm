@@ -1878,24 +1878,128 @@ window.debugAdminPanel = function() {
     const adminSection = document.getElementById('admin-profiles-section');
     console.log('📄 Sección admin existe:', !!adminSection);
     console.log('📄 Sección admin visible:', adminSection?.style.display !== 'none');
+    console.log('📄 Sección admin display:', adminSection?.style.display);
+    console.log('📄 Sección admin computed style:', adminSection ? getComputedStyle(adminSection).display : 'N/A');
     
     const adminPanel = document.querySelector('.admin-panel');
     console.log('📦 Panel admin existe:', !!adminPanel);
+    console.log('📦 Panel admin visible:', adminPanel ? getComputedStyle(adminPanel).display : 'N/A');
     
     const usersContainer = document.querySelector('.users-table-container');
     console.log('📋 Contenedor usuarios existe:', !!usersContainer);
+    console.log('📋 Contenedor usuarios innerHTML length:', usersContainer?.innerHTML?.length || 0);
+    console.log('📋 Contenedor usuarios visible:', usersContainer ? getComputedStyle(usersContainer).display : 'N/A');
+    
+    // Verificar si hay tabla dentro del contenedor
+    const table = usersContainer?.querySelector('table');
+    console.log('📊 Tabla existe:', !!table);
+    console.log('📊 Tabla visible:', table ? getComputedStyle(table).display : 'N/A');
     
     const newUserBtn = document.getElementById('new-user-btn');
     console.log('🆕 Botón nuevo usuario existe:', !!newUserBtn);
     console.log('🆕 Botón nuevo usuario tiene onclick:', typeof newUserBtn?.onclick === 'function');
+    console.log('🆕 Botón nuevo usuario visible:', newUserBtn ? getComputedStyle(newUserBtn).display : 'N/A');
     
     // Verificar token
     const token = localStorage.getItem('authToken');
     console.log('🔐 Token presente:', !!token);
     
+    // Verificar posicionamiento
+    if (adminSection) {
+        const rect = adminSection.getBoundingClientRect();
+        console.log('📐 Posición de la sección admin:', {
+            top: rect.top,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height,
+            visible: rect.width > 0 && rect.height > 0
+        });
+    }
+    
     // Intentar cargar usuarios manualmente
     console.log('🔄 Intentando cargar usuarios...');
     loadUsersForAdmin();
+};
+
+// Función para forzar la visibilidad del panel de administración
+window.forceShowAdminPanel = function() {
+    console.log('🔧 FORZANDO VISIBILIDAD DEL PANEL DE ADMINISTRACIÓN...');
+    
+    const adminSection = document.getElementById('admin-profiles-section');
+    if (adminSection) {
+        adminSection.style.display = 'block';
+        adminSection.style.visibility = 'visible';
+        adminSection.style.opacity = '1';
+        adminSection.style.position = 'relative';
+        adminSection.style.zIndex = '1';
+        console.log('✅ Sección admin forzada a visible');
+    }
+    
+    const adminPanel = document.querySelector('.admin-panel');
+    if (adminPanel) {
+        adminPanel.style.display = 'block';
+        adminPanel.style.visibility = 'visible';
+        adminPanel.style.opacity = '1';
+        adminPanel.style.backgroundColor = '#ffffff';
+        adminPanel.style.border = '2px solid #10b981';
+        adminPanel.style.padding = '2rem';
+        adminPanel.style.margin = '1rem';
+        adminPanel.style.borderRadius = '8px';
+        console.log('✅ Panel admin forzado a visible');
+    }
+    
+    const usersContainer = document.querySelector('.users-table-container');
+    if (usersContainer) {
+        usersContainer.style.display = 'block';
+        usersContainer.style.visibility = 'visible';
+        usersContainer.style.opacity = '1';
+        usersContainer.style.backgroundColor = '#f9fafb';
+        usersContainer.style.border = '2px solid #3b82f6';
+        usersContainer.style.padding = '1rem';
+        usersContainer.style.margin = '1rem 0';
+        usersContainer.style.borderRadius = '8px';
+        usersContainer.style.minHeight = '200px';
+        console.log('✅ Contenedor usuarios forzado a visible');
+        
+        // Si no hay contenido, agregar mensaje de prueba
+        if (!usersContainer.innerHTML || usersContainer.innerHTML.trim() === '') {
+            usersContainer.innerHTML = `
+                <div style="background: #fef3c7; border: 2px solid #f59e0b; padding: 1rem; border-radius: 8px; text-align: center;">
+                    <h3 style="color: #92400e; margin: 0 0 0.5rem 0;">⚠️ CONTENEDOR VACÍO</h3>
+                    <p style="color: #92400e; margin: 0;">El contenedor existe pero no tiene contenido. Ejecutando carga de usuarios...</p>
+                </div>
+            `;
+            
+            // Intentar cargar usuarios
+            setTimeout(() => {
+                loadUsersForAdmin();
+            }, 1000);
+        }
+    }
+    
+    const newUserBtn = document.getElementById('new-user-btn');
+    if (newUserBtn) {
+        newUserBtn.style.display = 'inline-block';
+        newUserBtn.style.visibility = 'visible';
+        newUserBtn.style.opacity = '1';
+        newUserBtn.style.backgroundColor = '#4f46e5';
+        newUserBtn.style.color = 'white';
+        newUserBtn.style.padding = '0.75rem 1.5rem';
+        newUserBtn.style.border = 'none';
+        newUserBtn.style.borderRadius = '6px';
+        newUserBtn.style.cursor = 'pointer';
+        console.log('✅ Botón nuevo usuario forzado a visible');
+    }
+    
+    // Ocultar otras secciones para evitar conflictos
+    const otherSections = document.querySelectorAll('#dashboard-section, #clientes-section, #pedidos-section, #pagos-section, #productos-section, #contactos-section, .page-content');
+    otherSections.forEach(section => {
+        if (section.id !== 'admin-profiles-section') {
+            section.style.display = 'none';
+        }
+    });
+    
+    console.log('🎯 Panel de administración forzado a mostrar');
 };
 
 // === FUNCIONES DE DEBUGGING GLOBALES ===
