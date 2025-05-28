@@ -6,6 +6,11 @@ const jwt = require('jsonwebtoken');
 const path = require('path');
 require('dotenv').config({ path: './config.env' });
 
+console.log('🚀 Iniciando servidor MIMI CRM...');
+console.log('📁 Directorio actual:', __dirname);
+console.log('🌍 NODE_ENV:', process.env.NODE_ENV);
+console.log('🔌 PORT:', process.env.PORT);
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 

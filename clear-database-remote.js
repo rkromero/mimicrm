@@ -6,7 +6,7 @@ async function clearRemoteDatabase() {
     });
 
     const options = {
-        hostname: 'mimi-crm-production.up.railway.app',
+        hostname: 'mimi-crm-production.railway.app',
         port: 443,
         path: '/api/admin/clear-database',
         method: 'POST',
@@ -20,11 +20,16 @@ async function clearRemoteDatabase() {
         const req = https.request(options, (res) => {
             let responseData = '';
 
+            console.log('📡 Status Code:', res.statusCode);
+            console.log('📡 Headers:', res.headers);
+
             res.on('data', (chunk) => {
                 responseData += chunk;
             });
 
             res.on('end', () => {
+                console.log('📡 Response Data:', responseData);
+                
                 try {
                     const result = JSON.parse(responseData);
                     resolve(result);
@@ -35,7 +40,13 @@ async function clearRemoteDatabase() {
         });
 
         req.on('error', (error) => {
+            console.error('📡 Request Error:', error);
             reject(error);
+        });
+
+        req.setTimeout(30000, () => {
+            req.destroy();
+            reject(new Error('Request timeout'));
         });
 
         req.write(data);
@@ -46,6 +57,7 @@ async function clearRemoteDatabase() {
 async function main() {
     try {
         console.log('🔗 Conectando a la base de datos de Railway...');
+        console.log('🌐 URL: https://mimi-crm-production.up.railway.app/api/admin/clear-database');
         console.log('🧹 Limpiando base de datos...');
         
         const result = await clearRemoteDatabase();
@@ -69,6 +81,7 @@ async function main() {
         
     } catch (error) {
         console.error('❌ Error limpiando la base de datos:', error.message);
+        console.error('❌ Stack:', error.stack);
     }
 }
 
