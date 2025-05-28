@@ -339,6 +339,111 @@ app.post('/api/clientes', authenticateToken, async (req, res) => {
     }
 });
 
+// Actualizar cliente
+app.put('/api/clientes/:id', authenticateToken, async (req, res) => {
+    try {
+        const clienteId = req.params.id;
+        const {
+            nombre, cuit, email, telefono, direccion, provincia,
+            ciudad, localidad, codigo_postal
+        } = req.body;
+
+        // Verificar que el cliente existe y el usuario tiene permisos
+        const [existingCliente] = await db.execute(
+            'SELECT * FROM clientes WHERE id = ?',
+            [clienteId]
+        );
+
+        if (existingCliente.length === 0) {
+            return res.status(404).json({ error: 'Cliente no encontrado' });
+        }
+
+        // Si es vendedor, verificar que sea el creador del cliente
+        if (req.user.perfil === 'Vendedor' && existingCliente[0].creado_por !== req.user.id) {
+            return res.status(403).json({ error: 'No tienes permisos para editar este cliente' });
+        }
+
+        // Verificar si el documento ya existe en otro cliente
+        if (cuit && cuit !== existingCliente[0].cuit) {
+            const [duplicateCliente] = await db.execute(
+                'SELECT id FROM clientes WHERE cuit = ? AND id != ? AND activo = true',
+                [cuit, clienteId]
+            );
+
+            if (duplicateCliente.length > 0) {
+                return res.status(400).json({ error: 'Ya existe un cliente con este número de documento' });
+            }
+        }
+
+        // Actualizar el cliente
+        await db.execute(
+            `UPDATE clientes SET 
+                nombre = ?, cuit = ?, email = ?, telefono = ?, direccion = ?, 
+                provincia = ?, ciudad = ?, localidad = ?, codigo_postal = ?
+            WHERE id = ?`,
+            [
+                nombre, cuit, email, telefono, direccion, provincia,
+                ciudad, localidad, codigo_postal, clienteId
+            ]
+        );
+
+        res.json({ message: 'Cliente actualizado exitosamente' });
+    } catch (error) {
+        console.error('Error actualizando cliente:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Eliminar cliente
+app.delete('/api/clientes/:id', authenticateToken, async (req, res) => {
+    try {
+        const clienteId = req.params.id;
+
+        // Verificar que el cliente existe y el usuario tiene permisos
+        const [existingCliente] = await db.execute(
+            'SELECT * FROM clientes WHERE id = ?',
+            [clienteId]
+        );
+
+        if (existingCliente.length === 0) {
+            return res.status(404).json({ error: 'Cliente no encontrado' });
+        }
+
+        // Si es vendedor, verificar que sea el creador del cliente
+        if (req.user.perfil === 'Vendedor' && existingCliente[0].creado_por !== req.user.id) {
+            return res.status(403).json({ error: 'No tienes permisos para eliminar este cliente' });
+        }
+
+        // Verificar que no tenga pedidos o pagos asociados
+        const [pedidosAsociados] = await db.execute(
+            'SELECT COUNT(*) as count FROM pedidos WHERE cliente_id = ?',
+            [clienteId]
+        );
+
+        const [pagosAsociados] = await db.execute(
+            'SELECT COUNT(*) as count FROM pagos WHERE cliente_id = ?',
+            [clienteId]
+        );
+
+        if (pedidosAsociados[0].count > 0 || pagosAsociados[0].count > 0) {
+            return res.status(400).json({ 
+                error: 'No se puede eliminar el cliente porque tiene pedidos o pagos asociados. Considere desactivarlo en su lugar.' 
+            });
+        }
+
+        // Eliminar el cliente (marcar como inactivo para preservar integridad)
+        await db.execute(
+            'UPDATE clientes SET activo = false WHERE id = ?',
+            [clienteId]
+        );
+
+        res.json({ message: 'Cliente eliminado exitosamente' });
+    } catch (error) {
+        console.error('Error eliminando cliente:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
 // RUTAS DE PRODUCTOS
 
 // Obtener todos los productos

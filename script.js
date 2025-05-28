@@ -1831,12 +1831,46 @@ function editClient(clientId) {
 }
 
 function deleteClient(clientId) {
-    if (confirm('¿Está seguro de que desea eliminar este cliente?')) {
-        console.log('Eliminar cliente:', clientId);
+    // Buscar el cliente para mostrar información en la confirmación
+    const client = clients.find(c => c.id == clientId);
+    if (!client) {
+        showNotification('Cliente no encontrado', 'error');
+        return;
+    }
+    
+    // Mostrar confirmación con información del cliente
+    const confirmMessage = `¿Está seguro de que desea eliminar este cliente?\n\nNombre: ${client.nombre}\nDocumento: ${client.cuit || client.documento || 'N/A'}\nEmail: ${client.email || 'N/A'}\n\nEsta acción no se puede deshacer y solo es posible si el cliente no tiene pedidos o pagos asociados.`;
+    
+    if (confirm(confirmMessage)) {
+        deleteClientFromServer(clientId);
+    }
+}
+
+async function deleteClientFromServer(clientId) {
+    try {
+        const token = localStorage.getItem('authToken');
         
-        // Aquí implementarías la lógica de eliminación
-        // Por ahora, mostrar mensaje de desarrollo
-        showNotification('Función de eliminación en desarrollo', 'info');
+        debugLog('HTTP', `Enviando petición DELETE a /api/clientes/${clientId}`);
+        
+        const response = await fetch(`/api/clientes/${clientId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            showNotification('Cliente eliminado exitosamente', 'success');
+            await loadClients(); // Recargar la lista
+        } else {
+            const errorData = await response.json();
+            console.error('❌ Error del servidor al eliminar cliente:', response.status, errorData);
+            showNotification(errorData.error || `Error del servidor: ${response.status}`, 'error');
+        }
+    } catch (error) {
+        console.error('❌ Error de red o conexión:', error);
+        showNotification(`Error de conexión: ${error.message}`, 'error');
     }
 }
 
