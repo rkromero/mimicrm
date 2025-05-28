@@ -1288,35 +1288,37 @@ app.post('/api/admin/update-pedidos-table', async (req, res) => {
     try {
         console.log('🔧 Actualizando estructura de tabla pedidos...');
 
-        // Actualizar el ENUM del campo estado con los nuevos valores
-        await db.execute(`
-            ALTER TABLE pedidos 
-            MODIFY COLUMN estado ENUM('pendiente de pago', 'fabricar', 'sale fabrica', 'completado') DEFAULT 'pendiente de pago'
-        `);
-
-        // Actualizar registros existentes con estados antiguos a los nuevos
+        // Primero actualizar registros existentes con estados antiguos a los nuevos
+        console.log('📝 Actualizando estados existentes...');
         await db.execute(`
             UPDATE pedidos 
             SET estado = CASE 
                 WHEN estado = 'pendiente' THEN 'pendiente de pago'
                 WHEN estado = 'en_proceso' THEN 'fabricar'
                 WHEN estado = 'completado' THEN 'completado'
-                WHEN estado = 'cancelado' THEN 'pendiente de pago'
-                ELSE estado
+                WHEN estado = 'cancelado' THEN 'completado'
+                ELSE 'pendiente de pago'
             END
         `);
 
-        console.log('✅ Tabla pedidos actualizada correctamente con nuevos estados');
+        // Ahora actualizar el ENUM del campo estado con los nuevos valores
+        console.log('🔧 Actualizando estructura ENUM...');
+        await db.execute(`
+            ALTER TABLE pedidos 
+            MODIFY COLUMN estado ENUM('pendiente de pago', 'fabricar', 'sale fabrica', 'completado') DEFAULT 'pendiente de pago'
+        `);
 
-        res.json({
-            success: true,
-            message: 'Tabla pedidos actualizada exitosamente con nuevos estados'
+        console.log('✅ Tabla pedidos actualizada correctamente');
+        res.json({ 
+            success: true, 
+            message: 'Tabla pedidos actualizada correctamente',
+            details: 'Estados migrados y estructura ENUM actualizada'
         });
 
     } catch (error) {
         console.error('❌ Error actualizando tabla pedidos:', error);
         res.status(500).json({ 
-            error: 'Error interno del servidor',
+            error: 'Error interno del servidor', 
             details: error.message 
         });
     }
