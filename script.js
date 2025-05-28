@@ -909,7 +909,7 @@ function setupForms() {
             btn.onclick = function() {
                 const modal = this.closest('.modal');
                 if (modal) {
-                    modal.style.display = 'none';
+                    modal.classList.remove('active');
                     console.log('✅ Modal cerrado');
                 }
             };
@@ -918,7 +918,7 @@ function setupForms() {
         // Configurar cierre de modales al hacer clic fuera
         document.addEventListener('click', function(e) {
             if (e.target.classList.contains('modal')) {
-                e.target.style.display = 'none';
+                e.target.classList.remove('active');
                 console.log('✅ Modal cerrado al hacer clic fuera');
             }
         });
@@ -955,8 +955,8 @@ function showModal(modalId) {
             console.warn(`⚠️ El elemento ${modalId} no tiene la clase 'modal'`);
         }
         
-        // Mostrar el modal
-        modal.style.display = 'block';
+        // Mostrar el modal usando la clase active (para que funcione con las transiciones CSS)
+        modal.classList.add('active');
         debugLog('MODAL', `Modal ${modalId} mostrado exitosamente`);
         
         // Configuraciones específicas por modal
@@ -1111,7 +1111,7 @@ async function handleNewClientSubmit(e) {
         
         if (response.ok) {
             showNotification('Cliente creado exitosamente', 'success');
-            document.getElementById('new-client-modal').style.display = 'none';
+            document.getElementById('new-client-modal').classList.remove('active');
             e.target.reset();
             await loadClients(); // Recargar la lista
         } else {
@@ -1149,7 +1149,7 @@ async function handleNewOrderSubmit(e) {
         
         if (response.ok) {
             showNotification('Pedido creado exitosamente', 'success');
-            document.getElementById('new-order-modal').style.display = 'none';
+            document.getElementById('new-order-modal').classList.remove('active');
             e.target.reset();
             await loadOrders();
         } else {
@@ -1186,7 +1186,7 @@ async function handleNewPaymentSubmit(e) {
         
         if (response.ok) {
             showNotification('Pago registrado exitosamente', 'success');
-            document.getElementById('new-payment-modal').style.display = 'none';
+            document.getElementById('new-payment-modal').classList.remove('active');
             e.target.reset();
             await loadPayments();
         } else {
@@ -1225,7 +1225,7 @@ async function handleNewContactSubmit(e) {
         
         if (response.ok) {
             showNotification('Contacto creado exitosamente', 'success');
-            document.getElementById('new-contact-modal').style.display = 'none';
+            document.getElementById('new-contact-modal').classList.remove('active');
             e.target.reset();
             await loadContacts();
         } else {
@@ -1262,7 +1262,7 @@ async function handleNewProductSubmit(e) {
         
         if (response.ok) {
             showNotification('Producto creado exitosamente', 'success');
-            document.getElementById('new-product-modal').style.display = 'none';
+            document.getElementById('new-product-modal').classList.remove('active');
             e.target.reset();
             await loadProducts();
         } else {
@@ -1474,6 +1474,7 @@ function runDOMDiagnostic() {
             report.modals[id] = {
                 exists: !!modal,
                 hasModalClass: modal ? modal.classList.contains('modal') : false,
+                isActive: modal ? modal.classList.contains('active') : false,
                 display: modal ? modal.style.display : 'N/A'
             };
             
@@ -1576,7 +1577,7 @@ window.testAllModals = function() {
                 showModal(modalId);
                 setTimeout(() => {
                     const modal = document.getElementById(modalId);
-                    if (modal) modal.style.display = 'none';
+                    if (modal) modal.classList.remove('active');
                 }, 1000);
             } catch (error) {
                 console.error(`Error con modal ${modalId}:`, error);
