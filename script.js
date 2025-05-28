@@ -551,11 +551,8 @@ function setupNavigation() {
     console.log(`🔍 Encontrados ${navItems.length} elementos de navegación`);
     
     navItems.forEach((item, index) => {
-        // Remover listeners existentes clonando el elemento
-        const newItem = item.cloneNode(true);
-        item.parentNode.replaceChild(newItem, item);
-        
-        newItem.addEventListener('click', function(e) {
+        // Usar onclick en lugar de addEventListener para evitar duplicados
+        item.onclick = function(e) {
             e.preventDefault();
             console.log('🖱️ Click en navegación:', this.textContent.trim());
             
@@ -578,17 +575,17 @@ function setupNavigation() {
             } catch (error) {
                 console.error('❌ Error en navegación:', error);
             }
-        });
+        };
     });
     
     // Configurar logout
     const logoutBtn = document.getElementById('logout');
     if (logoutBtn) {
-        logoutBtn.addEventListener('click', function(e) {
+        logoutBtn.onclick = function(e) {
             e.preventDefault();
             console.log('🚪 Cerrando sesión...');
             logoutUser();
-        });
+        };
         console.log('✅ Event listener de logout configurado');
     }
     
@@ -698,11 +695,8 @@ function setupForms() {
         // Configurar formulario de nuevo cliente
         const newClientForm = document.getElementById('new-client-form');
         if (newClientForm) {
-            // Remover listeners existentes
-            const newForm = newClientForm.cloneNode(true);
-            newClientForm.parentNode.replaceChild(newForm, newClientForm);
-            
-            newForm.addEventListener('submit', handleNewClientSubmit);
+            // Usar onsubmit en lugar de addEventListener para evitar duplicados
+            newClientForm.onsubmit = handleNewClientSubmit;
             console.log('✅ Event listener del formulario configurado');
         } else {
             console.warn('⚠️ No se encontró el formulario new-client-form');
@@ -711,14 +705,11 @@ function setupForms() {
         // Configurar botones de modal
         const newClientBtn = document.getElementById('new-client-btn');
         if (newClientBtn) {
-            // Remover listeners existentes
-            const newBtn = newClientBtn.cloneNode(true);
-            newClientBtn.parentNode.replaceChild(newBtn, newClientBtn);
-            
-            newBtn.addEventListener('click', () => {
+            // Usar onclick en lugar de addEventListener para evitar duplicados
+            newClientBtn.onclick = function() {
                 console.log('🖱️ Botón nuevo cliente clickeado');
                 showModal('new-client-modal');
-            });
+            };
             console.log('✅ Event listener del botón nuevo cliente configurado');
         } else {
             console.warn('⚠️ No se encontró el botón new-client-btn');
@@ -728,13 +719,13 @@ function setupForms() {
         const closeModalBtns = document.querySelectorAll('.close-modal');
         console.log(`🔍 Encontrados ${closeModalBtns.length} botones de cerrar modal`);
         closeModalBtns.forEach(btn => {
-            btn.addEventListener('click', function() {
+            btn.onclick = function() {
                 const modal = this.closest('.modal');
                 if (modal) {
                     modal.style.display = 'none';
                     console.log('✅ Modal cerrado');
                 }
-            });
+            };
         });
         
         console.log('✅ Configuración de formularios completada');
@@ -770,24 +761,24 @@ function showModal(modalId) {
 
 // Función para configurar listeners de provincia y ciudad
 function setupProvinceAndCityListeners() {
+    console.log('🔧 Configurando listeners de provincia y ciudad...');
+    
     const provinceSelect = document.getElementById('client-province-input');
     const citySelect = document.getElementById('client-city-input');
     const localitySelect = document.getElementById('client-locality-input');
     
     if (!provinceSelect || !citySelect || !localitySelect) {
-        console.warn('No se encontraron todos los elementos de provincia/ciudad/localidad');
+        console.warn('⚠️ No se encontraron todos los elementos de provincia/ciudad/localidad');
         return;
     }
     
-    // Remover listeners existentes para evitar duplicados
-    const newProvinceSelect = provinceSelect.cloneNode(true);
-    const newCitySelect = citySelect.cloneNode(true);
+    // Limpiar opciones existentes
+    citySelect.innerHTML = '<option value="">Seleccione una ciudad</option>';
+    localitySelect.innerHTML = '<option value="">Seleccione una localidad</option>';
     
-    provinceSelect.parentNode.replaceChild(newProvinceSelect, provinceSelect);
-    citySelect.parentNode.replaceChild(newCitySelect, citySelect);
-    
-    // Agregar nuevos listeners
-    newProvinceSelect.addEventListener('change', function() {
+    // Configurar listener de provincia (sin clonar)
+    provinceSelect.onchange = function() {
+        console.log('🌍 Provincia seleccionada:', this.value);
         try {
             actualizarCiudades(this.value);
             // Limpiar localidad cuando cambia la provincia
@@ -796,18 +787,22 @@ function setupProvinceAndCityListeners() {
                 localitySelect.innerHTML = '<option value="">Seleccione una localidad</option>';
             }
         } catch (error) {
-            console.error('Error al actualizar ciudades:', error);
+            console.error('❌ Error al actualizar ciudades:', error);
         }
-    });
+    };
     
-    newCitySelect.addEventListener('change', function() {
+    // Configurar listener de ciudad (sin clonar)
+    citySelect.onchange = function() {
+        console.log('🏙️ Ciudad seleccionada:', this.value);
         try {
-            const provincia = newProvinceSelect.value;
+            const provincia = provinceSelect.value;
             actualizarLocalidades(provincia, this.value);
         } catch (error) {
-            console.error('Error al actualizar localidades:', error);
+            console.error('❌ Error al actualizar localidades:', error);
         }
-    });
+    };
+    
+    console.log('✅ Listeners de provincia y ciudad configurados');
 }
 
 // Función para manejar envío de nuevo cliente
