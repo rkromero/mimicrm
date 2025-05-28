@@ -3116,7 +3116,11 @@ async function loadUsersForAdmin() {
             return;
         }
         
+        // Cargar permisos primero
+        await loadPermissions();
+        
         debugLog('ADMIN', 'Enviando petición GET a /api/usuarios');
+        
         
         const response = await fetch('/api/usuarios', {
             headers: {
@@ -4422,6 +4426,10 @@ function clearEditOrderItems() {
 function renderPermissionsTable() {
     debugLog('ADMIN', 'Iniciando renderizado de tabla de permisos...');
     
+    // Verificar si el usuario actual es administrador
+    const currentUser = getCurrentUserFromAuth();
+    const isAdmin = currentUser?.perfil === 'Administrador';
+    
     let container = document.querySelector('.perms-table-container');
     if (!container) {
         console.error('❌ No se encontró el contenedor .perms-table-container');
@@ -4463,8 +4471,8 @@ function renderPermissionsTable() {
         }
     }
     
-    // Definir permisos por perfil
-    const permisosPorPerfil = {
+    // Definir permisos por perfil (ahora almacenados globalmente para edición)
+    window.permisosPorPerfil = {
         'Administrador': {
             clientes: { crear: true, leer: true, editar: true, eliminar: true },
             pedidos: { crear: true, leer: true, editar: true, eliminar: true },
@@ -4497,6 +4505,17 @@ function renderPermissionsTable() {
     container.style.backgroundColor = '#f9fafb';
     container.style.border = '2px solid #8b5cf6';
     
+    // Agregar mensaje informativo para administradores
+    if (isAdmin) {
+        const infoDiv = document.createElement('div');
+        infoDiv.style.cssText = 'background: #dbeafe; border: 1px solid #3b82f6; padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem; color: #1e40af;';
+        infoDiv.innerHTML = `
+            <i class="fas fa-info-circle" style="margin-right: 0.5rem;"></i>
+            <strong>Modo Administrador:</strong> Puede modificar permisos usando los checkboxes. Los cambios se guardan automáticamente.
+        `;
+        container.appendChild(infoDiv);
+    }
+    
     const table = document.createElement('table');
     table.className = 'clients-table admin-permissions-table';
     table.style.width = '100%';
@@ -4525,9 +4544,9 @@ function renderPermissionsTable() {
     let bodyHTML = '<tbody>';
     let rowIndex = 0;
     
-    Object.keys(permisosPorPerfil).forEach(perfil => {
+    Object.keys(window.permisosPorPerfil).forEach(perfil => {
         modulos.forEach((modulo, moduloIndex) => {
-            const permisos = permisosPorPerfil[perfil][modulo];
+            const permisos = window.permisosPorPerfil[perfil][modulo];
             const isFirstModuleOfProfile = moduloIndex === 0;
             
             bodyHTML += `
@@ -4539,16 +4558,36 @@ function renderPermissionsTable() {
                     }
                     <td style="padding: 1rem; color: #6b7280; text-transform: capitalize; border-right: 1px solid #e5e7eb;">${modulo}</td>
                     <td style="padding: 0.5rem; text-align: center; border-right: 1px solid #e5e7eb;">
-                        <i class="fas ${permisos.crear ? 'fa-check text-green-600' : 'fa-times text-red-600'}" style="color: ${permisos.crear ? '#10b981' : '#ef4444'};"></i>
+                        ${isAdmin ? 
+                            `<input type="checkbox" ${permisos.crear ? 'checked' : ''} 
+                             onchange="updatePermission('${perfil}', '${modulo}', 'crear', this.checked)"
+                             style="width: 18px; height: 18px; cursor: pointer;">` :
+                            `<i class="fas ${permisos.crear ? 'fa-check text-green-600' : 'fa-times text-red-600'}" style="color: ${permisos.crear ? '#10b981' : '#ef4444'};"></i>`
+                        }
                     </td>
                     <td style="padding: 0.5rem; text-align: center; border-right: 1px solid #e5e7eb;">
-                        <i class="fas ${permisos.leer ? 'fa-check text-green-600' : 'fa-times text-red-600'}" style="color: ${permisos.leer ? '#10b981' : '#ef4444'};"></i>
+                        ${isAdmin ? 
+                            `<input type="checkbox" ${permisos.leer ? 'checked' : ''} 
+                             onchange="updatePermission('${perfil}', '${modulo}', 'leer', this.checked)"
+                             style="width: 18px; height: 18px; cursor: pointer;">` :
+                            `<i class="fas ${permisos.leer ? 'fa-check text-green-600' : 'fa-times text-red-600'}" style="color: ${permisos.leer ? '#10b981' : '#ef4444'};"></i>`
+                        }
                     </td>
                     <td style="padding: 0.5rem; text-align: center; border-right: 1px solid #e5e7eb;">
-                        <i class="fas ${permisos.editar ? 'fa-check text-green-600' : 'fa-times text-red-600'}" style="color: ${permisos.editar ? '#10b981' : '#ef4444'};"></i>
+                        ${isAdmin ? 
+                            `<input type="checkbox" ${permisos.editar ? 'checked' : ''} 
+                             onchange="updatePermission('${perfil}', '${modulo}', 'editar', this.checked)"
+                             style="width: 18px; height: 18px; cursor: pointer;">` :
+                            `<i class="fas ${permisos.editar ? 'fa-check text-green-600' : 'fa-times text-red-600'}" style="color: ${permisos.editar ? '#10b981' : '#ef4444'};"></i>`
+                        }
                     </td>
                     <td style="padding: 0.5rem; text-align: center;">
-                        <i class="fas ${permisos.eliminar ? 'fa-check text-green-600' : 'fa-times text-red-600'}" style="color: ${permisos.eliminar ? '#10b981' : '#ef4444'};"></i>
+                        ${isAdmin ? 
+                            `<input type="checkbox" ${permisos.eliminar ? 'checked' : ''} 
+                             onchange="updatePermission('${perfil}', '${modulo}', 'eliminar', this.checked)"
+                             style="width: 18px; height: 18px; cursor: pointer;">` :
+                            `<i class="fas ${permisos.eliminar ? 'fa-check text-green-600' : 'fa-times text-red-600'}" style="color: ${permisos.eliminar ? '#10b981' : '#ef4444'};"></i>`
+                        }
                     </td>
                 </tr>
             `;
@@ -4560,13 +4599,34 @@ function renderPermissionsTable() {
     
     table.innerHTML = headerHTML + bodyHTML;
     
-    container.innerHTML = '';
+    // Limpiar contenedor y agregar tabla
+    const existingInfoDiv = container.querySelector('div[style*="background: #dbeafe"]');
+    if (!existingInfoDiv && isAdmin) {
+        // El div de info ya se agregó arriba
+    }
+    
+    // Remover tabla anterior si existe
+    const existingTable = container.querySelector('table');
+    if (existingTable) {
+        existingTable.remove();
+    }
+    
     container.appendChild(table);
+    
+    // Agregar botón de guardar para administradores
+    if (isAdmin) {
+        const saveButton = document.createElement('button');
+        saveButton.className = 'btn btn-primary';
+        saveButton.style.cssText = 'margin-top: 1rem; background-color: #10b981; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;';
+        saveButton.innerHTML = '<i class="fas fa-save" style="margin-right: 0.5rem;"></i>Guardar Permisos';
+        saveButton.onclick = savePermissions;
+        container.appendChild(saveButton);
+    }
     
     // Agregar mensaje de confirmación visual
     const confirmationMsg = document.createElement('div');
     confirmationMsg.style.cssText = 'background: #8b5cf6; color: white; padding: 0.5rem 1rem; border-radius: 4px; margin-top: 1rem; text-align: center; font-weight: 500;';
-    confirmationMsg.textContent = `✅ Tabla de permisos por perfil cargada exitosamente`;
+    confirmationMsg.textContent = `✅ Tabla de permisos por perfil cargada exitosamente ${isAdmin ? '(Modo Edición)' : '(Solo Lectura)'}`;
     container.appendChild(confirmationMsg);
     
     // Remover el mensaje después de 3 segundos
@@ -4577,4 +4637,261 @@ function renderPermissionsTable() {
     }, 3000);
     
     debugLog('ADMIN', '✅ Tabla de permisos renderizada exitosamente');
+}
+
+// Funciones para administración de usuarios
+async function editUser(userId) {
+    console.log('Editar usuario:', userId);
+    
+    try {
+        // Obtener datos del usuario
+        const token = localStorage.getItem('authToken');
+        const response = await fetch(`/api/usuarios/${userId}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+        
+        const user = await response.json();
+        console.log('Datos del usuario obtenidos:', user);
+        
+        // Llenar el modal de edición
+        const modal = document.getElementById('edit-user-modal');
+        if (!modal) {
+            showNotification('Error: Modal de edición no encontrado', 'error');
+            return;
+        }
+        
+        // Llenar los campos del formulario
+        document.getElementById('edit-user-nombre').value = user.nombre || '';
+        document.getElementById('edit-user-email').value = user.email || '';
+        document.getElementById('edit-user-perfil').value = user.perfil || '';
+        document.getElementById('edit-user-password').value = ''; // Limpiar campo de contraseña
+        
+        // Guardar el ID del usuario para el submit
+        modal.setAttribute('data-user-id', userId);
+        
+        // Mostrar el modal
+        modal.classList.add('active');
+        modal.style.cssText = `
+            display: flex !important;
+            z-index: 12000 !important;
+            background-color: rgba(0, 0, 0, 0.7) !important;
+        `;
+        
+        // Configurar eventos de cierre si no están configurados
+        const closeButtons = modal.querySelectorAll('.close-modal, .cancel-btn');
+        closeButtons.forEach(btn => {
+            btn.onclick = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                modal.classList.remove('active');
+                modal.style.cssText = 'display: none !important;';
+                modal.removeAttribute('data-user-id');
+            };
+        });
+        
+        // Configurar submit del formulario
+        const form = modal.querySelector('#edit-user-form');
+        if (form) {
+            form.onsubmit = async function(e) {
+                e.preventDefault();
+                await handleEditUserSubmit(e, userId);
+            };
+        }
+        
+        console.log('✅ Modal de edición de usuario abierto');
+        
+    } catch (error) {
+        console.error('❌ Error obteniendo datos del usuario:', error);
+        showNotification(`Error al cargar datos del usuario: ${error.message}`, 'error');
+    }
+}
+
+async function handleEditUserSubmit(e, userId) {
+    e.preventDefault();
+    
+    try {
+        const formData = new FormData(e.target);
+        const userData = {
+            nombre: formData.get('nombre') || document.getElementById('edit-user-nombre').value,
+            email: formData.get('email') || document.getElementById('edit-user-email').value,
+            perfil: formData.get('perfil') || document.getElementById('edit-user-perfil').value
+        };
+        
+        // Solo incluir contraseña si se proporciona
+        const password = document.getElementById('edit-user-password').value;
+        if (password && password.trim() !== '') {
+            userData.password = password;
+        }
+        
+        console.log('Datos de usuario a actualizar:', userData);
+        
+        const token = localStorage.getItem('authToken');
+        const response = await fetch(`/api/usuarios/${userId}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(userData)
+        });
+        
+        if (response.ok) {
+            showNotification('Usuario actualizado exitosamente', 'success');
+            
+            // Cerrar modal
+            const modal = document.getElementById('edit-user-modal');
+            modal.classList.remove('active');
+            modal.style.cssText = 'display: none !important;';
+            modal.removeAttribute('data-user-id');
+            
+            // Recargar la tabla de usuarios
+            await loadUsersForAdmin();
+        } else {
+            const errorData = await response.json();
+            console.error('❌ Error del servidor:', response.status, errorData);
+            showNotification(errorData.message || `Error del servidor: ${response.status}`, 'error');
+        }
+    } catch (error) {
+        console.error('❌ Error actualizando usuario:', error);
+        showNotification(`Error de conexión: ${error.message}`, 'error');
+    }
+}
+
+// Función para actualizar permisos en tiempo real
+function updatePermission(perfil, modulo, accion, valor) {
+    console.log(`Actualizando permiso: ${perfil} -> ${modulo} -> ${accion} = ${valor}`);
+    
+    // Verificar que el usuario sea administrador
+    const currentUser = getCurrentUserFromAuth();
+    if (currentUser?.perfil !== 'Administrador') {
+        showNotification('Error: Solo los administradores pueden modificar permisos', 'error');
+        return;
+    }
+    
+    // Actualizar el valor en la estructura global
+    if (window.permisosPorPerfil && window.permisosPorPerfil[perfil] && window.permisosPorPerfil[perfil][modulo]) {
+        window.permisosPorPerfil[perfil][modulo][accion] = valor;
+        console.log('✅ Permiso actualizado en memoria');
+        
+        // Mostrar notificación de cambio
+        showNotification(`Permiso ${valor ? 'otorgado' : 'revocado'}: ${perfil} - ${modulo} - ${accion}`, 'info');
+    } else {
+        console.error('❌ Error: Estructura de permisos no encontrada');
+        showNotification('Error: No se pudo actualizar el permiso', 'error');
+    }
+}
+
+// Función para guardar permisos en el servidor
+async function savePermissions() {
+    console.log('Guardando permisos en el servidor...');
+    
+    // Verificar que el usuario sea administrador
+    const currentUser = getCurrentUserFromAuth();
+    if (currentUser?.perfil !== 'Administrador') {
+        showNotification('Error: Solo los administradores pueden guardar permisos', 'error');
+        return;
+    }
+    
+    try {
+        const token = localStorage.getItem('authToken');
+        
+        // Mostrar indicador de carga
+        const saveButton = document.querySelector('.perms-table-container button');
+        if (saveButton) {
+            saveButton.disabled = true;
+            saveButton.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 0.5rem;"></i>Guardando...';
+        }
+        
+        const response = await fetch('/api/permisos', {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                permisos: window.permisosPorPerfil
+            })
+        });
+        
+        if (response.ok) {
+            showNotification('Permisos guardados exitosamente', 'success');
+            console.log('✅ Permisos guardados en el servidor');
+        } else {
+            const errorData = await response.json();
+            console.error('❌ Error guardando permisos:', response.status, errorData);
+            
+            // Si no existe el endpoint, simular guardado local
+            if (response.status === 404) {
+                console.log('ℹ️ Endpoint de permisos no implementado, guardando localmente...');
+                localStorage.setItem('permisosPorPerfil', JSON.stringify(window.permisosPorPerfil));
+                showNotification('Permisos guardados localmente (funcionalidad en desarrollo)', 'info');
+            } else {
+                showNotification(errorData.message || `Error del servidor: ${response.status}`, 'error');
+            }
+        }
+    } catch (error) {
+        console.error('❌ Error de conexión guardando permisos:', error);
+        
+        // Guardar localmente como respaldo
+        localStorage.setItem('permisosPorPerfil', JSON.stringify(window.permisosPorPerfil));
+        showNotification('Permisos guardados localmente debido a error de conexión', 'warning');
+    } finally {
+        // Restaurar botón
+        const saveButton = document.querySelector('.perms-table-container button');
+        if (saveButton) {
+            saveButton.disabled = false;
+            saveButton.innerHTML = '<i class="fas fa-save" style="margin-right: 0.5rem;"></i>Guardar Permisos';
+        }
+    }
+}
+
+// Función para cargar permisos desde el servidor o localStorage
+async function loadPermissions() {
+    console.log('Cargando permisos...');
+    
+    try {
+        const token = localStorage.getItem('authToken');
+        
+        const response = await fetch('/api/permisos', {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            window.permisosPorPerfil = data.permisos;
+            console.log('✅ Permisos cargados desde el servidor');
+        } else if (response.status === 404) {
+            // Si no existe el endpoint, usar permisos por defecto o localStorage
+            const savedPermissions = localStorage.getItem('permisosPorPerfil');
+            if (savedPermissions) {
+                window.permisosPorPerfil = JSON.parse(savedPermissions);
+                console.log('✅ Permisos cargados desde localStorage');
+            } else {
+                console.log('ℹ️ Usando permisos por defecto');
+            }
+        } else {
+            throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+    } catch (error) {
+        console.error('❌ Error cargando permisos:', error);
+        
+        // Intentar cargar desde localStorage
+        const savedPermissions = localStorage.getItem('permisosPorPerfil');
+        if (savedPermissions) {
+            window.permisosPorPerfil = JSON.parse(savedPermissions);
+            console.log('✅ Permisos cargados desde localStorage como respaldo');
+        } else {
+            console.log('ℹ️ Usando permisos por defecto debido a error');
+        }
+    }
 }
