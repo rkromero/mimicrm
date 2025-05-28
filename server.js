@@ -436,6 +436,85 @@ app.post('/api/pedidos', authenticateToken, async (req, res) => {
     }
 });
 
+// Actualizar pedido
+app.put('/api/pedidos/:id', authenticateToken, async (req, res) => {
+    try {
+        const pedidoId = req.params.id;
+        const { cliente_id, descripcion, monto, estado, items = [] } = req.body;
+
+        // Verificar que el pedido existe y el usuario tiene permisos
+        const [existingPedido] = await db.execute(
+            'SELECT * FROM pedidos WHERE id = ?',
+            [pedidoId]
+        );
+
+        if (existingPedido.length === 0) {
+            return res.status(404).json({ error: 'Pedido no encontrado' });
+        }
+
+        // Si es vendedor, verificar que sea el creador del pedido
+        if (req.user.perfil === 'Vendedor' && existingPedido[0].creado_por !== req.user.id) {
+            return res.status(403).json({ error: 'No tienes permisos para editar este pedido' });
+        }
+
+        // Actualizar el pedido
+        await db.execute(
+            'UPDATE pedidos SET cliente_id = ?, descripcion = ?, monto = ?, estado = ? WHERE id = ?',
+            [cliente_id, descripcion, monto, estado, pedidoId]
+        );
+
+        // Eliminar items existentes del pedido
+        await db.execute('DELETE FROM pedido_items WHERE pedido_id = ?', [pedidoId]);
+
+        // Insertar los nuevos items del pedido
+        if (items && items.length > 0) {
+            for (const item of items) {
+                const subtotal = item.cantidad * item.precio;
+                await db.execute(
+                    'INSERT INTO pedido_items (pedido_id, producto_id, cantidad, precio, subtotal) VALUES (?, ?, ?, ?, ?)',
+                    [pedidoId, item.producto_id, item.cantidad, item.precio, subtotal]
+                );
+            }
+        }
+
+        res.json({ message: 'Pedido actualizado exitosamente' });
+    } catch (error) {
+        console.error('Error actualizando pedido:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Eliminar pedido
+app.delete('/api/pedidos/:id', authenticateToken, async (req, res) => {
+    try {
+        const pedidoId = req.params.id;
+
+        // Verificar que el pedido existe y el usuario tiene permisos
+        const [existingPedido] = await db.execute(
+            'SELECT * FROM pedidos WHERE id = ?',
+            [pedidoId]
+        );
+
+        if (existingPedido.length === 0) {
+            return res.status(404).json({ error: 'Pedido no encontrado' });
+        }
+
+        // Si es vendedor, verificar que sea el creador del pedido
+        if (req.user.perfil === 'Vendedor' && existingPedido[0].creado_por !== req.user.id) {
+            return res.status(403).json({ error: 'No tienes permisos para eliminar este pedido' });
+        }
+
+        // Eliminar items del pedido (se eliminan automáticamente por CASCADE)
+        // Eliminar el pedido
+        await db.execute('DELETE FROM pedidos WHERE id = ?', [pedidoId]);
+
+        res.json({ message: 'Pedido eliminado exitosamente' });
+    } catch (error) {
+        console.error('Error eliminando pedido:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
 // Obtener items de un pedido específico
 app.get('/api/pedidos/:id/items', authenticateToken, async (req, res) => {
     try {

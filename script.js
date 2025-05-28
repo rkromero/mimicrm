@@ -1850,16 +1850,26 @@ function editOrder(orderId) {
         return;
     }
     
-    // Llenar el modal con los datos del pedido
-    document.getElementById('edit-order-client-select').value = order.cliente_id;
-    document.getElementById('edit-order-description').value = order.descripcion;
-    document.getElementById('edit-order-status').value = order.estado;
-    
     // Guardar el ID del pedido en el modal para usarlo al guardar
     document.getElementById('edit-order-modal').setAttribute('data-order-id', orderId);
     
-    // Poblar el select de clientes
+    // Poblar el select de clientes primero
     populateClientSelects('edit-order-modal');
+    
+    // Llenar el modal con los datos del pedido (después de poblar el select)
+    setTimeout(() => {
+        document.getElementById('edit-order-client-select').value = order.cliente_id;
+        document.getElementById('edit-order-description').value = order.descripcion;
+        document.getElementById('edit-order-status').value = order.estado;
+        
+        // Deshabilitar el campo cliente para evitar cambios accidentales
+        document.getElementById('edit-order-client-select').disabled = true;
+        document.getElementById('edit-order-client-select').style.backgroundColor = '#f3f4f6';
+        document.getElementById('edit-order-client-select').style.cursor = 'not-allowed';
+    }, 100);
+    
+    // Cargar los productos del pedido
+    loadEditOrderItems(orderId);
     
     // Mostrar el modal
     showModal('edit-order-modal');
@@ -2164,9 +2174,15 @@ async function handleEditOrderSubmit(e) {
         return;
     }
 
+    // Habilitar temporalmente el campo cliente para obtener su valor
+    const clientSelect = document.getElementById('edit-order-client-select');
+    clientSelect.disabled = false;
+
     // Validar que hay productos en el pedido
     if (editOrderItems.length === 0) {
         showNotification('Debe tener al menos un producto en el pedido', 'error');
+        // Volver a deshabilitar el campo cliente
+        clientSelect.disabled = true;
         return;
     }
 
@@ -2174,7 +2190,7 @@ async function handleEditOrderSubmit(e) {
     const totalAmount = editOrderItems.reduce((sum, item) => sum + item.subtotal, 0);
     
     const orderData = {
-        cliente_id: document.getElementById('edit-order-client-select').value,
+        cliente_id: clientSelect.value,
         monto: totalAmount,
         descripcion: document.getElementById('edit-order-description').value,
         estado: document.getElementById('edit-order-status').value,
@@ -2190,12 +2206,13 @@ async function handleEditOrderSubmit(e) {
     // Validar que los campos requeridos no estén vacíos
     if (!orderData.cliente_id || !orderData.descripcion || !orderData.estado) {
         showNotification('Todos los campos son requeridos', 'error');
+        // Volver a deshabilitar el campo cliente
+        clientSelect.disabled = true;
         return;
     }
     
     try {
         const token = localStorage.getItem('authToken');
-        
         
         debugLog('HTTP', `Enviando petición PUT a /api/pedidos/${orderId}`);
         
@@ -2221,6 +2238,9 @@ async function handleEditOrderSubmit(e) {
     } catch (error) {
         console.error('❌ Error de red o conexión:', error);
         showNotification(`Error de conexión: ${error.message}`, 'error');
+    } finally {
+        // Volver a deshabilitar el campo cliente
+        clientSelect.disabled = true;
     }
 }
 
