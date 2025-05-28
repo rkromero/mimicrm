@@ -321,6 +321,27 @@ async function loadPayments() {
     }
 }
 
+// Función para cargar contactos desde la API
+async function loadContacts() {
+    try {
+        const token = localStorage.getItem('authToken');
+        const response = await fetch('/api/contactos', {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            contacts = await response.json();
+        } else {
+            console.error('Error cargando contactos:', response.statusText);
+        }
+    } catch (error) {
+        console.error('Error cargando contactos:', error);
+    }
+}
+
 // === FUNCIONES DE RENDERIZADO ===
 
 // Función para renderizar la tabla de clientes
@@ -378,7 +399,7 @@ function renderPriceListsTable() {
     if (!tbody) return;
     
     if (priceLists.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="12" class="text-center">No hay listas de precios registradas</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center">No hay listas de precios registradas</td></tr>';
         return;
     }
     
@@ -387,11 +408,128 @@ function renderPriceListsTable() {
             <td>${list.nombre || list.name}</td>
             <td>${list.descripcion || list.description}</td>
             <td>${list.descuento || list.discount || 0}%</td>
-            <td colspan="9">
+            <td>
                 <button onclick="editPriceList(${list.id})" class="btn-edit">
                     <i class="fas fa-edit"></i>
                 </button>
                 <button onclick="deletePriceList(${list.id})" class="btn-delete">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// Función para renderizar la tabla de pedidos
+function renderOrdersTable() {
+    const tbody = document.getElementById('orders-table-body');
+    if (!tbody) return;
+    
+    if (orders.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center">No hay pedidos registrados</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = orders.map(order => `
+        <tr>
+            <td>${order.numero_pedido}</td>
+            <td>${order.cliente_nombre || 'Cliente no encontrado'}</td>
+            <td>${order.descripcion || ''}</td>
+            <td>${formatCurrency(order.monto)}</td>
+            <td><span class="status-badge status-${order.estado}">${order.estado}</span></td>
+            <td>${formatDate(order.fecha)}</td>
+            <td>
+                <button onclick="editOrder(${order.id})" class="btn-edit">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button onclick="deleteOrder(${order.id})" class="btn-delete">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// Función para renderizar la tabla de pagos
+function renderPaymentsTable() {
+    const tbody = document.getElementById('payments-table-body');
+    if (!tbody) return;
+    
+    if (payments.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center">No hay pagos registrados</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = payments.map(payment => `
+        <tr>
+            <td>${payment.cliente_nombre || 'Cliente no encontrado'}</td>
+            <td>${formatCurrency(payment.monto)}</td>
+            <td>${payment.metodo}</td>
+            <td>${payment.referencia || ''}</td>
+            <td>${formatDate(payment.fecha)}</td>
+            <td>
+                <button onclick="editPayment(${payment.id})" class="btn-edit">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button onclick="deletePayment(${payment.id})" class="btn-delete">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// Función para renderizar la tabla de productos
+function renderProductsTable() {
+    const tbody = document.getElementById('products-table-body');
+    if (!tbody) return;
+    
+    if (products.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center">No hay productos registrados</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = products.map(product => `
+        <tr>
+            <td>${product.nombre}</td>
+            <td>${product.descripcion || ''}</td>
+            <td>${formatCurrency(product.precio)}</td>
+            <td>${product.stock || 0}</td>
+            <td>
+                <button onclick="editProduct(${product.id})" class="btn-edit">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button onclick="deleteProduct(${product.id})" class="btn-delete">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// Función para renderizar la tabla de contactos
+function renderContactsTable() {
+    const tbody = document.getElementById('contacts-table-body');
+    if (!tbody) return;
+    
+    if (contacts.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center">No hay contactos registrados</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = contacts.map(contact => `
+        <tr>
+            <td>${contact.nombre}</td>
+            <td>${contact.cliente_nombre || 'Cliente no encontrado'}</td>
+            <td>${contact.email || ''}</td>
+            <td>${contact.telefono || ''}</td>
+            <td>${contact.cargo || ''}</td>
+            <td>${contact.departamento || ''}</td>
+            <td>
+                <button onclick="editContact(${contact.id})" class="btn-edit">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button onclick="deleteContact(${contact.id})" class="btn-delete">
                     <i class="fas fa-trash"></i>
                 </button>
             </td>
@@ -445,6 +583,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     await loadOrders();
     await loadPayments();
     await loadPriceLists();
+    await loadContacts();
     
     // Configurar navegación
     setupNavigation();
@@ -472,6 +611,9 @@ function setupNavigation() {
             // Obtener la sección desde el data-section o el texto
             const section = this.getAttribute('data-section') || this.textContent.trim().toLowerCase();
             
+            // Actualizar el título del header
+            updateHeaderTitle(section);
+            
             // Mostrar la sección correspondiente
             showSection(section);
         });
@@ -487,27 +629,84 @@ function setupNavigation() {
     }
 }
 
+// Función para actualizar el título del header
+function updateHeaderTitle(section) {
+    const headerTitle = document.querySelector('.header h1');
+    if (headerTitle) {
+        switch(section) {
+            case 'dashboard':
+                headerTitle.textContent = 'Dashboard';
+                break;
+            case 'clientes':
+                headerTitle.textContent = 'Clientes';
+                break;
+            case 'pedidos':
+                headerTitle.textContent = 'Pedidos';
+                break;
+            case 'pagos':
+                headerTitle.textContent = 'Pagos';
+                break;
+            case 'productos':
+                headerTitle.textContent = 'Productos';
+                break;
+            case 'contactos':
+                headerTitle.textContent = 'Contactos';
+                break;
+            case 'listas-precios':
+                headerTitle.textContent = 'Listas de Precios';
+                break;
+            case 'fábrica':
+                headerTitle.textContent = 'Fábrica';
+                break;
+            default:
+                headerTitle.textContent = 'MIMI CRM';
+        }
+    }
+}
+
 // Función para mostrar secciones
 function showSection(section) {
     // Ocultar todas las secciones
-    const sections = document.querySelectorAll('.page-content, #listas-precios-section, #admin-profiles-section');
+    const sections = document.querySelectorAll('.page-content, #listas-precios-section, #admin-profiles-section, #pedidos-section, #pagos-section, #productos-section, #contactos-section');
     sections.forEach(sec => sec.style.display = 'none');
     
     // Mostrar la sección correspondiente
     switch(section) {
         case 'dashboard':
             document.querySelector('.page-content').style.display = 'block';
+            loadClients();
             break;
         case 'clientes':
             document.querySelector('.page-content').style.display = 'block';
             loadClients();
             break;
+        case 'pedidos':
+            document.getElementById('pedidos-section').style.display = 'block';
+            loadOrders();
+            renderOrdersTable();
+            break;
+        case 'pagos':
+            document.getElementById('pagos-section').style.display = 'block';
+            loadPayments();
+            renderPaymentsTable();
+            break;
+        case 'productos':
+            document.getElementById('productos-section').style.display = 'block';
+            loadProducts();
+            renderProductsTable();
+            break;
+        case 'contactos':
+            document.getElementById('contactos-section').style.display = 'block';
+            loadContacts();
+            renderContactsTable();
+            break;
         case 'listas-precios':
             document.getElementById('listas-precios-section').style.display = 'block';
             loadPriceLists();
             break;
-        case 'contactos':
-            // Implementar vista de contactos
+        case 'fábrica':
+            // Implementar vista de fábrica
+            document.querySelector('.page-content').style.display = 'block';
             break;
         default:
             document.querySelector('.page-content').style.display = 'block';
@@ -613,6 +812,54 @@ function editPriceList(listId) {
 function deletePriceList(listId) {
     if (confirm('¿Está seguro de que desea eliminar esta lista de precios?')) {
         console.log('Eliminar lista de precios:', listId);
+        showNotification('Función de eliminación en desarrollo', 'info');
+    }
+}
+
+function editOrder(orderId) {
+    console.log('Editar pedido:', orderId);
+    showNotification('Función de edición en desarrollo', 'info');
+}
+
+function deleteOrder(orderId) {
+    if (confirm('¿Está seguro de que desea eliminar este pedido?')) {
+        console.log('Eliminar pedido:', orderId);
+        showNotification('Función de eliminación en desarrollo', 'info');
+    }
+}
+
+function editPayment(paymentId) {
+    console.log('Editar pago:', paymentId);
+    showNotification('Función de edición en desarrollo', 'info');
+}
+
+function deletePayment(paymentId) {
+    if (confirm('¿Está seguro de que desea eliminar este pago?')) {
+        console.log('Eliminar pago:', paymentId);
+        showNotification('Función de eliminación en desarrollo', 'info');
+    }
+}
+
+function editProduct(productId) {
+    console.log('Editar producto:', productId);
+    showNotification('Función de edición en desarrollo', 'info');
+}
+
+function deleteProduct(productId) {
+    if (confirm('¿Está seguro de que desea eliminar este producto?')) {
+        console.log('Eliminar producto:', productId);
+        showNotification('Función de eliminación en desarrollo', 'info');
+    }
+}
+
+function editContact(contactId) {
+    console.log('Editar contacto:', contactId);
+    showNotification('Función de edición en desarrollo', 'info');
+}
+
+function deleteContact(contactId) {
+    if (confirm('¿Está seguro de que desea eliminar este contacto?')) {
+        console.log('Eliminar contacto:', contactId);
         showNotification('Función de eliminación en desarrollo', 'info');
     }
 }

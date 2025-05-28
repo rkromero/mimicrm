@@ -135,21 +135,142 @@
                             <thead>
                                 <tr>
                                     <th>Nombre</th>
-                                    <th>CUIT</th>
-                                    <th>Email</th>
-                                    <th>Teléfono</th>
-                                    <th>Dirección</th>
-                                    <th>Provincia</th>
-                                    <th>Ciudad</th>
-                                    <th>Localidad</th>
-                                    <th>Código Postal</th>
-                                    <th>Lista de Precios</th>
-                                    <th>Saldo</th>
+                                    <th>Descripción</th>
+                                    <th>Descuento</th>
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody id="price-lists-table-body">
                                 <!-- Las listas de precios se cargarán aquí dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección de Pedidos -->
+            <div id="pedidos-section" class="page-content" style="display:none;">
+                <div class="table-container">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2>Pedidos</h2>
+                        <div class="flex gap-2">
+                            <input type="text" class="input" placeholder="Buscar pedido..." id="orders-search">
+                            <button id="new-order-btn-section" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Nuevo Pedido
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="clients-table">
+                            <thead>
+                                <tr>
+                                    <th>Número</th>
+                                    <th>Cliente</th>
+                                    <th>Descripción</th>
+                                    <th>Monto</th>
+                                    <th>Estado</th>
+                                    <th>Fecha</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orders-table-body">
+                                <!-- Los pedidos se cargarán aquí dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección de Pagos -->
+            <div id="pagos-section" class="page-content" style="display:none;">
+                <div class="table-container">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2>Pagos</h2>
+                        <div class="flex gap-2">
+                            <input type="text" class="input" placeholder="Buscar pago..." id="payments-search">
+                            <button id="new-payment-btn-section" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Nuevo Pago
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="clients-table">
+                            <thead>
+                                <tr>
+                                    <th>Cliente</th>
+                                    <th>Monto</th>
+                                    <th>Método</th>
+                                    <th>Referencia</th>
+                                    <th>Fecha</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="payments-table-body">
+                                <!-- Los pagos se cargarán aquí dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección de Productos -->
+            <div id="productos-section" class="page-content" style="display:none;">
+                <div class="table-container">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2>Productos</h2>
+                        <div class="flex gap-2">
+                            <input type="text" class="input" placeholder="Buscar producto..." id="products-search">
+                            <button id="new-product-btn" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Nuevo Producto
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="clients-table">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Descripción</th>
+                                    <th>Precio</th>
+                                    <th>Stock</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="products-table-body">
+                                <!-- Los productos se cargarán aquí dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección de Contactos -->
+            <div id="contactos-section" class="page-content" style="display:none;">
+                <div class="table-container">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2>Contactos</h2>
+                        <div class="flex gap-2">
+                            <input type="text" class="input" placeholder="Buscar contacto..." id="contacts-search">
+                            <button id="new-contact-btn-section" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Nuevo Contacto
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="clients-table">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Cliente</th>
+                                    <th>Email</th>
+                                    <th>Teléfono</th>
+                                    <th>Cargo</th>
+                                    <th>Departamento</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="contacts-table-body">
+                                <!-- Los contactos se cargarán aquí dinámicamente -->
                             </tbody>
                         </table>
                     </div>
