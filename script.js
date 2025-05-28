@@ -1590,11 +1590,79 @@ function setupHeaderButtons() {
                     innerHTML: button.innerHTML.substring(0, 50) + '...'
                 });
                 
-                // Crear función onclick con manejo de errores
-                button.onclick = safeExecute(function() {
-                    debugLog('CLICK', `Botón clickeado: ${config.name}`);
-                    showModal(config.modal);
-                }, `Click ${config.name}`);
+                // Crear función onclick con manejo de errores específico para nuevo usuario
+                if (config.id === 'new-user-btn') {
+                    button.onclick = function() {
+                        console.log('🔧 DEBUG: Botón Nuevo Usuario clickeado');
+                        console.log('🔍 Verificando modal new-user-modal...');
+                        
+                        const modal = document.getElementById('new-user-modal');
+                        console.log('📋 Modal existe:', !!modal);
+                        console.log('📋 Modal classList:', modal ? Array.from(modal.classList) : 'N/A');
+                        console.log('📋 Modal display:', modal ? modal.style.display : 'N/A');
+                        console.log('📋 Modal computed display:', modal ? getComputedStyle(modal).display : 'N/A');
+                        
+                        if (modal) {
+                            console.log('🎯 Aplicando clase active al modal...');
+                            modal.classList.add('active');
+                            console.log('✅ Clase active agregada');
+                            console.log('📋 Modal classList después:', Array.from(modal.classList));
+                            
+                            // IMPORTANTE: Asegurar que el modal aparezca por encima del panel de administración
+                            modal.style.cssText = `
+                                display: flex !important;
+                                visibility: visible !important;
+                                opacity: 1 !important;
+                                z-index: 15000 !important;
+                                position: fixed !important;
+                                top: 0 !important;
+                                left: 0 !important;
+                                width: 100% !important;
+                                height: 100% !important;
+                                background-color: rgba(0, 0, 0, 0.7) !important;
+                                align-items: center !important;
+                                justify-content: center !important;
+                            `;
+                            
+                            // También asegurar que el contenido del modal tenga z-index alto
+                            const modalContent = modal.querySelector('.modal-content');
+                            if (modalContent) {
+                                modalContent.style.cssText = `
+                                    z-index: 15001 !important;
+                                    position: relative !important;
+                                    background: white !important;
+                                    padding: 2rem !important;
+                                    border-radius: 8px !important;
+                                    width: 90% !important;
+                                    max-width: 500px !important;
+                                    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3) !important;
+                                `;
+                            }
+                            
+                            console.log('✅ Modal forzado a aparecer por encima del panel de administración');
+                            
+                            // Verificar si el modal es visible después de agregar la clase
+                            setTimeout(() => {
+                                const computedStyle = getComputedStyle(modal);
+                                console.log('🔍 Estilos computados después de 100ms:', {
+                                    display: computedStyle.display,
+                                    visibility: computedStyle.visibility,
+                                    opacity: computedStyle.opacity,
+                                    zIndex: computedStyle.zIndex
+                                });
+                            }, 100);
+                        } else {
+                            console.error('❌ Modal new-user-modal no encontrado en el DOM');
+                            showNotification('Error: Modal de usuario no encontrado', 'error');
+                        }
+                    };
+                } else {
+                    // Para otros botones, usar la función normal
+                    button.onclick = safeExecute(function() {
+                        debugLog('CLICK', `Botón clickeado: ${config.name}`);
+                        showModal(config.modal);
+                    }, `Click ${config.name}`);
+                }
                 
                 debugLog('BUTTONS', `✅ Botón configurado exitosamente: ${config.name}`);
                 
@@ -1605,7 +1673,7 @@ function setupHeaderButtons() {
         
         // Verificar que todos los modales existan
         debugLog('BUTTONS', 'Verificando existencia de modales...');
-        const modalIds = ['new-client-modal', 'new-order-modal', 'new-payment-modal', 'new-contact-modal', 'new-product-modal'];
+        const modalIds = ['new-client-modal', 'new-order-modal', 'new-payment-modal', 'new-contact-modal', 'new-product-modal', 'new-user-modal'];
         modalIds.forEach(modalId => {
             const modal = document.getElementById(modalId);
             if (modal) {
@@ -2199,6 +2267,120 @@ window.debugModal = function(modalId) {
         console.log(`✅ Modal ${modalId} abierto exitosamente`);
     } catch (error) {
         console.error(`❌ Error abriendo modal ${modalId}:`, error);
+    }
+};
+
+// Función específica para debuggear el modal de nuevo usuario
+window.debugNewUserModal = function() {
+    console.log('🔧 DEBUG ESPECÍFICO: Modal de Nuevo Usuario');
+    
+    const modal = document.getElementById('new-user-modal');
+    console.log('📋 Modal existe:', !!modal);
+    
+    if (modal) {
+        console.log('📋 Modal classList inicial:', Array.from(modal.classList));
+        console.log('📋 Modal display inicial:', modal.style.display);
+        console.log('📋 Modal computed display inicial:', getComputedStyle(modal).display);
+        
+        // Intentar agregar clase active
+        console.log('🎯 Agregando clase active...');
+        modal.classList.add('active');
+        
+        console.log('📋 Modal classList después:', Array.from(modal.classList));
+        
+        // Forzar estilos inmediatamente con z-index alto
+        console.log('⚠️ Forzando visibilidad con z-index alto...');
+        modal.style.cssText = `
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            z-index: 15000 !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            background-color: rgba(0, 0, 0, 0.7) !important;
+            align-items: center !important;
+            justify-content: center !important;
+        `;
+        
+        // También asegurar que el contenido del modal tenga z-index alto
+        const modalContent = modal.querySelector('.modal-content');
+        if (modalContent) {
+            modalContent.style.cssText = `
+                z-index: 15001 !important;
+                position: relative !important;
+                background: white !important;
+                padding: 2rem !important;
+                border-radius: 8px !important;
+                width: 90% !important;
+                max-width: 500px !important;
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3) !important;
+            `;
+        }
+        
+        console.log('✅ Estilos forzados aplicados con z-index 15000');
+        
+        // Verificar estilos después de un momento
+        setTimeout(() => {
+            const computedStyle = getComputedStyle(modal);
+            console.log('🔍 Estilos computados después de 200ms:', {
+                display: computedStyle.display,
+                visibility: computedStyle.visibility,
+                opacity: computedStyle.opacity,
+                zIndex: computedStyle.zIndex,
+                position: computedStyle.position
+            });
+        }, 200);
+        
+        // Verificar contenido del modal
+        const modalContentElement = modal.querySelector('.modal-content');
+        console.log('📄 Modal content existe:', !!modalContentElement);
+        
+        const form = modal.querySelector('#new-user-form');
+        console.log('📝 Formulario existe:', !!form);
+        
+        const inputs = modal.querySelectorAll('input, select');
+        console.log('📝 Inputs encontrados:', inputs.length);
+        
+    } else {
+        console.error('❌ Modal new-user-modal no encontrado');
+        
+        // Buscar todos los modales disponibles
+        const allModals = document.querySelectorAll('.modal');
+        console.log('📋 Modales disponibles:', Array.from(allModals).map(m => m.id));
+    }
+};
+
+// Función para probar el botón de nuevo usuario
+window.testNewUserButton = function() {
+    console.log('🔧 DEBUG: Probando botón de nuevo usuario');
+    
+    const button = document.getElementById('new-user-btn');
+    console.log('🔘 Botón existe:', !!button);
+    
+    if (button) {
+        console.log('🔘 Botón onclick:', typeof button.onclick);
+        console.log('🔘 Botón visible:', getComputedStyle(button).display !== 'none');
+        
+        // Simular click
+        console.log('🖱️ Simulando click...');
+        button.click();
+    } else {
+        console.error('❌ Botón new-user-btn no encontrado');
+        
+        // Buscar botones similares
+        const allButtons = document.querySelectorAll('button');
+        const userButtons = Array.from(allButtons).filter(btn => 
+            btn.textContent.toLowerCase().includes('usuario') || 
+            btn.id.includes('user')
+        );
+        console.log('🔘 Botones relacionados con usuario:', userButtons.map(btn => ({
+            id: btn.id,
+            text: btn.textContent.trim(),
+            onclick: typeof btn.onclick
+        })));
     }
 };
 
