@@ -287,9 +287,16 @@ app.get('/api/auth/verify', authenticateToken, async (req, res) => {
 app.get('/api/clientes', authenticateToken, async (req, res) => {
     try {
         let query = `
-            SELECT c.*, u.nombre as creado_por_nombre
+            SELECT 
+                c.*,
+                u.nombre as creado_por_nombre,
+                COALESCE(SUM(p.monto), 0) as total_pedidos,
+                COALESCE(SUM(pa.monto), 0) as total_pagos,
+                (COALESCE(SUM(p.monto), 0) - COALESCE(SUM(pa.monto), 0)) as saldo_real
             FROM clientes c
             LEFT JOIN usuarios u ON c.creado_por = u.id
+            LEFT JOIN pedidos p ON c.id = p.cliente_id AND p.estado != 'cancelado'
+            LEFT JOIN pagos pa ON c.id = pa.cliente_id
             WHERE c.activo = true
         `;
         
@@ -303,10 +310,22 @@ app.get('/api/clientes', authenticateToken, async (req, res) => {
             query += ' AND c.creado_por IN (SELECT id FROM usuarios WHERE perfil = "Vendedor")';
         }
 
-        query += ' ORDER BY c.nombre';
+        query += ' GROUP BY c.id, u.nombre ORDER BY c.nombre';
 
+        console.log('📊 Ejecutando consulta de clientes con cálculo de saldo...');
         const [clientes] = await db.execute(query, params);
-        res.json(clientes);
+        
+        // Mapear los resultados para incluir el saldo calculado
+        const clientesConSaldo = clientes.map(cliente => ({
+            ...cliente,
+            saldo: cliente.saldo_real, // Usar el saldo calculado
+            total_pedidos: parseFloat(cliente.total_pedidos || 0),
+            total_pagos: parseFloat(cliente.total_pagos || 0),
+            saldo_calculado: parseFloat(cliente.saldo_real || 0)
+        }));
+        
+        console.log(`✅ ${clientesConSaldo.length} clientes obtenidos con saldos calculados`);
+        res.json(clientesConSaldo);
     } catch (error) {
         console.error('Error obteniendo clientes:', error);
         res.status(500).json({ error: 'Error interno del servidor' });

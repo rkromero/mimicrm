@@ -363,6 +363,45 @@ function renderClientsTable() {
         return;
     }
     
+    // Función auxiliar para obtener el estilo del saldo
+    function getSaldoStyle(saldo) {
+        const saldoNum = parseFloat(saldo) || 0;
+        if (saldoNum > 0) {
+            // Saldo deudor (cliente debe dinero) - fondo rojo
+            return `
+                background-color: #fee2e2; 
+                color: #dc2626; 
+                padding: 0.25rem 0.75rem; 
+                border-radius: 9999px; 
+                font-weight: 600;
+                text-align: center;
+                display: inline-block;
+                min-width: 80px;
+            `;
+        } else if (saldoNum < 0) {
+            // Saldo a favor (cliente tiene crédito) - fondo verde
+            return `
+                background-color: #dcfce7; 
+                color: #16a34a; 
+                padding: 0.25rem 0.75rem; 
+                border-radius: 9999px; 
+                font-weight: 600;
+                text-align: center;
+                display: inline-block;
+                min-width: 80px;
+            `;
+        } else {
+            // Saldo neutro - sin color especial
+            return `
+                color: #6b7280; 
+                padding: 0.25rem 0.75rem; 
+                text-align: center;
+                display: inline-block;
+                min-width: 80px;
+            `;
+        }
+    }
+    
     const table = document.createElement('table');
     table.className = 'clients-table';
     
@@ -378,26 +417,35 @@ function renderClientsTable() {
             </tr>
         </thead>
         <tbody>
-            ${clients.map(client => `
-                <tr>
-                    <td>${client.nombre || client.name}</td>
-                    <td>${client.documento || client.cuit}</td>
-                    <td>${client.email}</td>
-                    <td>${client.telefono || client.phone}</td>
-                    <td>${formatCurrency(client.saldo || client.balance || 0)}</td>
-                    <td>
-                        <button onclick="viewClientDetails(${client.id})" class="btn-icon" title="Ver detalles">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button onclick="editClient(${client.id})" class="btn-icon" title="Editar">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button onclick="deleteClient(${client.id})" class="btn-icon" title="Eliminar" style="color: #dc2626;">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-            `).join('')}
+            ${clients.map(client => {
+                const saldo = client.saldo || client.balance || client.saldo_calculado || 0;
+                const saldoStyle = getSaldoStyle(saldo);
+                
+                return `
+                    <tr>
+                        <td>${client.nombre || client.name}</td>
+                        <td>${client.documento || client.cuit}</td>
+                        <td>${client.email}</td>
+                        <td>${client.telefono || client.phone}</td>
+                        <td>
+                            <span style="${saldoStyle}">
+                                ${formatCurrency(saldo)}
+                            </span>
+                        </td>
+                        <td>
+                            <button onclick="viewClientDetails(${client.id})" class="btn-icon" title="Ver detalles">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button onclick="editClient(${client.id})" class="btn-icon" title="Editar">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="deleteClient(${client.id})" class="btn-icon" title="Eliminar" style="color: #dc2626;">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('')}
         </tbody>
     `;
     
