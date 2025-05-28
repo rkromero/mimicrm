@@ -1631,9 +1631,46 @@ function editOrder(orderId) {
 }
 
 function deleteOrder(orderId) {
-    if (confirm('¿Está seguro de que desea eliminar este pedido?')) {
-        console.log('Eliminar pedido:', orderId);
-        showNotification('Función de eliminación en desarrollo', 'info');
+    // Buscar el pedido para mostrar información en la confirmación
+    const order = orders.find(o => o.id == orderId);
+    if (!order) {
+        showNotification('Pedido no encontrado', 'error');
+        return;
+    }
+    
+    // Mostrar confirmación con información del pedido
+    const confirmMessage = `¿Está seguro de que desea eliminar este pedido?\n\nPedido: #${order.numero_pedido}\nMonto: ${formatCurrency(order.monto)}\nCliente: ${order.cliente_nombre || 'N/A'}\n\nEsta acción no se puede deshacer.`;
+    
+    if (confirm(confirmMessage)) {
+        deleteOrderFromServer(orderId);
+    }
+}
+
+async function deleteOrderFromServer(orderId) {
+    try {
+        const token = localStorage.getItem('authToken');
+        
+        debugLog('HTTP', `Enviando petición DELETE a /api/pedidos/${orderId}`);
+        
+        const response = await fetch(`/api/pedidos/${orderId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            showNotification('Pedido eliminado exitosamente', 'success');
+            await loadOrders(); // Recargar la lista
+        } else {
+            const errorData = await response.json();
+            console.error('❌ Error del servidor al eliminar pedido:', response.status, errorData);
+            showNotification(errorData.message || `Error del servidor: ${response.status}`, 'error');
+        }
+    } catch (error) {
+        console.error('❌ Error de red o conexión:', error);
+        showNotification(`Error de conexión: ${error.message}`, 'error');
     }
 }
 
@@ -1652,9 +1689,46 @@ function editPayment(paymentId) {
 }
 
 function deletePayment(paymentId) {
-    if (confirm('¿Está seguro de que desea eliminar este pago?')) {
-        console.log('Eliminar pago:', paymentId);
-        showNotification('Función de eliminación en desarrollo', 'info');
+    // Buscar el pago para mostrar información en la confirmación
+    const payment = payments.find(p => p.id == paymentId);
+    if (!payment) {
+        showNotification('Pago no encontrado', 'error');
+        return;
+    }
+    
+    // Mostrar confirmación con información del pago
+    const confirmMessage = `¿Está seguro de que desea eliminar este pago?\n\nMonto: ${formatCurrency(payment.monto)}\nMétodo: ${payment.metodo}\nCliente: ${payment.cliente_nombre || 'N/A'}\nReferencia: ${payment.referencia || 'N/A'}\n\nEsta acción no se puede deshacer.`;
+    
+    if (confirm(confirmMessage)) {
+        deletePaymentFromServer(paymentId);
+    }
+}
+
+async function deletePaymentFromServer(paymentId) {
+    try {
+        const token = localStorage.getItem('authToken');
+        
+        debugLog('HTTP', `Enviando petición DELETE a /api/pagos/${paymentId}`);
+        
+        const response = await fetch(`/api/pagos/${paymentId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            showNotification('Pago eliminado exitosamente', 'success');
+            await loadPayments(); // Recargar la lista
+        } else {
+            const errorData = await response.json();
+            console.error('❌ Error del servidor al eliminar pago:', response.status, errorData);
+            showNotification(errorData.message || `Error del servidor: ${response.status}`, 'error');
+        }
+    } catch (error) {
+        console.error('❌ Error de red o conexión:', error);
+        showNotification(`Error de conexión: ${error.message}`, 'error');
     }
 }
 
@@ -1673,9 +1747,46 @@ function editProduct(productId) {
 }
 
 function deleteProduct(productId) {
-    if (confirm('¿Está seguro de que desea eliminar este producto?')) {
-        console.log('Eliminar producto:', productId);
-        showNotification('Función de eliminación en desarrollo', 'info');
+    // Buscar el producto para mostrar información en la confirmación
+    const product = products.find(p => p.id == productId);
+    if (!product) {
+        showNotification('Producto no encontrado', 'error');
+        return;
+    }
+    
+    // Mostrar confirmación con información del producto
+    const confirmMessage = `¿Está seguro de que desea eliminar este producto?\n\nNombre: ${product.nombre}\nPrecio: ${formatCurrency(product.precio)}\nStock: ${product.stock || 0}\nDescripción: ${product.descripcion || 'N/A'}\n\nEsta acción no se puede deshacer.`;
+    
+    if (confirm(confirmMessage)) {
+        deleteProductFromServer(productId);
+    }
+}
+
+async function deleteProductFromServer(productId) {
+    try {
+        const token = localStorage.getItem('authToken');
+        
+        debugLog('HTTP', `Enviando petición DELETE a /api/productos/${productId}`);
+        
+        const response = await fetch(`/api/productos/${productId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            showNotification('Producto eliminado exitosamente', 'success');
+            await loadProducts(); // Recargar la lista
+        } else {
+            const errorData = await response.json();
+            console.error('❌ Error del servidor al eliminar producto:', response.status, errorData);
+            showNotification(errorData.message || `Error del servidor: ${response.status}`, 'error');
+        }
+    } catch (error) {
+        console.error('❌ Error de red o conexión:', error);
+        showNotification(`Error de conexión: ${error.message}`, 'error');
     }
 }
 
@@ -1694,9 +1805,46 @@ function editContact(contactId) {
 }
 
 function deleteContact(contactId) {
-    if (confirm('¿Está seguro de que desea eliminar este contacto?')) {
-        console.log('Eliminar contacto:', contactId);
-        showNotification('Función de eliminación en desarrollo', 'info');
+    // Buscar el contacto para mostrar información en la confirmación
+    const contact = contacts.find(c => c.id == contactId);
+    if (!contact) {
+        showNotification('Contacto no encontrado', 'error');
+        return;
+    }
+    
+    // Mostrar confirmación con información del contacto
+    const confirmMessage = `¿Está seguro de que desea eliminar este contacto?\n\nNombre: ${contact.nombre}\nEmail: ${contact.email}\nTeléfono: ${contact.telefono || 'N/A'}\nCargo: ${contact.cargo || 'N/A'}\nCliente: ${contact.cliente_nombre || 'N/A'}\n\nEsta acción no se puede deshacer.`;
+    
+    if (confirm(confirmMessage)) {
+        deleteContactFromServer(contactId);
+    }
+}
+
+async function deleteContactFromServer(contactId) {
+    try {
+        const token = localStorage.getItem('authToken');
+        
+        debugLog('HTTP', `Enviando petición DELETE a /api/contactos/${contactId}`);
+        
+        const response = await fetch(`/api/contactos/${contactId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            showNotification('Contacto eliminado exitosamente', 'success');
+            await loadContacts(); // Recargar la lista
+        } else {
+            const errorData = await response.json();
+            console.error('❌ Error del servidor al eliminar contacto:', response.status, errorData);
+            showNotification(errorData.message || `Error del servidor: ${response.status}`, 'error');
+        }
+    } catch (error) {
+        console.error('❌ Error de red o conexión:', error);
+        showNotification(`Error de conexión: ${error.message}`, 'error');
     }
 }
 
