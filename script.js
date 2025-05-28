@@ -123,10 +123,24 @@ function actualizarLocalidades(provincia, ciudad, selectId = 'client-locality-in
 
 // Funciones de utilidad
 function formatCurrency(amount) {
+    if (amount === null || amount === undefined) return '$0.00';
     return new Intl.NumberFormat('es-AR', {
         style: 'currency',
         currency: 'ARS'
     }).format(amount);
+}
+
+function translateOrderStatus(status) {
+    const statusMap = {
+        'active': 'Activo',
+        'completed': 'Completado', 
+        'cancelled': 'Cancelado',
+        'pendiente': 'Pendiente',
+        'en_proceso': 'En Proceso',
+        'completado': 'Completado',
+        'cancelado': 'Cancelado'
+    };
+    return statusMap[status] || status;
 }
 
 function formatDate(date) {
@@ -395,10 +409,10 @@ function renderOrdersTable() {
     tbody.innerHTML = orders.map(order => `
         <tr>
             <td>${order.numero_pedido}</td>
-            <td>${order.cliente_nombre || 'Cliente no encontrado'}</td>
-            <td>${order.descripcion || ''}</td>
+            <td>${order.cliente_nombre || 'N/A'}</td>
+            <td>${order.descripcion || 'Sin descripción'}</td>
             <td>${formatCurrency(order.monto)}</td>
-            <td><span class="status-badge status-${order.estado}">${order.estado}</span></td>
+            <td><span class="status-badge status-${order.estado}">${translateOrderStatus(order.estado)}</span></td>
             <td>${formatDate(order.fecha)}</td>
             <td>
                 <button onclick="viewOrderDetails(${order.id})" class="btn-icon" title="Ver detalles">
@@ -1549,7 +1563,7 @@ async function handleNewOrderSubmit(e) {
         cliente_id: clientId,
         descripcion: description,
         monto: totalAmount,
-        estado: 'pendiente',
+        estado: 'active', // Cambiar a 'active' para compatibilidad con BD actual
         items: orderItems.map(item => ({
             producto_id: item.producto_id,
             cantidad: item.cantidad,
@@ -3453,7 +3467,7 @@ function viewOrderDetails(orderId) {
                         <div>
                             <strong>Estado:</strong><br>
                             <span class="status-badge status-${order.estado}" style="padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.875rem; font-weight: 500;">
-                                ${order.estado}
+                                ${translateOrderStatus(order.estado)}
                             </span>
                         </div>
                         <div>
