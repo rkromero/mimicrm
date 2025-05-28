@@ -342,6 +342,227 @@ app.post('/api/clientes', authenticateToken, async (req, res) => {
     }
 });
 
+// RUTAS DE PRODUCTOS
+
+// Obtener todos los productos
+app.get('/api/productos', authenticateToken, async (req, res) => {
+    try {
+        const [productos] = await db.execute(
+            'SELECT * FROM productos WHERE activo = true ORDER BY nombre'
+        );
+        res.json(productos);
+    } catch (error) {
+        console.error('Error obteniendo productos:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Crear producto
+app.post('/api/productos', authenticateToken, async (req, res) => {
+    try {
+        const { nombre, descripcion, precio, categoria, codigo } = req.body;
+
+        const [result] = await db.execute(
+            'INSERT INTO productos (nombre, descripcion, precio, categoria, codigo, creado_por) VALUES (?, ?, ?, ?, ?, ?)',
+            [nombre, descripcion, precio, categoria, codigo, req.user.id]
+        );
+
+        res.status(201).json({ id: result.insertId, message: 'Producto creado exitosamente' });
+    } catch (error) {
+        console.error('Error creando producto:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// RUTAS DE PEDIDOS
+
+// Obtener todos los pedidos
+app.get('/api/pedidos', authenticateToken, async (req, res) => {
+    try {
+        let query = `
+            SELECT p.*, c.nombre as cliente_nombre, u.nombre as creado_por_nombre
+            FROM pedidos p
+            LEFT JOIN clientes c ON p.cliente_id = c.id
+            LEFT JOIN usuarios u ON p.creado_por = u.id
+            WHERE p.activo = true
+        `;
+        
+        const params = [];
+
+        // Filtrar por perfil de usuario
+        if (req.user.perfil === 'Vendedor') {
+            query += ' AND p.creado_por = ?';
+            params.push(req.user.id);
+        }
+
+        query += ' ORDER BY p.fecha_creacion DESC';
+
+        const [pedidos] = await db.execute(query, params);
+        res.json(pedidos);
+    } catch (error) {
+        console.error('Error obteniendo pedidos:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Crear pedido
+app.post('/api/pedidos', authenticateToken, async (req, res) => {
+    try {
+        const { cliente_id, numero_pedido, descripcion, monto, estado, items } = req.body;
+
+        const [result] = await db.execute(
+            'INSERT INTO pedidos (cliente_id, numero_pedido, descripcion, monto, estado, creado_por) VALUES (?, ?, ?, ?, ?, ?)',
+            [cliente_id, numero_pedido, descripcion, monto, estado || 'pendiente', req.user.id]
+        );
+
+        const pedidoId = result.insertId;
+
+        // Si hay items, insertarlos en la tabla de pedidos_productos
+        if (items && items.length > 0) {
+            for (const item of items) {
+                await db.execute(
+                    'INSERT INTO pedidos_productos (pedido_id, producto_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?)',
+                    [pedidoId, item.producto_id, item.cantidad, item.precio_unitario]
+                );
+            }
+        }
+
+        res.status(201).json({ id: pedidoId, message: 'Pedido creado exitosamente' });
+    } catch (error) {
+        console.error('Error creando pedido:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// RUTAS DE PAGOS
+
+// Obtener todos los pagos
+app.get('/api/pagos', authenticateToken, async (req, res) => {
+    try {
+        let query = `
+            SELECT p.*, c.nombre as cliente_nombre, pe.numero_pedido, u.nombre as creado_por_nombre
+            FROM pagos p
+            LEFT JOIN clientes c ON p.cliente_id = c.id
+            LEFT JOIN pedidos pe ON p.pedido_id = pe.id
+            LEFT JOIN usuarios u ON p.creado_por = u.id
+            WHERE p.activo = true
+        `;
+        
+        const params = [];
+
+        // Filtrar por perfil de usuario
+        if (req.user.perfil === 'Vendedor') {
+            query += ' AND p.creado_por = ?';
+            params.push(req.user.id);
+        }
+
+        query += ' ORDER BY p.fecha_pago DESC';
+
+        const [pagos] = await db.execute(query, params);
+        res.json(pagos);
+    } catch (error) {
+        console.error('Error obteniendo pagos:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Crear pago
+app.post('/api/pagos', authenticateToken, async (req, res) => {
+    try {
+        const { cliente_id, pedido_id, monto, metodo_pago, referencia, fecha_pago } = req.body;
+
+        const [result] = await db.execute(
+            'INSERT INTO pagos (cliente_id, pedido_id, monto, metodo_pago, referencia, fecha_pago, creado_por) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [cliente_id, pedido_id, monto, metodo_pago, referencia, fecha_pago || new Date(), req.user.id]
+        );
+
+        res.status(201).json({ id: result.insertId, message: 'Pago registrado exitosamente' });
+    } catch (error) {
+        console.error('Error registrando pago:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// RUTAS DE LISTAS DE PRECIOS
+
+// Obtener todas las listas de precios
+app.get('/api/listas-precios', authenticateToken, async (req, res) => {
+    try {
+        const [listas] = await db.execute(
+            'SELECT * FROM listas_precios WHERE activo = true ORDER BY nombre'
+        );
+        res.json(listas);
+    } catch (error) {
+        console.error('Error obteniendo listas de precios:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Crear lista de precios
+app.post('/api/listas-precios', authenticateToken, async (req, res) => {
+    try {
+        const { nombre, descripcion, descuento } = req.body;
+
+        const [result] = await db.execute(
+            'INSERT INTO listas_precios (nombre, descripcion, descuento, creado_por) VALUES (?, ?, ?, ?)',
+            [nombre, descripcion, descuento || 0, req.user.id]
+        );
+
+        res.status(201).json({ id: result.insertId, message: 'Lista de precios creada exitosamente' });
+    } catch (error) {
+        console.error('Error creando lista de precios:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// RUTAS DE CONTACTOS
+
+// Obtener todos los contactos
+app.get('/api/contactos', authenticateToken, async (req, res) => {
+    try {
+        let query = `
+            SELECT co.*, c.nombre as cliente_nombre, u.nombre as creado_por_nombre
+            FROM contactos co
+            LEFT JOIN clientes c ON co.cliente_id = c.id
+            LEFT JOIN usuarios u ON co.creado_por = u.id
+            WHERE co.activo = true
+        `;
+        
+        const params = [];
+
+        // Filtrar por perfil de usuario
+        if (req.user.perfil === 'Vendedor') {
+            query += ' AND co.creado_por = ?';
+            params.push(req.user.id);
+        }
+
+        query += ' ORDER BY co.nombre';
+
+        const [contactos] = await db.execute(query, params);
+        res.json(contactos);
+    } catch (error) {
+        console.error('Error obteniendo contactos:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Crear contacto
+app.post('/api/contactos', authenticateToken, async (req, res) => {
+    try {
+        const { cliente_id, nombre, email, telefono, cargo, departamento } = req.body;
+
+        const [result] = await db.execute(
+            'INSERT INTO contactos (cliente_id, nombre, email, telefono, cargo, departamento, creado_por) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [cliente_id, nombre, email, telefono, cargo, departamento, req.user.id]
+        );
+
+        res.status(201).json({ id: result.insertId, message: 'Contacto creado exitosamente' });
+    } catch (error) {
+        console.error('Error creando contacto:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
 // Ruta para servir la aplicación
 app.get('/', (req, res) => {
     res.redirect('/login.html');

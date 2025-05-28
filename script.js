@@ -7,8 +7,25 @@ let contacts = [];
 let priceLists = [];
 
 // Función para cargar las listas de precios
-function loadPriceLists() {
-    // Los datos se cargan desde la base de datos vía API
+async function loadPriceLists() {
+    try {
+        const token = localStorage.getItem('authToken');
+        const response = await fetch('/api/listas-precios', {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            priceLists = await response.json();
+        } else {
+            console.error('Error cargando listas de precios:', response.statusText);
+        }
+    } catch (error) {
+        console.error('Error cargando listas de precios:', error);
+    }
+    
     renderPriceListsTable();
 }
 
@@ -427,6 +444,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     await loadProducts();
     await loadOrders();
     await loadPayments();
+    await loadPriceLists();
     
     // Configurar navegación
     setupNavigation();
