@@ -789,6 +789,11 @@ function updateHeaderTitle(section) {
 function showSection(section) {
     console.log('🔄 Cambiando a sección:', section);
     
+    // Restaurar estilos del panel de administración si no estamos navegando a él
+    if (section !== 'administrar perfiles' && section !== 'admin') {
+        restoreAdminPanelStyles();
+    }
+    
     // Ocultar todas las secciones
     const sections = document.querySelectorAll('.page-content, #admin-profiles-section, #pedidos-section, #pagos-section, #productos-section, #contactos-section, #dashboard-section, #clientes-section');
     sections.forEach(sec => sec.style.display = 'none');
@@ -858,6 +863,104 @@ function showSection(section) {
                 adminSection.style.display = 'block';
                 // Cargar datos de usuarios si es necesario
                 loadUsersForAdmin();
+                
+                // Aplicar automáticamente el forzado de visibilidad
+                setTimeout(() => {
+                    console.log('🔧 Aplicando forzado automático de visibilidad del panel admin...');
+                    
+                    // Aplicar los mismos estilos que la función forceShowAdminPanel
+                    adminSection.style.cssText = `
+                        display: block !important;
+                        visibility: visible !important;
+                        opacity: 1 !important;
+                        position: fixed !important;
+                        top: 0 !important;
+                        left: 0 !important;
+                        width: 100vw !important;
+                        height: 100vh !important;
+                        z-index: 9999 !important;
+                        background: #f3f4f6 !important;
+                        overflow-y: auto !important;
+                    `;
+                    
+                    const pageContent = adminSection.querySelector('.page-content');
+                    if (pageContent) {
+                        pageContent.style.cssText = `
+                            display: block !important;
+                            visibility: visible !important;
+                            opacity: 1 !important;
+                            padding: 1rem 2rem !important;
+                            max-width: 1200px !important;
+                            margin: 0 auto !important;
+                            background: transparent !important;
+                        `;
+                    }
+                    
+                    const adminPanel = adminSection.querySelector('.admin-panel');
+                    if (adminPanel) {
+                        adminPanel.style.cssText = `
+                            display: block !important;
+                            visibility: visible !important;
+                            opacity: 1 !important;
+                            background: #ffffff !important;
+                            border: 3px solid #10b981 !important;
+                            padding: 2rem !important;
+                            margin: 1rem auto !important;
+                            border-radius: 8px !important;
+                            max-width: 1200px !important;
+                            width: 95% !important;
+                            box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+                        `;
+                    }
+                    
+                    const usersContainer = adminSection.querySelector('.users-table-container');
+                    if (usersContainer) {
+                        usersContainer.style.cssText = `
+                            display: block !important;
+                            visibility: visible !important;
+                            opacity: 1 !important;
+                            background: #ffffff !important;
+                            border: 3px solid #3b82f6 !important;
+                            padding: 1rem !important;
+                            margin: 1rem 0 !important;
+                            border-radius: 8px !important;
+                            min-height: 200px !important;
+                            width: 100% !important;
+                            overflow: visible !important;
+                        `;
+                        
+                        // Si hay contenido, asegurar que la tabla sea visible
+                        const table = usersContainer.querySelector('table');
+                        if (table) {
+                            table.style.cssText = `
+                                display: table !important;
+                                visibility: visible !important;
+                                opacity: 1 !important;
+                                width: 100% !important;
+                                background: white !important;
+                                border-collapse: collapse !important;
+                            `;
+                        }
+                    }
+                    
+                    const newUserBtn = adminSection.querySelector('#new-user-btn');
+                    if (newUserBtn) {
+                        newUserBtn.style.cssText = `
+                            display: inline-block !important;
+                            visibility: visible !important;
+                            opacity: 1 !important;
+                            background-color: #4f46e5 !important;
+                            color: white !important;
+                            padding: 0.75rem 1.5rem !important;
+                            border: none !important;
+                            border-radius: 6px !important;
+                            cursor: pointer !important;
+                            font-weight: 500 !important;
+                        `;
+                    }
+                    
+                    console.log('✅ Forzado automático aplicado al panel de administración');
+                }, 200);
             }
             break;
         default:
@@ -1517,6 +1620,14 @@ function setupHeaderButtons() {
         if (backToDashboardBtn) {
             backToDashboardBtn.onclick = function() {
                 debugLog('CLICK', 'Volver al Dashboard clickeado');
+                
+                // Restaurar estilos normales del panel de administración
+                const adminSection = document.getElementById('admin-profiles-section');
+                if (adminSection) {
+                    adminSection.style.cssText = 'display: none;';
+                    console.log('✅ Estilos del panel de administración restaurados');
+                }
+                
                 showSection('dashboard');
                 updateHeaderTitle('dashboard');
                 
@@ -2209,3 +2320,40 @@ window.testServerConnection = async function() {
         console.error('❌ Error en test de conexión:', error);
     }
 };
+
+// Función para restaurar estilos normales del panel de administración
+function restoreAdminPanelStyles() {
+    const adminSection = document.getElementById('admin-profiles-section');
+    if (adminSection) {
+        // Restaurar estilos normales
+        adminSection.style.cssText = 'display: none;';
+        
+        // También restaurar estilos de elementos internos si existen
+        const pageContent = adminSection.querySelector('.page-content');
+        if (pageContent) {
+            pageContent.style.cssText = '';
+        }
+        
+        const adminPanel = adminSection.querySelector('.admin-panel');
+        if (adminPanel) {
+            adminPanel.style.cssText = '';
+        }
+        
+        const usersContainer = adminSection.querySelector('.users-table-container');
+        if (usersContainer) {
+            usersContainer.style.cssText = '';
+            
+            const table = usersContainer.querySelector('table');
+            if (table) {
+                table.style.cssText = '';
+            }
+        }
+        
+        const newUserBtn = adminSection.querySelector('#new-user-btn');
+        if (newUserBtn) {
+            newUserBtn.style.cssText = '';
+        }
+        
+        console.log('✅ Estilos del panel de administración restaurados a valores normales');
+    }
+}
