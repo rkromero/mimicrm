@@ -1735,7 +1735,7 @@ async function loadUsersForAdmin() {
 function renderUsersTable(users) {
     debugLog('ADMIN', 'Iniciando renderizado de tabla de usuarios...');
     
-    const container = document.querySelector('.users-table-container');
+    let container = document.querySelector('.users-table-container');
     if (!container) {
         console.error('❌ No se encontró el contenedor .users-table-container');
         
@@ -1745,6 +1745,11 @@ function renderUsersTable(users) {
             console.log('🔄 Creando contenedor de tabla de usuarios...');
             const newContainer = document.createElement('div');
             newContainer.className = 'users-table-container';
+            newContainer.style.minHeight = '200px';
+            newContainer.style.border = '1px solid #e5e7eb';
+            newContainer.style.borderRadius = '8px';
+            newContainer.style.padding = '1rem';
+            newContainer.style.marginTop = '1rem';
             
             // Buscar si ya existe un h2 de "Usuarios"
             let usersHeader = altContainer.querySelector('h2');
@@ -1755,12 +1760,14 @@ function renderUsersTable(users) {
                 // Crear header y contenedor
                 const header = document.createElement('h2');
                 header.textContent = 'Usuarios';
+                header.style.color = '#4f46e5';
+                header.style.marginBottom = '1rem';
                 altContainer.appendChild(header);
                 altContainer.appendChild(newContainer);
             }
             
-            // Llamar recursivamente con el nuevo contenedor
-            return renderUsersTable(users);
+            container = newContainer;
+            debugLog('ADMIN', 'Contenedor de usuarios creado exitosamente');
         } else {
             console.error('❌ No se pudo encontrar ningún contenedor para la tabla de usuarios');
             showNotification('Error: No se encontró el contenedor de usuarios', 'error');
@@ -1770,44 +1777,54 @@ function renderUsersTable(users) {
     
     debugLog('ADMIN', `Renderizando ${users.length} usuarios`);
     
+    // Agregar indicador visual de que el contenedor existe
+    container.style.backgroundColor = '#f9fafb';
+    container.style.border = '2px solid #10b981';
+    
     if (users.length === 0) {
         container.innerHTML = `
-            <div style="text-align: center; padding: 2rem; color: #6b7280;">
-                <i class="fas fa-users" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
-                <p>No hay usuarios registrados</p>
-                <p style="font-size: 0.875rem;">Usa el botón "Nuevo Usuario" para crear el primer usuario.</p>
+            <div style="text-align: center; padding: 2rem; color: #6b7280; background: white; border-radius: 8px;">
+                <i class="fas fa-users" style="font-size: 2rem; margin-bottom: 1rem; display: block; color: #4f46e5;"></i>
+                <p style="font-size: 1.1rem; margin-bottom: 0.5rem;">No hay usuarios registrados</p>
+                <p style="font-size: 0.875rem; color: #9ca3af;">Usa el botón "Nuevo Usuario" para crear el primer usuario.</p>
             </div>
         `;
+        debugLog('ADMIN', 'Mensaje de "no usuarios" renderizado');
         return;
     }
     
     const table = document.createElement('table');
     table.className = 'clients-table admin-users-table';
+    table.style.width = '100%';
+    table.style.backgroundColor = 'white';
+    table.style.borderRadius = '8px';
+    table.style.overflow = 'hidden';
+    table.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)';
     
     table.innerHTML = `
         <thead>
-            <tr>
-                <th>Nombre</th>
-                <th>Email</th>
-                <th>Perfil</th>
-                <th>Estado</th>
-                <th>Fecha Creación</th>
-                <th>Acciones</th>
+            <tr style="background-color: #f3f4f6;">
+                <th style="padding: 1rem; text-align: left; font-weight: 600; color: #374151;">Nombre</th>
+                <th style="padding: 1rem; text-align: left; font-weight: 600; color: #374151;">Email</th>
+                <th style="padding: 1rem; text-align: left; font-weight: 600; color: #374151;">Perfil</th>
+                <th style="padding: 1rem; text-align: left; font-weight: 600; color: #374151;">Estado</th>
+                <th style="padding: 1rem; text-align: left; font-weight: 600; color: #374151;">Fecha Creación</th>
+                <th style="padding: 1rem; text-align: left; font-weight: 600; color: #374151;">Acciones</th>
             </tr>
         </thead>
         <tbody>
-            ${users.map(user => `
-                <tr>
-                    <td>${user.nombre}</td>
-                    <td>${user.email}</td>
-                    <td><span class="badge badge-${user.perfil.toLowerCase()}">${user.perfil}</span></td>
-                    <td><span class="badge ${user.activo ? 'badge-yes' : 'badge-no'}">${user.activo ? 'Activo' : 'Inactivo'}</span></td>
-                    <td>${user.created_at ? formatDate(user.created_at) : 'N/A'}</td>
-                    <td>
-                        <button onclick="editUser(${user.id})" class="btn btn-secondary" title="Editar usuario" style="margin-right: 0.5rem;">
+            ${users.map((user, index) => `
+                <tr style="background-color: ${index % 2 === 0 ? '#ffffff' : '#f9fafb'}; border-bottom: 1px solid #e5e7eb;">
+                    <td style="padding: 1rem; color: #111827;">${user.nombre}</td>
+                    <td style="padding: 1rem; color: #6b7280;">${user.email}</td>
+                    <td style="padding: 1rem;"><span class="badge badge-${user.perfil.toLowerCase()}" style="padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500;">${user.perfil}</span></td>
+                    <td style="padding: 1rem;"><span class="badge ${user.activo ? 'badge-yes' : 'badge-no'}" style="padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500;">${user.activo ? 'Activo' : 'Inactivo'}</span></td>
+                    <td style="padding: 1rem; color: #6b7280;">${user.created_at ? formatDate(user.created_at) : 'N/A'}</td>
+                    <td style="padding: 1rem;">
+                        <button onclick="editUser(${user.id})" class="btn btn-secondary" title="Editar usuario" style="margin-right: 0.5rem; padding: 0.5rem; border-radius: 4px;">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button onclick="deleteUser(${user.id})" class="btn btn-secondary" title="Eliminar usuario" style="background-color: #dc2626; color: white;">
+                        <button onclick="deleteUser(${user.id})" class="btn btn-secondary" title="Eliminar usuario" style="background-color: #dc2626; color: white; padding: 0.5rem; border-radius: 4px;">
                             <i class="fas fa-trash"></i>
                         </button>
                     </td>
@@ -1818,6 +1835,19 @@ function renderUsersTable(users) {
     
     container.innerHTML = '';
     container.appendChild(table);
+    
+    // Agregar mensaje de confirmación visual
+    const confirmationMsg = document.createElement('div');
+    confirmationMsg.style.cssText = 'background: #10b981; color: white; padding: 0.5rem 1rem; border-radius: 4px; margin-top: 1rem; text-align: center; font-weight: 500;';
+    confirmationMsg.textContent = `✅ ${users.length} usuario(s) cargado(s) exitosamente`;
+    container.appendChild(confirmationMsg);
+    
+    // Remover el mensaje después de 3 segundos
+    setTimeout(() => {
+        if (confirmationMsg.parentNode) {
+            confirmationMsg.parentNode.removeChild(confirmationMsg);
+        }
+    }, 3000);
     
     debugLog('ADMIN', '✅ Tabla de usuarios renderizada exitosamente');
 }
