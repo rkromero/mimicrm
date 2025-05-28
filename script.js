@@ -299,6 +299,13 @@ async function loadOrders() {
         if (response.ok) {
             orders = await response.json();
             renderOrdersTable(); // Renderizar la tabla después de cargar los datos
+            
+            // Si la sección de fábrica está activa, también actualizarla
+            const fabricaSection = document.getElementById('fabrica-section');
+            if (fabricaSection && fabricaSection.style.display !== 'none') {
+                renderFabricaTable();
+            }
+            
             debugLog('DATA', 'Pedidos cargados');
         } else {
             console.error('Error cargando pedidos:', response.statusText);
@@ -899,7 +906,7 @@ function showSection(section) {
     }
     
     // Ocultar todas las secciones
-    const sections = document.querySelectorAll('.page-content, #admin-profiles-section, #pedidos-section, #pagos-section, #productos-section, #contactos-section, #dashboard-section, #clientes-section');
+    const sections = document.querySelectorAll('.page-content, #admin-profiles-section, #pedidos-section, #pagos-section, #productos-section, #contactos-section, #dashboard-section, #clientes-section, #fabrica-section');
     sections.forEach(sec => sec.style.display = 'none');
     
     // Mostrar la sección correspondiente
@@ -957,8 +964,11 @@ function showSection(section) {
             }
             break;
         case 'fábrica':
-            // Implementar vista de fábrica
-            document.querySelector('.page-content').style.display = 'block';
+            document.getElementById('fabrica-section').style.display = 'block';
+            // Solo renderizar si ya tenemos datos
+            if (orders.length > 0) {
+                renderFabricaTable();
+            }
             break;
         case 'administrar perfiles':
         case 'admin':
@@ -3404,7 +3414,7 @@ window.forceShowAdminPanel = function() {
     console.log('🔧 FORZANDO VISIBILIDAD DEL PANEL DE ADMINISTRACIÓN...');
     
     // Primero, ocultar TODAS las otras secciones
-    const allSections = document.querySelectorAll('#dashboard-section, #clientes-section, #pedidos-section, #pagos-section, #productos-section, #contactos-section, .page-content');
+    const allSections = document.querySelectorAll('#dashboard-section, #clientes-section, #pedidos-section, #pagos-section, #productos-section, #contactos-section, .page-content, #fabrica-section');
     allSections.forEach(section => {
         if (section.id !== 'admin-profiles-section' && !section.closest('#admin-profiles-section')) {
             section.style.display = 'none !important';
@@ -5033,4 +5043,121 @@ function getOrderStatusStyle(status) {
         min-width: 100px;
         white-space: nowrap;
     `;
+}
+
+// Función para renderizar la tabla de pedidos en fábrica (solo estado 'fabricar')
+function renderFabricaTable() {
+    const tbody = document.getElementById('fabrica-table-body');
+    const countElement = document.getElementById('fabrica-count');
+    
+    if (!tbody) {
+        console.error('❌ No se encontró el elemento fabrica-table-body');
+        return;
+    }
+    
+    // Filtrar solo pedidos en estado 'fabricar'
+    const pedidosFabrica = orders.filter(order => order.estado === 'fabricar');
+    
+    // Actualizar contador
+    if (countElement) {
+        countElement.textContent = pedidosFabrica.length;
+    }
+    
+    if (pedidosFabrica.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center" style="padding: 2rem; color: #6b7280;">
+                    <i class="fas fa-tools" style="font-size: 2rem; margin-bottom: 0.5rem; display: block; color: #d1d5db;"></i>
+                    <p style="margin: 0;">No hay pedidos pendientes para fabricar</p>
+                    <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem;">Los pedidos aparecerán aquí cuando estén en estado "Fabricar"</p>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    tbody.innerHTML = pedidosFabrica.map(order => `
+        <tr style="background: ${order.estado === 'fabricar' ? '#f0f9ff' : '#ffffff'};">
+            <td>${order.numero_pedido}</td>
+            <td>${order.cliente_nombre || 'N/A'}</td>
+            <td>${order.descripcion || 'Sin descripción'}</td>
+            <td>${formatCurrency(order.monto)}</td>
+            <td>
+                <span style="${getOrderStatusStyle(order.estado)}">
+                    ${translateOrderStatus(order.estado)}
+                </span>
+            </td>
+            <td>${formatDate(order.fecha)}</td>
+            <td>
+                <button onclick="viewOrderDetails(${order.id})" class="btn-icon" title="Ver detalles">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button onclick="editOrder(${order.id})" class="btn-icon" title="Editar">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button onclick="markAsProduced(${order.id})" class="btn btn-success" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; margin-left: 0.5rem;" title="Marcar como 'Sale Fábrica'">
+                    <i class="fas fa-check"></i> Producido
+                </button>
+            </td>
+        </tr>
+    `).join('');
+    
+    console.log(`✅ Tabla de fábrica renderizada con ${pedidosFabrica.length} pedidos`);
+}
+
+// Función para marcar un pedido como producido (cambiar estado a 'sale fabrica')
+async function markAsProduced(orderId) {
+    if (!confirm('¿Confirma que este pedido está terminado y listo para salir de fábrica?')) {
+        return;
+    }
+    
+    try {
+        // Encontrar el pedido en el array local
+        const order = orders.find(o => o.id === orderId);
+        if (!order) {
+            showNotification('Pedido no encontrado', 'error');
+            return;
+        }
+        
+        // Preparar datos para actualizar
+        const updateData = {
+            cliente_id: order.cliente_id,
+            descripcion: order.descripcion,
+            monto: order.monto,
+            estado: 'sale fabrica' // Cambiar a siguiente estado
+        };
+        
+        console.log(`🔄 Marcando pedido ${orderId} como producido...`);
+        
+        const token = localStorage.getItem('authToken');
+        const response = await fetch(`/api/pedidos/${orderId}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(updateData)
+        });
+        
+        if (response.ok) {
+            showNotification('Pedido marcado como producido exitosamente', 'success');
+            
+            // Actualizar el pedido en el array local
+            order.estado = 'sale fabrica';
+            
+            // Recargar la tabla de fábrica
+            renderFabricaTable();
+            
+            // También recargar pedidos desde el servidor para mantener sincronización
+            await loadOrders();
+            
+            console.log(`✅ Pedido ${orderId} marcado como 'sale fabrica'`);
+        } else {
+            const error = await response.json();
+            showNotification(error.message || 'Error al actualizar el pedido', 'error');
+        }
+    } catch (error) {
+        console.error('❌ Error marcando pedido como producido:', error);
+        showNotification('Error al actualizar el estado del pedido', 'error');
+    }
 }

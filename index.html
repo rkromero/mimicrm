@@ -306,6 +306,39 @@
                     <div id="clients-list"></div>
                 </div>
             </div>
+
+            <!-- Sección de Fábrica -->
+            <div id="fabrica-section" class="page-content" style="display:none;">
+                <div class="table-container">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2>Fábrica - Pedidos para Fabricar</h2>
+                        <div class="flex gap-2">
+                            <input type="text" class="input" placeholder="Buscar pedido..." id="fabrica-search">
+                            <div class="stat-badge" style="background: #dbeafe; color: #1e40af; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600;">
+                                <span id="fabrica-count">0</span> pedidos pendientes
+                            </div>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="clients-table">
+                            <thead>
+                                <tr>
+                                    <th>Número</th>
+                                    <th>Cliente</th>
+                                    <th>Descripción</th>
+                                    <th>Monto</th>
+                                    <th>Estado</th>
+                                    <th>Fecha</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fabrica-table-body">
+                                <!-- Los pedidos para fabricar se cargarán aquí dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
 
