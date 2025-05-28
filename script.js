@@ -726,11 +726,46 @@ function setupForms() {
         // Configurar formulario de nuevo cliente
         const newClientForm = document.getElementById('new-client-form');
         if (newClientForm) {
-            // Usar onsubmit en lugar de addEventListener para evitar duplicados
             newClientForm.onsubmit = handleNewClientSubmit;
-            console.log('✅ Event listener del formulario configurado');
+            console.log('✅ Event listener del formulario de cliente configurado');
         } else {
             console.warn('⚠️ No se encontró el formulario new-client-form');
+        }
+        
+        // Configurar formulario de nuevo pedido
+        const newOrderForm = document.getElementById('new-order-form');
+        if (newOrderForm) {
+            newOrderForm.onsubmit = handleNewOrderSubmit;
+            console.log('✅ Event listener del formulario de pedido configurado');
+        } else {
+            console.warn('⚠️ No se encontró el formulario new-order-form');
+        }
+        
+        // Configurar formulario de nuevo pago
+        const newPaymentForm = document.getElementById('new-payment-form');
+        if (newPaymentForm) {
+            newPaymentForm.onsubmit = handleNewPaymentSubmit;
+            console.log('✅ Event listener del formulario de pago configurado');
+        } else {
+            console.warn('⚠️ No se encontró el formulario new-payment-form');
+        }
+        
+        // Configurar formulario de nuevo contacto
+        const newContactForm = document.getElementById('new-contact-form');
+        if (newContactForm) {
+            newContactForm.onsubmit = handleNewContactSubmit;
+            console.log('✅ Event listener del formulario de contacto configurado');
+        } else {
+            console.warn('⚠️ No se encontró el formulario new-contact-form');
+        }
+        
+        // Configurar formulario de nuevo producto
+        const newProductForm = document.getElementById('new-product-form');
+        if (newProductForm) {
+            newProductForm.onsubmit = handleNewProductSubmit;
+            console.log('✅ Event listener del formulario de producto configurado');
+        } else {
+            console.warn('⚠️ No se encontró el formulario new-product-form');
         }
         
         // Configurar cierre de modales
@@ -744,6 +779,14 @@ function setupForms() {
                     console.log('✅ Modal cerrado');
                 }
             };
+        });
+        
+        // Configurar cierre de modales al hacer clic fuera
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('modal')) {
+                e.target.style.display = 'none';
+                console.log('✅ Modal cerrado al hacer clic fuera');
+            }
         });
         
         console.log('✅ Configuración de formularios completada');
@@ -765,7 +808,7 @@ function showModal(modalId) {
     console.log('✅ Modal encontrado, mostrando...');
     modal.style.display = 'block';
     
-    // Si es el modal de nuevo cliente, configurar listeners de provincia y ciudad
+    // Configuraciones específicas por modal
     if (modalId === 'new-client-modal') {
         console.log('🔄 Cargando configuración para modal de nuevo cliente...');
         try {
@@ -774,7 +817,53 @@ function showModal(modalId) {
         } catch (error) {
             console.error('❌ Error al configurar modal de nuevo cliente:', error);
         }
+    } else if (modalId === 'new-order-modal' || modalId === 'new-payment-modal' || modalId === 'new-contact-modal') {
+        console.log('🔄 Cargando lista de clientes para modal...');
+        try {
+            populateClientSelects(modalId);
+            console.log('✅ Lista de clientes cargada');
+        } catch (error) {
+            console.error('❌ Error al cargar lista de clientes:', error);
+        }
     }
+}
+
+// Función para poblar los selects de clientes
+function populateClientSelects(modalId) {
+    let selectId = '';
+    
+    switch(modalId) {
+        case 'new-order-modal':
+            selectId = 'order-client-select';
+            break;
+        case 'new-payment-modal':
+            selectId = 'payment-client-select';
+            break;
+        case 'new-contact-modal':
+            selectId = 'contact-client-select';
+            break;
+        default:
+            return;
+    }
+    
+    const clientSelect = document.getElementById(selectId);
+    if (!clientSelect) {
+        console.warn(`⚠️ No se encontró el select ${selectId}`);
+        return;
+    }
+    
+    // Limpiar opciones existentes
+    clientSelect.innerHTML = '<option value="">Seleccione un cliente</option>';
+    
+    // Agregar clientes
+    clients.forEach(client => {
+        const option = document.createElement('option');
+        option.value = client.id;
+        option.textContent = client.nombre;
+        clientSelect.appendChild(option);
+    });
+    
+    console.log(`✅ Select ${selectId} poblado con ${clients.length} clientes`);
 }
 
 // Función para configurar listeners de provincia y ciudad
@@ -863,6 +952,157 @@ async function handleNewClientSubmit(e) {
     } catch (error) {
         console.error('Error:', error);
         showNotification('Error al crear cliente', 'error');
+    }
+}
+
+// Función para manejar envío de nuevo pedido
+async function handleNewOrderSubmit(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const orderData = {
+        cliente_id: document.getElementById('order-client-select').value,
+        monto: parseFloat(document.getElementById('order-amount').value),
+        descripcion: document.getElementById('order-description').value,
+        estado: 'pendiente'
+    };
+    
+    try {
+        const token = localStorage.getItem('authToken');
+        const response = await fetch('/api/pedidos', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(orderData)
+        });
+        
+        if (response.ok) {
+            showNotification('Pedido creado exitosamente', 'success');
+            document.getElementById('new-order-modal').style.display = 'none';
+            e.target.reset();
+            await loadOrders();
+        } else {
+            const error = await response.json();
+            showNotification(error.message || 'Error al crear pedido', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Error al crear pedido', 'error');
+    }
+}
+
+// Función para manejar envío de nuevo pago
+async function handleNewPaymentSubmit(e) {
+    e.preventDefault();
+    
+    const paymentData = {
+        cliente_id: document.getElementById('payment-client-select').value,
+        monto: parseFloat(document.getElementById('payment-amount').value),
+        metodo: document.getElementById('payment-method').value,
+        referencia: document.getElementById('payment-reference').value
+    };
+    
+    try {
+        const token = localStorage.getItem('authToken');
+        const response = await fetch('/api/pagos', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(paymentData)
+        });
+        
+        if (response.ok) {
+            showNotification('Pago registrado exitosamente', 'success');
+            document.getElementById('new-payment-modal').style.display = 'none';
+            e.target.reset();
+            await loadPayments();
+        } else {
+            const error = await response.json();
+            showNotification(error.message || 'Error al registrar pago', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Error al registrar pago', 'error');
+    }
+}
+
+// Función para manejar envío de nuevo contacto
+async function handleNewContactSubmit(e) {
+    e.preventDefault();
+    
+    const contactData = {
+        cliente_id: document.getElementById('contact-client-select').value,
+        nombre: document.getElementById('contact-name-input').value,
+        email: document.getElementById('contact-email-input').value,
+        telefono: document.getElementById('contact-phone-input').value,
+        cargo: document.getElementById('contact-position-input').value,
+        departamento: document.getElementById('contact-department-input').value
+    };
+    
+    try {
+        const token = localStorage.getItem('authToken');
+        const response = await fetch('/api/contactos', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(contactData)
+        });
+        
+        if (response.ok) {
+            showNotification('Contacto creado exitosamente', 'success');
+            document.getElementById('new-contact-modal').style.display = 'none';
+            e.target.reset();
+            await loadContacts();
+        } else {
+            const error = await response.json();
+            showNotification(error.message || 'Error al crear contacto', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Error al crear contacto', 'error');
+    }
+}
+
+// Función para manejar envío de nuevo producto
+async function handleNewProductSubmit(e) {
+    e.preventDefault();
+    
+    const productData = {
+        nombre: document.getElementById('product-name-input').value,
+        descripcion: document.getElementById('product-description-input').value,
+        precio: parseFloat(document.getElementById('product-price-input').value),
+        stock: parseInt(document.getElementById('product-stock-input').value)
+    };
+    
+    try {
+        const token = localStorage.getItem('authToken');
+        const response = await fetch('/api/productos', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(productData)
+        });
+        
+        if (response.ok) {
+            showNotification('Producto creado exitosamente', 'success');
+            document.getElementById('new-product-modal').style.display = 'none';
+            e.target.reset();
+            await loadProducts();
+        } else {
+            const error = await response.json();
+            showNotification(error.message || 'Error al crear producto', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Error al crear producto', 'error');
     }
 }
 

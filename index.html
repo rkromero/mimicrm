@@ -696,6 +696,40 @@
         </div>
     </div>
 
+    <!-- Modal de Nuevo Producto -->
+    <div id="new-product-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Nuevo Producto</h2>
+                <button class="close-modal btn btn-secondary">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="new-product-form">
+                <div class="mb-4">
+                    <label for="product-name-input">Nombre del Producto</label>
+                    <input type="text" id="product-name-input" name="nombre" class="input" required>
+                </div>
+                <div class="mb-4">
+                    <label for="product-description-input">Descripción</label>
+                    <textarea id="product-description-input" name="descripcion" class="input" rows="3"></textarea>
+                </div>
+                <div class="mb-4">
+                    <label for="product-price-input">Precio</label>
+                    <input type="number" id="product-price-input" name="precio" class="input" step="0.01" required>
+                </div>
+                <div class="mb-4">
+                    <label for="product-stock-input">Stock</label>
+                    <input type="number" id="product-stock-input" name="stock" class="input" min="0" required>
+                </div>
+                <div class="flex justify-between">
+                    <button type="button" class="btn btn-secondary close-modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Modal de Preferencias de Usuario -->
     <div id="user-config-modal" class="modal" style="display:none;">
         <div class="modal-content" style="max-width: 400px;">
