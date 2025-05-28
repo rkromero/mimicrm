@@ -121,7 +121,7 @@ async function createTables() {
                 cliente_id INT NOT NULL,
                 descripcion TEXT,
                 monto DECIMAL(15,2) NOT NULL,
-                estado ENUM('active', 'completed', 'cancelled') DEFAULT 'active',
+                estado ENUM('pendiente', 'en_proceso', 'completado', 'cancelado') DEFAULT 'pendiente',
                 fecha DATE NOT NULL,
                 creado_por INT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -740,6 +740,44 @@ app.get('/api/test', (req, res) => {
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'development'
     });
+});
+
+// ENDPOINT ESPECIAL PARA ACTUALIZAR ESTRUCTURA DE TABLA PEDIDOS
+app.post('/api/admin/update-pedidos-table', async (req, res) => {
+    try {
+        console.log('🔧 Actualizando estructura de tabla pedidos...');
+
+        // Actualizar el ENUM del campo estado
+        await db.execute(`
+            ALTER TABLE pedidos 
+            MODIFY COLUMN estado ENUM('pendiente', 'en_proceso', 'completado', 'cancelado') DEFAULT 'pendiente'
+        `);
+
+        // Actualizar registros existentes con estados antiguos
+        await db.execute(`
+            UPDATE pedidos 
+            SET estado = CASE 
+                WHEN estado = 'active' THEN 'pendiente'
+                WHEN estado = 'completed' THEN 'completado'
+                WHEN estado = 'cancelled' THEN 'cancelado'
+                ELSE estado
+            END
+        `);
+
+        console.log('✅ Tabla pedidos actualizada correctamente');
+
+        res.json({
+            success: true,
+            message: 'Tabla pedidos actualizada exitosamente'
+        });
+
+    } catch (error) {
+        console.error('❌ Error actualizando tabla pedidos:', error);
+        res.status(500).json({ 
+            error: 'Error interno del servidor',
+            details: error.message 
+        });
+    }
 });
 
 // ENDPOINT ESPECIAL PARA LIMPIAR BASE DE DATOS (SOLO DESARROLLO)

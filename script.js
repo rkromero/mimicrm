@@ -3577,3 +3577,29 @@ async function loadOrderItems(orderId) {
         return [];
     }
 }
+
+// Función temporal para actualizar estructura de tabla pedidos
+async function updatePedidosTableStructure() {
+    try {
+        const token = localStorage.getItem('authToken');
+        const response = await fetch('/api/admin/update-pedidos-table', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            console.log('✅ Estructura de tabla actualizada:', result.message);
+            showNotification('Estructura de base de datos actualizada correctamente', 'success');
+        } else {
+            console.error('❌ Error actualizando estructura:', response.status);
+            showNotification('Error actualizando estructura de base de datos', 'error');
+        }
+    } catch (error) {
+        console.error('❌ Error de red:', error);
+        showNotification('Error de conexión al actualizar base de datos', 'error');
+    }
+}
