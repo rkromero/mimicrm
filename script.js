@@ -476,7 +476,7 @@ function renderProductsTable() {
     if (!tbody) return;
     
     if (products.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center">No hay productos registrados</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center">No hay productos registrados</td></tr>';
         return;
     }
     
@@ -487,10 +487,13 @@ function renderProductsTable() {
             <td>${formatCurrency(product.precio)}</td>
             <td>${product.stock || 0}</td>
             <td>
-                <button onclick="editProduct(${product.id})" class="btn-edit">
+                <button onclick="viewProductDetails(${product.id})" class="btn-icon" title="Ver detalles">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button onclick="editProduct(${product.id})" class="btn-icon" title="Editar">
                     <i class="fas fa-edit"></i>
                 </button>
-                <button onclick="deleteProduct(${product.id})" class="btn-delete">
+                <button onclick="deleteProduct(${product.id})" class="btn-icon" title="Eliminar" style="color: #dc2626;">
                     <i class="fas fa-trash"></i>
                 </button>
             </td>
@@ -504,7 +507,7 @@ function renderContactsTable() {
     if (!tbody) return;
     
     if (contacts.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center">No hay contactos registrados</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center">No hay contactos registrados</td></tr>';
         return;
     }
     
@@ -517,10 +520,13 @@ function renderContactsTable() {
             <td>${contact.cargo || ''}</td>
             <td>${contact.departamento || ''}</td>
             <td>
-                <button onclick="editContact(${contact.id})" class="btn-edit">
+                <button onclick="viewContactDetails(${contact.id})" class="btn-icon" title="Ver detalles">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button onclick="editContact(${contact.id})" class="btn-icon" title="Editar">
                     <i class="fas fa-edit"></i>
                 </button>
-                <button onclick="deleteContact(${contact.id})" class="btn-delete">
+                <button onclick="deleteContact(${contact.id})" class="btn-icon" title="Eliminar" style="color: #dc2626;">
                     <i class="fas fa-trash"></i>
                 </button>
             </td>
@@ -2001,8 +2007,9 @@ function editPayment(paymentId) {
         return;
     }
     
-    // Mostrar detalles del pago (por ahora como notificación)
-    showNotification(`Pago de ${formatCurrency(payment.monto)} - ${payment.metodo}`, 'info');
+    // Por ahora mostrar notificación informativa
+    // TODO: Implementar modal de edición de pagos
+    showNotification(`Función de edición de pagos en desarrollo. Pago: ${formatCurrency(payment.monto)} - ${payment.metodo}`, 'info');
 }
 
 function deletePayment(paymentId) {
@@ -2041,12 +2048,84 @@ async function deletePaymentFromServer(paymentId) {
         } else {
             const errorData = await response.json();
             console.error('❌ Error del servidor al eliminar pago:', response.status, errorData);
-            showNotification(errorData.message || `Error del servidor: ${response.status}`, 'error');
+            showNotification(errorData.error || `Error del servidor: ${response.status}`, 'error');
         }
     } catch (error) {
         console.error('❌ Error de red o conexión:', error);
         showNotification(`Error de conexión: ${error.message}`, 'error');
     }
+}
+
+function viewProductDetails(productId) {
+    console.log('Ver detalles del producto:', productId);
+    
+    const product = products.find(p => p.id == productId);
+    if (!product) {
+        showNotification('Producto no encontrado', 'error');
+        return;
+    }
+    
+    // Crear modal de detalles dinámicamente
+    const detailsModal = document.createElement('div');
+    detailsModal.className = 'modal active';
+    detailsModal.style.cssText = `
+        display: flex !important;
+        z-index: 12000 !important;
+        background-color: rgba(0, 0, 0, 0.7) !important;
+    `;
+    
+    detailsModal.innerHTML = `
+        <div class="modal-content" style="max-width: 600px; z-index: 12001 !important;">
+            <div class="modal-header">
+                <h2 class="modal-title">Detalles del Producto</h2>
+                <button class="close-modal btn btn-secondary" onclick="this.closest('.modal').remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div style="padding: 1rem;">
+                <div style="background: #f8fafc; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                    <h3 style="margin: 0 0 1rem 0; color: #1f2937;">Información del Producto</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div>
+                            <strong>Nombre:</strong><br>
+                            ${product.nombre}
+                        </div>
+                        <div>
+                            <strong>Precio:</strong><br>
+                            ${formatCurrency(product.precio)}
+                        </div>
+                        <div>
+                            <strong>Stock:</strong><br>
+                            ${product.stock || 0} unidades
+                        </div>
+                        <div>
+                            <strong>Estado:</strong><br>
+                            <span style="color: ${product.stock > 0 ? '#10b981' : '#ef4444'};">
+                                ${product.stock > 0 ? 'Disponible' : 'Sin stock'}
+                            </span>
+                        </div>
+                    </div>
+                    ${product.descripcion ? `
+                        <div style="margin-top: 1rem;">
+                            <strong>Descripción:</strong><br>
+                            ${product.descripcion}
+                        </div>
+                    ` : ''}
+                </div>
+                
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+                    <button class="btn btn-primary" onclick="editProduct(${product.id}); this.closest('.modal').remove();" style="background: #4f46e5; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;">
+                        <i class="fas fa-edit"></i> Editar Producto
+                    </button>
+                    <button class="btn btn-secondary" onclick="this.closest('.modal').remove()" style="background: #6b7280; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;">
+                        <i class="fas fa-times"></i> Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(detailsModal);
 }
 
 function editProduct(productId) {
@@ -2059,8 +2138,9 @@ function editProduct(productId) {
         return;
     }
     
-    // Mostrar detalles del producto (por ahora como notificación)
-    showNotification(`Producto: ${product.nombre} - ${formatCurrency(product.precio)}`, 'info');
+    // Por ahora mostrar notificación informativa
+    // TODO: Implementar modal de edición de productos
+    showNotification(`Función de edición de productos en desarrollo. Producto: ${product.nombre} - ${formatCurrency(product.precio)}`, 'info');
 }
 
 function deleteProduct(productId) {
@@ -2099,7 +2179,7 @@ async function deleteProductFromServer(productId) {
         } else {
             const errorData = await response.json();
             console.error('❌ Error del servidor al eliminar producto:', response.status, errorData);
-            showNotification(errorData.message || `Error del servidor: ${response.status}`, 'error');
+            showNotification(errorData.error || `Error del servidor: ${response.status}`, 'error');
         }
     } catch (error) {
         console.error('❌ Error de red o conexión:', error);
@@ -2117,8 +2197,9 @@ function editContact(contactId) {
         return;
     }
     
-    // Mostrar detalles del contacto (por ahora como notificación)
-    showNotification(`Contacto: ${contact.nombre} - ${contact.email}`, 'info');
+    // Por ahora mostrar notificación informativa
+    // TODO: Implementar modal de edición de contactos
+    showNotification(`Función de edición de contactos en desarrollo. Contacto: ${contact.nombre} - ${contact.email}`, 'info');
 }
 
 function deleteContact(contactId) {
