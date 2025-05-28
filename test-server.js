@@ -51,6 +51,7 @@ async function main() {
     const endpoints = [
         '/',
         '/login.html',
+        '/api/test',
         '/api/auth/verify',
         '/api/admin/clear-database'
     ];
