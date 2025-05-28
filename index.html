@@ -465,6 +465,47 @@
         </div>
     </div>
 
+    <!-- Modal de Editar Pedido -->
+    <div id="edit-order-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Editar Pedido</h2>
+                <button class="close-modal btn btn-secondary">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="edit-order-form">
+                <div class="mb-4">
+                    <label for="edit-order-client-select">Cliente</label>
+                    <select id="edit-order-client-select" class="input" autocomplete="off" required>
+                        <option value="">Seleccione un cliente</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label for="edit-order-amount">Monto</label>
+                    <input type="number" id="edit-order-amount" class="input" autocomplete="off" required>
+                </div>
+                <div class="mb-4">
+                    <label for="edit-order-description">Descripción</label>
+                    <textarea id="edit-order-description" class="input" autocomplete="off" required></textarea>
+                </div>
+                <div class="mb-4">
+                    <label for="edit-order-status">Estado</label>
+                    <select id="edit-order-status" class="input" autocomplete="off" required>
+                        <option value="pendiente">Pendiente</option>
+                        <option value="en_proceso">En Proceso</option>
+                        <option value="completado">Completado</option>
+                        <option value="cancelado">Cancelado</option>
+                    </select>
+                </div>
+                <div class="flex justify-between">
+                    <button type="button" class="btn btn-secondary close-modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Modal de Nuevo Contacto -->
     <div id="new-contact-modal" class="modal">
         <div class="modal-content">

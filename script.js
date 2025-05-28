@@ -1064,6 +1064,15 @@ function setupForms() {
             console.warn('⚠️ No se encontró el formulario edit-client-form');
         }
         
+        // Configurar formulario de edición de pedido
+        const editOrderForm = document.getElementById('edit-order-form');
+        if (editOrderForm) {
+            editOrderForm.onsubmit = handleEditOrderSubmit;
+            console.log('✅ Event listener del formulario de edición de pedido configurado');
+        } else {
+            console.warn('⚠️ No se encontró el formulario edit-order-form');
+        }
+        
         // Configurar cierre de modales
         const closeModalBtns = document.querySelectorAll('.close-modal');
         console.log(`🔍 Encontrados ${closeModalBtns.length} botones de cerrar modal`);
@@ -1140,6 +1149,15 @@ function showModal(modalId) {
                 console.error('❌ Error al cargar lista de clientes:', error);
                 throw error;
             }
+        } else if (modalId === 'edit-order-modal') {
+            debugLog('MODAL', `Configurando selects de clientes para ${modalId}...`);
+            try {
+                populateClientSelects(modalId);
+                debugLog('MODAL', `Selects de clientes configurados para ${modalId}`);
+            } catch (error) {
+                console.error('❌ Error al cargar lista de clientes:', error);
+                throw error;
+            }
         }
         
         debugLog('MODAL', `Modal ${modalId} configurado completamente`);
@@ -1172,6 +1190,9 @@ function populateClientSelects(modalId) {
             break;
         case 'new-contact-modal':
             selectId = 'contact-client-select';
+            break;
+        case 'edit-order-modal':
+            selectId = 'edit-order-client-select';
             break;
         default:
             return;
@@ -1593,8 +1614,20 @@ function editOrder(orderId) {
         return;
     }
     
-    // Mostrar detalles del pedido (por ahora como notificación)
-    showNotification(`Pedido #${order.numero_pedido} - ${formatCurrency(order.monto)}`, 'info');
+    // Llenar el modal con los datos del pedido
+    document.getElementById('edit-order-client-select').value = order.cliente_id;
+    document.getElementById('edit-order-amount').value = order.monto;
+    document.getElementById('edit-order-description').value = order.descripcion;
+    document.getElementById('edit-order-status').value = order.estado;
+    
+    // Guardar el ID del pedido en el modal para usarlo al guardar
+    document.getElementById('edit-order-modal').setAttribute('data-order-id', orderId);
+    
+    // Poblar el select de clientes
+    populateClientSelects('edit-order-modal');
+    
+    // Mostrar el modal
+    showModal('edit-order-modal');
 }
 
 function deleteOrder(orderId) {
@@ -1730,6 +1763,65 @@ async function handleEditClientSubmit(e) {
         } else {
             const errorData = await response.json();
             console.error('❌ Error del servidor al actualizar cliente:', response.status, errorData);
+            showNotification(errorData.message || `Error del servidor: ${response.status}`, 'error');
+        }
+    } catch (error) {
+        console.error('❌ Error de red o conexión:', error);
+        showNotification(`Error de conexión: ${error.message}`, 'error');
+    }
+}
+
+// Función para manejar la edición de pedido
+async function handleEditOrderSubmit(e) {
+    e.preventDefault();
+    
+    const orderId = document.getElementById('edit-order-modal').getAttribute('data-order-id');
+    if (!orderId) {
+        showNotification('Error: ID de pedido no encontrado', 'error');
+        return;
+    }
+    
+    const orderData = {
+        cliente_id: document.getElementById('edit-order-client-select').value,
+        monto: parseFloat(document.getElementById('edit-order-amount').value),
+        descripcion: document.getElementById('edit-order-description').value,
+        estado: document.getElementById('edit-order-status').value
+    };
+    
+    debugLog('FORM', 'Datos del pedido a actualizar:', orderData);
+    
+    // Validar que los campos requeridos no estén vacíos
+    if (!orderData.cliente_id || !orderData.monto || !orderData.descripcion || !orderData.estado) {
+        showNotification('Todos los campos son requeridos', 'error');
+        return;
+    }
+    
+    if (orderData.monto <= 0) {
+        showNotification('El monto debe ser mayor a 0', 'error');
+        return;
+    }
+    
+    try {
+        const token = localStorage.getItem('authToken');
+        
+        debugLog('HTTP', `Enviando petición PUT a /api/pedidos/${orderId}`);
+        
+        const response = await fetch(`/api/pedidos/${orderId}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(orderData)
+        });
+        
+        if (response.ok) {
+            showNotification('Pedido actualizado exitosamente', 'success');
+            document.getElementById('edit-order-modal').classList.remove('active');
+            await loadOrders(); // Recargar la lista
+        } else {
+            const errorData = await response.json();
+            console.error('❌ Error del servidor al actualizar pedido:', response.status, errorData);
             showNotification(errorData.message || `Error del servidor: ${response.status}`, 'error');
         }
     } catch (error) {
