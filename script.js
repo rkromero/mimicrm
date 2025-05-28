@@ -3282,10 +3282,37 @@ function viewClientDetails(clientId) {
     // Buscar pagos del cliente
     const clientPayments = payments.filter(payment => payment.cliente_id == clientId);
     
-    // Calcular totales
-    const totalPedidos = clientOrders.reduce((sum, order) => sum + (order.monto || 0), 0);
-    const totalPagos = clientPayments.reduce((sum, payment) => sum + (payment.monto || 0), 0);
+    // Debug: mostrar datos encontrados
+    console.log('🔍 Datos del cliente:', {
+        clientId,
+        clientName: client.nombre,
+        ordersFound: clientOrders.length,
+        paymentsFound: clientPayments.length,
+        orders: clientOrders.map(o => ({ id: o.id, monto: o.monto, tipo: typeof o.monto })),
+        payments: clientPayments.map(p => ({ id: p.id, monto: p.monto, tipo: typeof p.monto }))
+    });
+    
+    // Calcular totales con conversión explícita a números
+    const totalPedidos = clientOrders.reduce((sum, order) => {
+        const monto = parseFloat(order.monto) || 0;
+        return sum + monto;
+    }, 0);
+    
+    const totalPagos = clientPayments.reduce((sum, payment) => {
+        const monto = parseFloat(payment.monto) || 0;
+        return sum + monto;
+    }, 0);
+    
     const saldoPendiente = totalPedidos - totalPagos;
+    const saldoActual = parseFloat(client.saldo) || 0;
+    
+    // Debug: mostrar cálculos
+    console.log('💰 Cálculos financieros:', {
+        totalPedidos,
+        totalPagos,
+        saldoPendiente,
+        saldoActual
+    });
     
     // Crear modal de detalles dinámicamente
     const detailsModal = document.createElement('div');
@@ -3361,8 +3388,8 @@ function viewClientDetails(clientId) {
                         </div>
                         <div>
                             <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">Saldo Actual</div>
-                            <div style="font-size: 1.25rem; font-weight: bold; color: ${(client.saldo || 0) >= 0 ? '#10b981' : '#ef4444'};">
-                                ${formatCurrency(client.saldo || 0)}
+                            <div style="font-size: 1.25rem; font-weight: bold; color: ${saldoActual >= 0 ? '#10b981' : '#ef4444'};">
+                                ${formatCurrency(saldoActual)}
                             </div>
                         </div>
                     </div>
@@ -3391,9 +3418,9 @@ function viewClientDetails(clientId) {
                                         <tr style="background: ${index % 2 === 0 ? '#ffffff' : '#f9fafb'};">
                                             <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">${order.numero_pedido}</td>
                                             <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">${order.descripcion || 'Sin descripción'}</td>
-                                            <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #0ea5e9;">${formatCurrency(order.monto)}</td>
+                                            <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #0ea5e9;">${formatCurrency(parseFloat(order.monto) || 0)}</td>
                                             <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
-                                                <span class="status-badge status-${order.estado}" style="padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 500;">${order.estado}</span>
+                                                <span class="status-badge status-${order.estado}" style="padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 500;">${translateOrderStatus(order.estado)}</span>
                                             </td>
                                             <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; color: #6b7280;">${formatDate(order.fecha)}</td>
                                         </tr>
@@ -3429,7 +3456,7 @@ function viewClientDetails(clientId) {
                                 <tbody>
                                     ${clientPayments.map((payment, index) => `
                                         <tr style="background: ${index % 2 === 0 ? '#ffffff' : '#f9fafb'};">
-                                            <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #10b981;">${formatCurrency(payment.monto)}</td>
+                                            <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #10b981;">${formatCurrency(parseFloat(payment.monto) || 0)}</td>
                                             <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">${payment.metodo || 'N/A'}</td>
                                             <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; color: #6b7280;">${payment.referencia || 'Sin referencia'}</td>
                                             <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; color: #6b7280;">${formatDate(payment.fecha)}</td>
