@@ -139,7 +139,10 @@ function translateOrderStatus(status) {
         'pendiente': 'Pendiente',
         'en_proceso': 'En Proceso',
         'completado': 'Completado',
-        'cancelado': 'Cancelado'
+        'cancelado': 'Cancelado',
+        'pendiente de pago': 'Pendiente de Pago',
+        'fabricar': 'Fabricar',
+        'sale fabrica': 'Sale Fábrica'
     };
     return statusMap[status] || status;
 }
@@ -469,7 +472,11 @@ function renderOrdersTable() {
             <td>${order.cliente_nombre || 'N/A'}</td>
             <td>${order.descripcion || 'Sin descripción'}</td>
             <td>${formatCurrency(order.monto)}</td>
-            <td><span class="status-badge status-${order.estado}">${translateOrderStatus(order.estado)}</span></td>
+            <td>
+                <span style="${getOrderStatusStyle(order.estado)}">
+                    ${translateOrderStatus(order.estado)}
+                </span>
+            </td>
             <td>${formatDate(order.fecha)}</td>
             <td>
                 <button onclick="viewOrderDetails(${order.id})" class="btn-icon" title="Ver detalles">
@@ -4961,4 +4968,52 @@ async function loadPermissions() {
             console.log('ℹ️ Usando permisos por defecto debido a error');
         }
     }
+}
+
+// Función para obtener estilos de color para estados de pedidos
+function getOrderStatusStyle(status) {
+    const styles = {
+        'pendiente de pago': {
+            backgroundColor: '#fef3c7',
+            color: '#d97706',
+            borderColor: '#f59e0b'
+        },
+        'fabricar': {
+            backgroundColor: '#dbeafe',
+            color: '#2563eb',
+            borderColor: '#3b82f6'
+        },
+        'sale fabrica': {
+            backgroundColor: '#f3e8ff',
+            color: '#9333ea',
+            borderColor: '#a855f7'
+        },
+        'completado': {
+            backgroundColor: '#dcfce7',
+            color: '#16a34a',
+            borderColor: '#22c55e'
+        }
+    };
+    
+    const defaultStyle = {
+        backgroundColor: '#f3f4f6',
+        color: '#6b7280',
+        borderColor: '#d1d5db'
+    };
+    
+    const style = styles[status] || defaultStyle;
+    
+    return `
+        background-color: ${style.backgroundColor};
+        color: ${style.color};
+        border: 1px solid ${style.borderColor};
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-align: center;
+        display: inline-block;
+        min-width: 100px;
+        white-space: nowrap;
+    `;
 }

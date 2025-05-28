@@ -121,7 +121,7 @@ async function createTables() {
                 cliente_id INT NOT NULL,
                 descripcion TEXT,
                 monto DECIMAL(15,2) NOT NULL,
-                estado ENUM('pendiente', 'en_proceso', 'completado', 'cancelado') DEFAULT 'pendiente',
+                estado ENUM('pendiente de pago', 'fabricar', 'sale fabrica', 'completado') DEFAULT 'pendiente de pago',
                 fecha DATE NOT NULL,
                 creado_por INT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -295,7 +295,7 @@ app.get('/api/clientes', authenticateToken, async (req, res) => {
                 (COALESCE(SUM(p.monto), 0) - COALESCE(SUM(pa.monto), 0)) as saldo_real
             FROM clientes c
             LEFT JOIN usuarios u ON c.creado_por = u.id
-            LEFT JOIN pedidos p ON c.id = p.cliente_id AND p.estado != 'cancelado'
+            LEFT JOIN pedidos p ON c.id = p.cliente_id AND p.estado NOT IN ('pendiente de pago')
             LEFT JOIN pagos pa ON c.id = pa.cliente_id
             WHERE c.activo = true
         `;
@@ -558,7 +558,7 @@ app.get('/api/pedidos', authenticateToken, async (req, res) => {
 // Crear pedido
 app.post('/api/pedidos', authenticateToken, async (req, res) => {
     try {
-        const { cliente_id, descripcion, monto, estado = 'pendiente', items = [] } = req.body;
+        const { cliente_id, descripcion, monto, estado = 'pendiente de pago', items = [] } = req.body;
 
         // Generar número de pedido único
         const numeroPedido = `PED-${Date.now()}`;
@@ -1288,28 +1288,29 @@ app.post('/api/admin/update-pedidos-table', async (req, res) => {
     try {
         console.log('🔧 Actualizando estructura de tabla pedidos...');
 
-        // Actualizar el ENUM del campo estado
+        // Actualizar el ENUM del campo estado con los nuevos valores
         await db.execute(`
             ALTER TABLE pedidos 
-            MODIFY COLUMN estado ENUM('pendiente', 'en_proceso', 'completado', 'cancelado') DEFAULT 'pendiente'
+            MODIFY COLUMN estado ENUM('pendiente de pago', 'fabricar', 'sale fabrica', 'completado') DEFAULT 'pendiente de pago'
         `);
 
-        // Actualizar registros existentes con estados antiguos
+        // Actualizar registros existentes con estados antiguos a los nuevos
         await db.execute(`
             UPDATE pedidos 
             SET estado = CASE 
-                WHEN estado = 'active' THEN 'pendiente'
-                WHEN estado = 'completed' THEN 'completado'
-                WHEN estado = 'cancelled' THEN 'cancelado'
+                WHEN estado = 'pendiente' THEN 'pendiente de pago'
+                WHEN estado = 'en_proceso' THEN 'fabricar'
+                WHEN estado = 'completado' THEN 'completado'
+                WHEN estado = 'cancelado' THEN 'pendiente de pago'
                 ELSE estado
             END
         `);
 
-        console.log('✅ Tabla pedidos actualizada correctamente');
+        console.log('✅ Tabla pedidos actualizada correctamente con nuevos estados');
 
         res.json({
             success: true,
-            message: 'Tabla pedidos actualizada exitosamente'
+            message: 'Tabla pedidos actualizada exitosamente con nuevos estados'
         });
 
     } catch (error) {
