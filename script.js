@@ -1224,6 +1224,12 @@ function renderOrderProducts() {
     const noProductsMessage = document.getElementById('no-products-message');
     const submitBtn = document.getElementById('submit-order-btn');
 
+    // Validar que los elementos existan (el modal podría estar cerrado)
+    if (!productsList || !noProductsMessage || !submitBtn) {
+        console.log('⚠️ Elementos del modal de pedido no encontrados, probablemente el modal está cerrado');
+        return;
+    }
+
     if (orderItems.length === 0) {
         noProductsMessage.style.display = 'block';
         submitBtn.disabled = true;
@@ -1281,6 +1287,8 @@ function updateOrderTotal() {
     const orderTotalElement = document.getElementById('order-total');
     if (orderTotalElement) {
         orderTotalElement.textContent = formatCurrency(total);
+    } else {
+        console.log('⚠️ Elemento order-total no encontrado, probablemente el modal está cerrado');
     }
 }
 
@@ -1586,9 +1594,9 @@ async function handleNewOrderSubmit(e) {
         
         if (response.ok) {
             showNotification('Pedido creado exitosamente', 'success');
+            clearOrderItems(); // Limpiar productos antes de cerrar el modal
             document.getElementById('new-order-modal').classList.remove('active');
             e.target.reset();
-            clearOrderItems(); // Limpiar productos
             await loadOrders();
         } else {
             const error = await response.json();
