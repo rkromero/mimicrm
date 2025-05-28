@@ -1875,6 +1875,44 @@ function editOrder(orderId) {
     showModal('edit-order-modal');
 }
 
+// Función para cargar los productos de un pedido específico para edición
+async function loadEditOrderItems(orderId) {
+    try {
+        const token = localStorage.getItem('authToken');
+        const response = await fetch(`/api/pedidos/${orderId}/items`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const items = await response.json();
+            editOrderItems = items.map(item => ({
+                producto_id: item.producto_id,
+                producto_nombre: item.producto_nombre,
+                cantidad: item.cantidad,
+                precio: parseFloat(item.precio),
+                subtotal: item.cantidad * parseFloat(item.precio)
+            }));
+            
+            renderEditOrderProducts();
+            updateEditOrderTotal();
+            debugLog('EDIT_ORDER', `Productos cargados para pedido ${orderId}:`, editOrderItems);
+        } else {
+            console.error('Error cargando items del pedido:', response.statusText);
+            editOrderItems = [];
+            renderEditOrderProducts();
+            updateEditOrderTotal();
+        }
+    } catch (error) {
+        console.error('Error cargando items del pedido:', error);
+        editOrderItems = [];
+        renderEditOrderProducts();
+        updateEditOrderTotal();
+    }
+}
+
 function deleteOrder(orderId) {
     // Buscar el pedido para mostrar información en la confirmación
     const order = orders.find(o => o.id == orderId);
