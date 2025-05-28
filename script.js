@@ -539,6 +539,20 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Configurar formularios
     setupForms();
     
+    // Configurar botones del header
+    setupHeaderButtons();
+    
+    // Mostrar dashboard por defecto
+    showSection('dashboard');
+    updateHeaderTitle('dashboard');
+    
+    // Marcar dashboard como activo en la navegación
+    document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+    const dashboardNav = document.querySelector('.nav-item'); // El primer nav-item es dashboard
+    if (dashboardNav) {
+        dashboardNav.classList.add('active');
+    }
+    
     console.log('✅ Aplicación inicializada correctamente');
 });
 
@@ -700,19 +714,6 @@ function setupForms() {
             console.log('✅ Event listener del formulario configurado');
         } else {
             console.warn('⚠️ No se encontró el formulario new-client-form');
-        }
-        
-        // Configurar botones de modal
-        const newClientBtn = document.getElementById('new-client-btn');
-        if (newClientBtn) {
-            // Usar onclick en lugar de addEventListener para evitar duplicados
-            newClientBtn.onclick = function() {
-                console.log('🖱️ Botón nuevo cliente clickeado');
-                showModal('new-client-modal');
-            };
-            console.log('✅ Event listener del botón nuevo cliente configurado');
-        } else {
-            console.warn('⚠️ No se encontró el botón new-client-btn');
         }
         
         // Configurar cierre de modales
@@ -906,5 +907,79 @@ function deleteContact(contactId) {
     if (confirm('¿Está seguro de que desea eliminar este contacto?')) {
         console.log('Eliminar contacto:', contactId);
         showNotification('Función de eliminación en desarrollo', 'info');
+    }
+}
+
+// Función para configurar botones del header
+function setupHeaderButtons() {
+    console.log('🔧 Configurando botones del header...');
+    
+    try {
+        // Configurar botón "Nuevo Cliente" del header
+        const newClientBtnHeader = document.getElementById('new-client-btn');
+        if (newClientBtnHeader) {
+            newClientBtnHeader.onclick = function() {
+                console.log('🖱️ Botón nuevo cliente (header) clickeado');
+                showModal('new-client-modal');
+            };
+            console.log('✅ Botón nuevo cliente del header configurado');
+        }
+        
+        // Configurar botón "Nuevo Pedido" del header
+        const newOrderBtnHeader = document.getElementById('new-order-btn');
+        if (newOrderBtnHeader) {
+            newOrderBtnHeader.onclick = function() {
+                console.log('🖱️ Botón nuevo pedido (header) clickeado');
+                showModal('new-order-modal');
+            };
+            console.log('✅ Botón nuevo pedido del header configurado');
+        }
+        
+        // Configurar botón "Nuevo Pago" del header
+        const newPaymentBtnHeader = document.getElementById('new-payment-btn');
+        if (newPaymentBtnHeader) {
+            newPaymentBtnHeader.onclick = function() {
+                console.log('🖱️ Botón nuevo pago (header) clickeado');
+                showModal('new-payment-modal');
+            };
+            console.log('✅ Botón nuevo pago del header configurado');
+        }
+        
+        // Configurar botones adicionales de las secciones
+        const newOrderBtnSection = document.getElementById('new-order-btn-section');
+        if (newOrderBtnSection) {
+            newOrderBtnSection.onclick = function() {
+                console.log('🖱️ Botón nuevo pedido (sección) clickeado');
+                showModal('new-order-modal');
+            };
+        }
+        
+        const newPaymentBtnSection = document.getElementById('new-payment-btn-section');
+        if (newPaymentBtnSection) {
+            newPaymentBtnSection.onclick = function() {
+                console.log('🖱️ Botón nuevo pago (sección) clickeado');
+                showModal('new-payment-modal');
+            };
+        }
+        
+        const newContactBtnSection = document.getElementById('new-contact-btn-section');
+        if (newContactBtnSection) {
+            newContactBtnSection.onclick = function() {
+                console.log('🖱️ Botón nuevo contacto (sección) clickeado');
+                showModal('new-contact-modal');
+            };
+        }
+        
+        const newProductBtn = document.getElementById('new-product-btn');
+        if (newProductBtn) {
+            newProductBtn.onclick = function() {
+                console.log('🖱️ Botón nuevo producto clickeado');
+                showModal('new-product-modal');
+            };
+        }
+        
+        console.log('✅ Configuración de botones del header completada');
+    } catch (error) {
+        console.error('❌ Error configurando botones del header:', error);
     }
 }
