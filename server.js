@@ -476,6 +476,35 @@ app.post('/api/productos', authenticateToken, async (req, res) => {
     }
 });
 
+// Actualizar producto
+app.put('/api/productos/:id', authenticateToken, async (req, res) => {
+    try {
+        const productoId = req.params.id;
+        const { nombre, descripcion, precio, stock } = req.body;
+
+        // Verificar que el producto existe
+        const [existingProduct] = await db.execute(
+            'SELECT * FROM productos WHERE id = ? AND activo = true',
+            [productoId]
+        );
+
+        if (existingProduct.length === 0) {
+            return res.status(404).json({ error: 'Producto no encontrado' });
+        }
+
+        // Actualizar el producto
+        await db.execute(
+            'UPDATE productos SET nombre = ?, descripcion = ?, precio = ?, stock = ? WHERE id = ?',
+            [nombre, descripcion, precio, stock || 0, productoId]
+        );
+
+        res.json({ message: 'Producto actualizado exitosamente' });
+    } catch (error) {
+        console.error('Error actualizando producto:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
 // RUTAS DE PEDIDOS
 
 // Obtener todos los pedidos
@@ -694,6 +723,45 @@ app.post('/api/pagos', authenticateToken, async (req, res) => {
     }
 });
 
+// Actualizar pago
+app.put('/api/pagos/:id', authenticateToken, async (req, res) => {
+    try {
+        const pagoId = req.params.id;
+        const { cliente_id, monto, metodo, referencia } = req.body;
+
+        // Verificar que el pago existe y el usuario tiene permisos
+        const [existingPago] = await db.execute(
+            'SELECT * FROM pagos WHERE id = ?',
+            [pagoId]
+        );
+
+        if (existingPago.length === 0) {
+            return res.status(404).json({ error: 'Pago no encontrado' });
+        }
+
+        // Si es vendedor, verificar que sea el creador del pago
+        if (req.user.perfil === 'Vendedor' && existingPago[0].creado_por !== req.user.id) {
+            return res.status(403).json({ error: 'No tienes permisos para editar este pago' });
+        }
+
+        // Validar campos requeridos
+        if (!cliente_id || !monto || !metodo) {
+            return res.status(400).json({ error: 'Cliente, monto y método son campos requeridos' });
+        }
+
+        // Actualizar el pago
+        await db.execute(
+            'UPDATE pagos SET cliente_id = ?, monto = ?, metodo = ?, referencia = ? WHERE id = ?',
+            [cliente_id, monto, metodo, referencia, pagoId]
+        );
+
+        res.json({ message: 'Pago actualizado exitosamente' });
+    } catch (error) {
+        console.error('Error actualizando pago:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
 // Eliminar pago
 app.delete('/api/pagos/:id', authenticateToken, async (req, res) => {
     try {
@@ -764,6 +832,35 @@ app.post('/api/contactos', authenticateToken, async (req, res) => {
         res.status(201).json({ id: result.insertId, message: 'Contacto creado exitosamente' });
     } catch (error) {
         console.error('Error creando contacto:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Actualizar contacto
+app.put('/api/contactos/:id', authenticateToken, async (req, res) => {
+    try {
+        const contactoId = req.params.id;
+        const { cliente_id, nombre, email, telefono, cargo, departamento } = req.body;
+
+        // Verificar que el contacto existe
+        const [existingContacto] = await db.execute(
+            'SELECT * FROM contactos WHERE id = ? AND activo = true',
+            [contactoId]
+        );
+
+        if (existingContacto.length === 0) {
+            return res.status(404).json({ error: 'Contacto no encontrado' });
+        }
+
+        // Actualizar el contacto
+        await db.execute(
+            'UPDATE contactos SET cliente_id = ?, nombre = ?, email = ?, telefono = ?, cargo = ?, departamento = ? WHERE id = ?',
+            [cliente_id, nombre, email, telefono, cargo, departamento, contactoId]
+        );
+
+        res.json({ message: 'Contacto actualizado exitosamente' });
+    } catch (error) {
+        console.error('Error actualizando contacto:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });

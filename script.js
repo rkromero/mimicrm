@@ -2007,9 +2007,103 @@ function editPayment(paymentId) {
         return;
     }
     
-    // Por ahora mostrar notificación informativa
-    // TODO: Implementar modal de edición de pagos
-    showNotification(`Función de edición de pagos en desarrollo. Pago: ${formatCurrency(payment.monto)} - ${payment.metodo}`, 'info');
+    // Crear modal de edición dinámicamente
+    const editModal = document.createElement('div');
+    editModal.className = 'modal active';
+    editModal.style.cssText = `
+        display: flex !important;
+        z-index: 12000 !important;
+        background-color: rgba(0, 0, 0, 0.7) !important;
+    `;
+    
+    editModal.innerHTML = `
+        <div class="modal-content" style="max-width: 600px; z-index: 12001 !important;">
+            <div class="modal-header">
+                <h2 class="modal-title">Editar Pago</h2>
+                <button class="close-modal btn btn-secondary" onclick="this.closest('.modal').remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="edit-payment-form-${payment.id}">
+                <div class="mb-4">
+                    <label for="edit-payment-client-${payment.id}">Cliente</label>
+                    <select id="edit-payment-client-${payment.id}" class="input" required>
+                        <option value="">Seleccione un cliente</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label for="edit-payment-amount-${payment.id}">Monto</label>
+                    <input type="number" id="edit-payment-amount-${payment.id}" class="input" step="0.01" value="${payment.monto}" required>
+                </div>
+                <div class="mb-4">
+                    <label for="edit-payment-method-${payment.id}">Método de Pago</label>
+                    <select id="edit-payment-method-${payment.id}" class="input" required>
+                        <option value="efectivo" ${payment.metodo === 'efectivo' ? 'selected' : ''}>Efectivo</option>
+                        <option value="transferencia" ${payment.metodo === 'transferencia' ? 'selected' : ''}>Transferencia</option>
+                        <option value="tarjeta" ${payment.metodo === 'tarjeta' ? 'selected' : ''}>Tarjeta</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label for="edit-payment-reference-${payment.id}">Referencia</label>
+                    <input type="text" id="edit-payment-reference-${payment.id}" class="input" value="${payment.referencia || ''}" required>
+                </div>
+                <div class="flex justify-between">
+                    <button type="button" class="btn btn-secondary" onclick="this.closest('.modal').remove()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    `;
+    
+    document.body.appendChild(editModal);
+    
+    // Poblar select de clientes
+    const clientSelect = document.getElementById(`edit-payment-client-${payment.id}`);
+    clients.forEach(client => {
+        const option = document.createElement('option');
+        option.value = client.id;
+        option.textContent = client.nombre;
+        if (client.id == payment.cliente_id) {
+            option.selected = true;
+        }
+        clientSelect.appendChild(option);
+    });
+    
+    // Manejar envío del formulario
+    document.getElementById(`edit-payment-form-${payment.id}`).addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const paymentData = {
+            cliente_id: document.getElementById(`edit-payment-client-${payment.id}`).value,
+            monto: parseFloat(document.getElementById(`edit-payment-amount-${payment.id}`).value),
+            metodo: document.getElementById(`edit-payment-method-${payment.id}`).value,
+            referencia: document.getElementById(`edit-payment-reference-${payment.id}`).value
+        };
+        
+        try {
+            const token = localStorage.getItem('authToken');
+            
+            const response = await fetch(`/api/pagos/${payment.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(paymentData)
+            });
+            
+            if (response.ok) {
+                showNotification('Pago actualizado exitosamente', 'success');
+                editModal.remove();
+                await loadPayments();
+            } else {
+                const errorData = await response.json();
+                showNotification(errorData.message || 'Error al actualizar pago', 'error');
+            }
+        } catch (error) {
+            showNotification(`Error de conexión: ${error.message}`, 'error');
+        }
+    });
 }
 
 function deletePayment(paymentId) {
@@ -2138,9 +2232,85 @@ function editProduct(productId) {
         return;
     }
     
-    // Por ahora mostrar notificación informativa
-    // TODO: Implementar modal de edición de productos
-    showNotification(`Función de edición de productos en desarrollo. Producto: ${product.nombre} - ${formatCurrency(product.precio)}`, 'info');
+    // Crear modal de edición dinámicamente
+    const editModal = document.createElement('div');
+    editModal.className = 'modal active';
+    editModal.style.cssText = `
+        display: flex !important;
+        z-index: 12000 !important;
+        background-color: rgba(0, 0, 0, 0.7) !important;
+    `;
+    
+    editModal.innerHTML = `
+        <div class="modal-content" style="max-width: 600px; z-index: 12001 !important;">
+            <div class="modal-header">
+                <h2 class="modal-title">Editar Producto</h2>
+                <button class="close-modal btn btn-secondary" onclick="this.closest('.modal').remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="edit-product-form-${product.id}">
+                <div class="mb-4">
+                    <label for="edit-product-name-${product.id}">Nombre del Producto</label>
+                    <input type="text" id="edit-product-name-${product.id}" class="input" value="${product.nombre}" required>
+                </div>
+                <div class="mb-4">
+                    <label for="edit-product-description-${product.id}">Descripción</label>
+                    <textarea id="edit-product-description-${product.id}" class="input" rows="3">${product.descripcion || ''}</textarea>
+                </div>
+                <div class="mb-4">
+                    <label for="edit-product-price-${product.id}">Precio</label>
+                    <input type="number" id="edit-product-price-${product.id}" class="input" step="0.01" value="${product.precio}" required>
+                </div>
+                <div class="mb-4">
+                    <label for="edit-product-stock-${product.id}">Stock</label>
+                    <input type="number" id="edit-product-stock-${product.id}" class="input" min="0" value="${product.stock || 0}" required>
+                </div>
+                <div class="flex justify-between">
+                    <button type="button" class="btn btn-secondary" onclick="this.closest('.modal').remove()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    `;
+    
+    document.body.appendChild(editModal);
+    
+    // Manejar envío del formulario
+    document.getElementById(`edit-product-form-${product.id}`).addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const productData = {
+            nombre: document.getElementById(`edit-product-name-${product.id}`).value,
+            descripcion: document.getElementById(`edit-product-description-${product.id}`).value,
+            precio: parseFloat(document.getElementById(`edit-product-price-${product.id}`).value),
+            stock: parseInt(document.getElementById(`edit-product-stock-${product.id}`).value)
+        };
+        
+        try {
+            const token = localStorage.getItem('authToken');
+            
+            const response = await fetch(`/api/productos/${product.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(productData)
+            });
+            
+            if (response.ok) {
+                showNotification('Producto actualizado exitosamente', 'success');
+                editModal.remove();
+                await loadProducts();
+            } else {
+                const errorData = await response.json();
+                showNotification(errorData.message || 'Error al actualizar producto', 'error');
+            }
+        } catch (error) {
+            showNotification(`Error de conexión: ${error.message}`, 'error');
+        }
+    });
 }
 
 function deleteProduct(productId) {
@@ -2197,9 +2367,181 @@ function editContact(contactId) {
         return;
     }
     
-    // Por ahora mostrar notificación informativa
-    // TODO: Implementar modal de edición de contactos
-    showNotification(`Función de edición de contactos en desarrollo. Contacto: ${contact.nombre} - ${contact.email}`, 'info');
+    // Crear modal de edición dinámicamente
+    const editModal = document.createElement('div');
+    editModal.className = 'modal active';
+    editModal.style.cssText = `
+        display: flex !important;
+        z-index: 12000 !important;
+        background-color: rgba(0, 0, 0, 0.7) !important;
+    `;
+    
+    editModal.innerHTML = `
+        <div class="modal-content" style="max-width: 600px; z-index: 12001 !important;">
+            <div class="modal-header">
+                <h2 class="modal-title">Editar Contacto</h2>
+                <button class="close-modal btn btn-secondary" onclick="this.closest('.modal').remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="edit-contact-form-${contact.id}">
+                <div class="mb-4">
+                    <label for="edit-contact-client-${contact.id}">Cliente</label>
+                    <select id="edit-contact-client-${contact.id}" class="input" required>
+                        <option value="">Seleccione un cliente</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label for="edit-contact-name-${contact.id}">Nombre Completo</label>
+                    <input type="text" id="edit-contact-name-${contact.id}" class="input" value="${contact.nombre}" required>
+                </div>
+                <div class="mb-4">
+                    <label for="edit-contact-email-${contact.id}">Email</label>
+                    <input type="email" id="edit-contact-email-${contact.id}" class="input" value="${contact.email}" required>
+                </div>
+                <div class="mb-4">
+                    <label for="edit-contact-phone-${contact.id}">Teléfono</label>
+                    <input type="tel" id="edit-contact-phone-${contact.id}" class="input" value="${contact.telefono || ''}" required>
+                </div>
+                <div class="mb-4">
+                    <label for="edit-contact-position-${contact.id}">Cargo</label>
+                    <input type="text" id="edit-contact-position-${contact.id}" class="input" value="${contact.cargo || ''}" required>
+                </div>
+                <div class="mb-4">
+                    <label for="edit-contact-department-${contact.id}">Departamento</label>
+                    <input type="text" id="edit-contact-department-${contact.id}" class="input" value="${contact.departamento || ''}">
+                </div>
+                <div class="flex justify-between">
+                    <button type="button" class="btn btn-secondary" onclick="this.closest('.modal').remove()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    `;
+    
+    document.body.appendChild(editModal);
+    
+    // Poblar select de clientes
+    const clientSelect = document.getElementById(`edit-contact-client-${contact.id}`);
+    clients.forEach(client => {
+        const option = document.createElement('option');
+        option.value = client.id;
+        option.textContent = client.nombre;
+        if (client.id == contact.cliente_id) {
+            option.selected = true;
+        }
+        clientSelect.appendChild(option);
+    });
+    
+    // Manejar envío del formulario
+    document.getElementById(`edit-contact-form-${contact.id}`).addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const contactData = {
+            cliente_id: document.getElementById(`edit-contact-client-${contact.id}`).value,
+            nombre: document.getElementById(`edit-contact-name-${contact.id}`).value,
+            email: document.getElementById(`edit-contact-email-${contact.id}`).value,
+            telefono: document.getElementById(`edit-contact-phone-${contact.id}`).value,
+            cargo: document.getElementById(`edit-contact-position-${contact.id}`).value,
+            departamento: document.getElementById(`edit-contact-department-${contact.id}`).value
+        };
+        
+        try {
+            const token = localStorage.getItem('authToken');
+            
+            const response = await fetch(`/api/contactos/${contact.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(contactData)
+            });
+            
+            if (response.ok) {
+                showNotification('Contacto actualizado exitosamente', 'success');
+                editModal.remove();
+                await loadContacts();
+            } else {
+                const errorData = await response.json();
+                showNotification(errorData.message || 'Error al actualizar contacto', 'error');
+            }
+        } catch (error) {
+            showNotification(`Error de conexión: ${error.message}`, 'error');
+        }
+    });
+}
+
+function viewContactDetails(contactId) {
+    console.log('Ver detalles del contacto:', contactId);
+    
+    const contact = contacts.find(c => c.id == contactId);
+    if (!contact) {
+        showNotification('Contacto no encontrado', 'error');
+        return;
+    }
+    
+    // Crear modal de detalles dinámicamente
+    const detailsModal = document.createElement('div');
+    detailsModal.className = 'modal active';
+    detailsModal.style.cssText = `
+        display: flex !important;
+        z-index: 12000 !important;
+        background-color: rgba(0, 0, 0, 0.7) !important;
+    `;
+    
+    detailsModal.innerHTML = `
+        <div class="modal-content" style="max-width: 600px; z-index: 12001 !important;">
+            <div class="modal-header">
+                <h2 class="modal-title">Detalles del Contacto</h2>
+                <button class="close-modal btn btn-secondary" onclick="this.closest('.modal').remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div style="padding: 1rem;">
+                <div style="background: #f8fafc; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                    <h3 style="margin: 0 0 1rem 0; color: #1f2937;">Información del Contacto</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div>
+                            <strong>Nombre:</strong><br>
+                            ${contact.nombre}
+                        </div>
+                        <div>
+                            <strong>Email:</strong><br>
+                            ${contact.email}
+                        </div>
+                        <div>
+                            <strong>Teléfono:</strong><br>
+                            ${contact.telefono || 'N/A'}
+                        </div>
+                        <div>
+                            <strong>Cargo:</strong><br>
+                            ${contact.cargo || 'N/A'}
+                        </div>
+                        <div>
+                            <strong>Departamento:</strong><br>
+                            ${contact.departamento || 'N/A'}
+                        </div>
+                        <div>
+                            <strong>Cliente:</strong><br>
+                            ${contact.cliente_nombre || 'N/A'}
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+                    <button class="btn btn-primary" onclick="editContact(${contact.id}); this.closest('.modal').remove();" style="background: #4f46e5; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;">
+                        <i class="fas fa-edit"></i> Editar Contacto
+                    </button>
+                    <button class="btn btn-secondary" onclick="this.closest('.modal').remove()" style="background: #6b7280; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;">
+                        <i class="fas fa-times"></i> Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(detailsModal);
 }
 
 function deleteContact(contactId) {
