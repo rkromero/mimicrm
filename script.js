@@ -510,11 +510,17 @@ function renderContactsTable() {
 function showNotification(message, type = 'success') {
     // Crear elemento de notificación
     const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    notification.innerHTML = `
+    notification.className = `notification notification-${type}`;
+    
+    // Crear contenido de la notificación con la estructura correcta
+    const notificationContent = document.createElement('div');
+    notificationContent.className = 'notification-content';
+    notificationContent.innerHTML = `
         <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
         <span>${message}</span>
     `;
+    
+    notification.appendChild(notificationContent);
     
     // Agregar al DOM
     document.body.appendChild(notification);
@@ -522,11 +528,15 @@ function showNotification(message, type = 'success') {
     // Mostrar con animación
     setTimeout(() => notification.classList.add('show'), 100);
     
-    // Ocultar después de 3 segundos
+    // Ocultar después de 4 segundos (un poco más de tiempo para leer)
     setTimeout(() => {
         notification.classList.remove('show');
-        setTimeout(() => document.body.removeChild(notification), 300);
-    }, 3000);
+        setTimeout(() => {
+            if (notification.parentNode) {
+                document.body.removeChild(notification);
+            }
+        }, 300);
+    }, 4000);
 }
 
 // === INICIALIZACIÓN ===
