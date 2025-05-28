@@ -1088,7 +1088,7 @@ async function handleNewClientSubmit(e) {
     const formData = new FormData(e.target);
     const clientData = {
         nombre: formData.get('nombre') || document.getElementById('client-name-input').value,
-        documento: formData.get('documento') || document.getElementById('client-rut-input').value,
+        cuit: formData.get('documento') || document.getElementById('client-rut-input').value,
         email: formData.get('email') || document.getElementById('client-email-input').value,
         telefono: formData.get('telefono') || document.getElementById('client-phone-input').value,
         direccion: formData.get('direccion') || document.getElementById('client-address-input').value,
@@ -1101,7 +1101,7 @@ async function handleNewClientSubmit(e) {
     debugLog('FORM', 'Datos del cliente a enviar:', clientData);
     
     // Validar que los campos requeridos no estén vacíos
-    const requiredFields = ['nombre', 'documento', 'email', 'telefono', 'direccion'];
+    const requiredFields = ['nombre', 'cuit', 'email', 'telefono', 'direccion'];
     const missingFields = requiredFields.filter(field => !clientData[field] || clientData[field].trim() === '');
     
     if (missingFields.length > 0) {
@@ -1678,7 +1678,7 @@ window.testServerConnection = async function() {
         console.log('3. Probando POST /api/clientes con datos de prueba...');
         const testData = {
             nombre: 'Cliente de Prueba',
-            documento: '12345678',
+            cuit: '12345678',
             email: 'test@test.com',
             telefono: '123456789',
             direccion: 'Dirección de prueba',
