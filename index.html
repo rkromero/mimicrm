@@ -101,19 +101,6 @@
                 </div>
             </header>
 
-            <!-- Contenido de la página -->
-            <div class="page-content">
-                <div class="table-container mb-4">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2>Clientes Recientes</h2>
-                        <div class="flex gap-2">
-                            <input type="text" class="input" placeholder="Buscar cliente..." id="client-list-search">
-                        </div>
-                    </div>
-                    <div id="clients-list"></div>
-                </div>
-            </div>
-
             <!-- Sección de Pedidos -->
             <div id="pedidos-section" class="page-content" style="display:none;">
                 <div class="table-container">
@@ -240,6 +227,83 @@
                             </tbody>
                         </table>
                     </div>
+                </div>
+            </div>
+
+            <!-- Contenido del Dashboard -->
+            <div id="dashboard-section" class="page-content">
+                <div class="dashboard-grid">
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <h3>Resumen General</h3>
+                            <i class="fas fa-chart-pie"></i>
+                        </div>
+                        <div class="card-content">
+                            <div class="stat-item">
+                                <span class="stat-label">Total Clientes</span>
+                                <span class="stat-value" id="total-clients">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Pedidos Activos</span>
+                                <span class="stat-value" id="total-orders">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Productos</span>
+                                <span class="stat-value" id="total-products">0</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <h3>Actividad Reciente</h3>
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="card-content">
+                            <div id="recent-activity">
+                                <p class="text-center text-gray-500">No hay actividad reciente</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <h3>Acciones Rápidas</h3>
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <div class="card-content">
+                            <div class="quick-actions">
+                                <button class="quick-action-btn" onclick="showModal('new-client-modal')">
+                                    <i class="fas fa-user-plus"></i>
+                                    <span>Nuevo Cliente</span>
+                                </button>
+                                <button class="quick-action-btn" onclick="showModal('new-order-modal')">
+                                    <i class="fas fa-shopping-cart"></i>
+                                    <span>Nuevo Pedido</span>
+                                </button>
+                                <button class="quick-action-btn" onclick="showModal('new-payment-modal')">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                    <span>Nuevo Pago</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección de Clientes -->
+            <div id="clientes-section" class="page-content" style="display:none;">
+                <div class="table-container mb-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2>Clientes</h2>
+                        <div class="flex gap-2">
+                            <input type="text" class="input" placeholder="Buscar cliente..." id="client-list-search">
+                            <button id="new-client-btn-section" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Nuevo Cliente
+                            </button>
+                        </div>
+                    </div>
+                    <div id="clients-list"></div>
                 </div>
             </div>
         </main>

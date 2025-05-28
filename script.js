@@ -643,20 +643,30 @@ function showSection(section) {
     console.log('🔄 Cambiando a sección:', section);
     
     // Ocultar todas las secciones
-    const sections = document.querySelectorAll('.page-content, #admin-profiles-section, #pedidos-section, #pagos-section, #productos-section, #contactos-section');
+    const sections = document.querySelectorAll('.page-content, #admin-profiles-section, #pedidos-section, #pagos-section, #productos-section, #contactos-section, #dashboard-section, #clientes-section');
     sections.forEach(sec => sec.style.display = 'none');
     
     // Mostrar la sección correspondiente
     switch(section) {
         case 'dashboard':
-            document.querySelector('.page-content').style.display = 'block';
-            // Solo renderizar si ya tenemos datos
-            if (clients.length > 0) {
-                renderClientsTable();
+            const dashboardSection = document.getElementById('dashboard-section');
+            if (dashboardSection) {
+                dashboardSection.style.display = 'block';
+            } else {
+                // Si no existe la sección dashboard, mostrar la primera page-content
+                document.querySelector('.page-content').style.display = 'block';
             }
+            // Actualizar estadísticas del dashboard
+            updateDashboardStats();
             break;
         case 'clientes':
-            document.querySelector('.page-content').style.display = 'block';
+            const clientesSection = document.getElementById('clientes-section');
+            if (clientesSection) {
+                clientesSection.style.display = 'block';
+            } else {
+                // Fallback a la sección general
+                document.querySelector('.page-content').style.display = 'block';
+            }
             // Solo renderizar si ya tenemos datos
             if (clients.length > 0) {
                 renderClientsTable();
@@ -695,7 +705,14 @@ function showSection(section) {
             document.querySelector('.page-content').style.display = 'block';
             break;
         default:
-            document.querySelector('.page-content').style.display = 'block';
+            // Por defecto mostrar dashboard
+            const defaultDashboard = document.getElementById('dashboard-section');
+            if (defaultDashboard) {
+                defaultDashboard.style.display = 'block';
+                updateDashboardStats();
+            } else {
+                document.querySelector('.page-content').style.display = 'block';
+            }
     }
     
     console.log('✅ Sección mostrada:', section);
@@ -981,5 +998,34 @@ function setupHeaderButtons() {
         console.log('✅ Configuración de botones del header completada');
     } catch (error) {
         console.error('❌ Error configurando botones del header:', error);
+    }
+}
+
+// Función para actualizar las estadísticas del dashboard
+function updateDashboardStats() {
+    console.log('📊 Actualizando estadísticas del dashboard...');
+    
+    try {
+        // Actualizar total de clientes
+        const totalClientsElement = document.getElementById('total-clients');
+        if (totalClientsElement) {
+            totalClientsElement.textContent = clients.length;
+        }
+        
+        // Actualizar total de pedidos
+        const totalOrdersElement = document.getElementById('total-orders');
+        if (totalOrdersElement) {
+            totalOrdersElement.textContent = orders.length;
+        }
+        
+        // Actualizar total de productos
+        const totalProductsElement = document.getElementById('total-products');
+        if (totalProductsElement) {
+            totalProductsElement.textContent = products.length;
+        }
+        
+        console.log('✅ Estadísticas actualizadas');
+    } catch (error) {
+        console.error('❌ Error actualizando estadísticas:', error);
     }
 }
