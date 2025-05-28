@@ -357,8 +357,14 @@ app.get('/dashboard', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Servir archivos estáticos
-app.use(express.static(__dirname));
+// ENDPOINT DE PRUEBA SIMPLE
+app.get('/api/test', (req, res) => {
+    res.json({ 
+        message: 'Servidor funcionando correctamente',
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'development'
+    });
+});
 
 // ENDPOINT ESPECIAL PARA LIMPIAR BASE DE DATOS (SOLO DESARROLLO)
 app.post('/api/admin/clear-database', async (req, res) => {
@@ -422,6 +428,9 @@ app.post('/api/admin/clear-database', async (req, res) => {
         });
     }
 });
+
+// Servir archivos estáticos (debe ir al final)
+app.use(express.static(__dirname));
 
 // Iniciar servidor
 async function startServer() {
