@@ -362,10 +362,13 @@ function renderClientsTable() {
                     <td>${client.telefono || client.phone}</td>
                     <td>${formatCurrency(client.saldo || client.balance || 0)}</td>
                     <td>
-                        <button onclick="editClient(${client.id})" class="btn-edit">
+                        <button onclick="viewClientDetails(${client.id})" class="btn-icon" title="Ver detalles">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button onclick="editClient(${client.id})" class="btn-icon" title="Editar">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button onclick="deleteClient(${client.id})" class="btn-delete">
+                        <button onclick="deleteClient(${client.id})" class="btn-icon" title="Eliminar" style="color: #dc2626;">
                             <i class="fas fa-trash"></i>
                         </button>
                     </td>
@@ -384,7 +387,7 @@ function renderOrdersTable() {
     if (!tbody) return;
     
     if (orders.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center">No hay pedidos registrados</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center">No hay pedidos registrados</td></tr>';
         return;
     }
     
@@ -397,10 +400,13 @@ function renderOrdersTable() {
             <td><span class="status-badge status-${order.estado}">${order.estado}</span></td>
             <td>${formatDate(order.fecha)}</td>
             <td>
-                <button onclick="editOrder(${order.id})" class="btn-edit">
+                <button onclick="viewOrderDetails(${order.id})" class="btn-icon" title="Ver detalles">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button onclick="editOrder(${order.id})" class="btn-icon" title="Editar">
                     <i class="fas fa-edit"></i>
                 </button>
-                <button onclick="deleteOrder(${order.id})" class="btn-delete">
+                <button onclick="deleteOrder(${order.id})" class="btn-icon" title="Eliminar" style="color: #dc2626;">
                     <i class="fas fa-trash"></i>
                 </button>
             </td>
@@ -414,7 +420,7 @@ function renderPaymentsTable() {
     if (!tbody) return;
     
     if (payments.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center">No hay pagos registrados</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center">No hay pagos registrados</td></tr>';
         return;
     }
     
@@ -426,10 +432,13 @@ function renderPaymentsTable() {
             <td>${payment.referencia || ''}</td>
             <td>${formatDate(payment.fecha)}</td>
             <td>
-                <button onclick="editPayment(${payment.id})" class="btn-edit">
+                <button onclick="viewPaymentDetails(${payment.id})" class="btn-icon" title="Ver detalles">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button onclick="editPayment(${payment.id})" class="btn-icon" title="Editar">
                     <i class="fas fa-edit"></i>
                 </button>
-                <button onclick="deletePayment(${payment.id})" class="btn-delete">
+                <button onclick="deletePayment(${payment.id})" class="btn-icon" title="Eliminar" style="color: #dc2626;">
                     <i class="fas fa-trash"></i>
                 </button>
             </td>
@@ -1036,6 +1045,15 @@ function setupForms() {
             console.warn('⚠️ No se encontró el formulario new-user-form');
         }
         
+        // Configurar formulario de edición de cliente
+        const editClientForm = document.getElementById('edit-client-form');
+        if (editClientForm) {
+            editClientForm.onsubmit = handleEditClientSubmit;
+            console.log('✅ Event listener del formulario de edición de cliente configurado');
+        } else {
+            console.warn('⚠️ No se encontró el formulario edit-client-form');
+        }
+        
         // Configurar cierre de modales
         const closeModalBtns = document.querySelectorAll('.close-modal');
         console.log(`🔍 Encontrados ${closeModalBtns.length} botones de cerrar modal`);
@@ -1495,22 +1513,71 @@ async function handleNewUserSubmit(e) {
     }
 }
 
-// Funciones placeholder para compatibilidad
+// Funciones de edición y eliminación
 function editClient(clientId) {
     console.log('Editar cliente:', clientId);
-    showNotification('Función de edición en desarrollo', 'info');
+    
+    // Buscar el cliente en el array
+    const client = clients.find(c => c.id == clientId);
+    if (!client) {
+        showNotification('Cliente no encontrado', 'error');
+        return;
+    }
+    
+    // Llenar el formulario de edición con los datos del cliente
+    document.getElementById('edit-client-name').value = client.nombre || '';
+    document.getElementById('edit-client-rut').value = client.cuit || client.documento || '';
+    document.getElementById('edit-client-email').value = client.email || '';
+    document.getElementById('edit-client-phone').value = client.telefono || '';
+    document.getElementById('edit-client-address').value = client.direccion || '';
+    document.getElementById('edit-client-province').value = client.provincia || '';
+    document.getElementById('edit-client-city').value = client.ciudad || '';
+    document.getElementById('edit-client-locality').value = client.localidad || '';
+    document.getElementById('edit-client-zip').value = client.codigo_postal || '';
+    
+    // Actualizar ciudades y localidades si hay provincia seleccionada
+    if (client.provincia) {
+        actualizarCiudades(client.provincia, 'edit-client-city');
+        if (client.ciudad) {
+            setTimeout(() => {
+                document.getElementById('edit-client-city').value = client.ciudad;
+                actualizarLocalidades(client.provincia, client.ciudad, 'edit-client-locality');
+                setTimeout(() => {
+                    document.getElementById('edit-client-locality').value = client.localidad || '';
+                }, 100);
+            }, 100);
+        }
+    }
+    
+    // Guardar el ID del cliente que se está editando
+    document.getElementById('edit-client-modal').setAttribute('data-client-id', clientId);
+    
+    // Mostrar el modal
+    showModal('edit-client-modal');
 }
 
 function deleteClient(clientId) {
     if (confirm('¿Está seguro de que desea eliminar este cliente?')) {
         console.log('Eliminar cliente:', clientId);
+        
+        // Aquí implementarías la lógica de eliminación
+        // Por ahora, mostrar mensaje de desarrollo
         showNotification('Función de eliminación en desarrollo', 'info');
     }
 }
 
 function editOrder(orderId) {
     console.log('Editar pedido:', orderId);
-    showNotification('Función de edición en desarrollo', 'info');
+    
+    // Buscar el pedido en el array
+    const order = orders.find(o => o.id == orderId);
+    if (!order) {
+        showNotification('Pedido no encontrado', 'error');
+        return;
+    }
+    
+    // Mostrar detalles del pedido (por ahora como notificación)
+    showNotification(`Pedido #${order.numero_pedido} - ${formatCurrency(order.monto)}`, 'info');
 }
 
 function deleteOrder(orderId) {
@@ -1522,7 +1589,16 @@ function deleteOrder(orderId) {
 
 function editPayment(paymentId) {
     console.log('Editar pago:', paymentId);
-    showNotification('Función de edición en desarrollo', 'info');
+    
+    // Buscar el pago en el array
+    const payment = payments.find(p => p.id == paymentId);
+    if (!payment) {
+        showNotification('Pago no encontrado', 'error');
+        return;
+    }
+    
+    // Mostrar detalles del pago (por ahora como notificación)
+    showNotification(`Pago de ${formatCurrency(payment.monto)} - ${payment.metodo}`, 'info');
 }
 
 function deletePayment(paymentId) {
@@ -1534,7 +1610,16 @@ function deletePayment(paymentId) {
 
 function editProduct(productId) {
     console.log('Editar producto:', productId);
-    showNotification('Función de edición en desarrollo', 'info');
+    
+    // Buscar el producto en el array
+    const product = products.find(p => p.id == productId);
+    if (!product) {
+        showNotification('Producto no encontrado', 'error');
+        return;
+    }
+    
+    // Mostrar detalles del producto (por ahora como notificación)
+    showNotification(`Producto: ${product.nombre} - ${formatCurrency(product.precio)}`, 'info');
 }
 
 function deleteProduct(productId) {
@@ -1546,13 +1631,86 @@ function deleteProduct(productId) {
 
 function editContact(contactId) {
     console.log('Editar contacto:', contactId);
-    showNotification('Función de edición en desarrollo', 'info');
+    
+    // Buscar el contacto en el array
+    const contact = contacts.find(c => c.id == contactId);
+    if (!contact) {
+        showNotification('Contacto no encontrado', 'error');
+        return;
+    }
+    
+    // Mostrar detalles del contacto (por ahora como notificación)
+    showNotification(`Contacto: ${contact.nombre} - ${contact.email}`, 'info');
 }
 
 function deleteContact(contactId) {
     if (confirm('¿Está seguro de que desea eliminar este contacto?')) {
         console.log('Eliminar contacto:', contactId);
         showNotification('Función de eliminación en desarrollo', 'info');
+    }
+}
+
+// Función para manejar la edición de cliente
+async function handleEditClientSubmit(e) {
+    e.preventDefault();
+    
+    const clientId = document.getElementById('edit-client-modal').getAttribute('data-client-id');
+    if (!clientId) {
+        showNotification('Error: ID de cliente no encontrado', 'error');
+        return;
+    }
+    
+    const formData = new FormData(e.target);
+    const clientData = {
+        nombre: document.getElementById('edit-client-name').value,
+        cuit: document.getElementById('edit-client-rut').value,
+        email: document.getElementById('edit-client-email').value,
+        telefono: document.getElementById('edit-client-phone').value,
+        direccion: document.getElementById('edit-client-address').value,
+        provincia: document.getElementById('edit-client-province').value,
+        ciudad: document.getElementById('edit-client-city').value,
+        localidad: document.getElementById('edit-client-locality').value,
+        codigo_postal: document.getElementById('edit-client-zip').value
+    };
+    
+    debugLog('FORM', 'Datos del cliente a actualizar:', clientData);
+    
+    // Validar que los campos requeridos no estén vacíos
+    const requiredFields = ['nombre', 'cuit', 'email', 'telefono', 'direccion'];
+    const missingFields = requiredFields.filter(field => !clientData[field] || clientData[field].trim() === '');
+    
+    if (missingFields.length > 0) {
+        console.error('❌ Campos requeridos faltantes:', missingFields);
+        showNotification(`Campos requeridos faltantes: ${missingFields.join(', ')}`, 'error');
+        return;
+    }
+    
+    try {
+        const token = localStorage.getItem('authToken');
+        
+        debugLog('HTTP', `Enviando petición PUT a /api/clientes/${clientId}`);
+        
+        const response = await fetch(`/api/clientes/${clientId}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(clientData)
+        });
+        
+        if (response.ok) {
+            showNotification('Cliente actualizado exitosamente', 'success');
+            document.getElementById('edit-client-modal').classList.remove('active');
+            await loadClients(); // Recargar la lista
+        } else {
+            const errorData = await response.json();
+            console.error('❌ Error del servidor al actualizar cliente:', response.status, errorData);
+            showNotification(errorData.message || `Error del servidor: ${response.status}`, 'error');
+        }
+    } catch (error) {
+        console.error('❌ Error de red o conexión:', error);
+        showNotification(`Error de conexión: ${error.message}`, 'error');
     }
 }
 
@@ -2538,4 +2696,206 @@ function restoreAdminPanelStyles() {
         
         console.log('✅ Estilos del panel de administración restaurados a valores normales');
     }
+}
+
+// Funciones para mostrar detalles
+function viewClientDetails(clientId) {
+    console.log('Ver detalles del cliente:', clientId);
+    
+    const client = clients.find(c => c.id == clientId);
+    if (!client) {
+        showNotification('Cliente no encontrado', 'error');
+        return;
+    }
+    
+    // Crear modal de detalles dinámicamente
+    const detailsModal = document.createElement('div');
+    detailsModal.className = 'modal active';
+    detailsModal.style.cssText = `
+        display: flex !important;
+        z-index: 12000 !important;
+        background-color: rgba(0, 0, 0, 0.7) !important;
+    `;
+    
+    detailsModal.innerHTML = `
+        <div class="modal-content" style="max-width: 600px; z-index: 12001 !important;">
+            <div class="modal-header">
+                <h2 class="modal-title">Detalles del Cliente</h2>
+                <button class="close-modal btn btn-secondary" onclick="this.closest('.modal').remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div style="padding: 1rem;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <strong>Nombre:</strong><br>
+                        ${client.nombre || 'N/A'}
+                    </div>
+                    <div>
+                        <strong>CUIT/Documento:</strong><br>
+                        ${client.cuit || client.documento || 'N/A'}
+                    </div>
+                    <div>
+                        <strong>Email:</strong><br>
+                        ${client.email || 'N/A'}
+                    </div>
+                    <div>
+                        <strong>Teléfono:</strong><br>
+                        ${client.telefono || 'N/A'}
+                    </div>
+                    <div>
+                        <strong>Dirección:</strong><br>
+                        ${client.direccion || 'N/A'}
+                    </div>
+                    <div>
+                        <strong>Saldo:</strong><br>
+                        <span style="font-size: 1.2rem; font-weight: bold; color: ${(client.saldo || 0) >= 0 ? '#10b981' : '#ef4444'};">
+                            ${formatCurrency(client.saldo || 0)}
+                        </span>
+                    </div>
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <strong>Ubicación:</strong><br>
+                    ${[client.localidad, client.ciudad, client.provincia].filter(Boolean).join(', ') || 'N/A'}
+                    ${client.codigo_postal ? ` (CP: ${client.codigo_postal})` : ''}
+                </div>
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                    <button class="btn btn-primary" onclick="editClient(${client.id}); this.closest('.modal').remove();">
+                        <i class="fas fa-edit"></i> Editar
+                    </button>
+                    <button class="btn btn-secondary" onclick="this.closest('.modal').remove()">
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(detailsModal);
+}
+
+function viewOrderDetails(orderId) {
+    console.log('Ver detalles del pedido:', orderId);
+    
+    const order = orders.find(o => o.id == orderId);
+    if (!order) {
+        showNotification('Pedido no encontrado', 'error');
+        return;
+    }
+    
+    // Crear modal de detalles dinámicamente
+    const detailsModal = document.createElement('div');
+    detailsModal.className = 'modal active';
+    detailsModal.style.cssText = `
+        display: flex !important;
+        z-index: 12000 !important;
+        background-color: rgba(0, 0, 0, 0.7) !important;
+    `;
+    
+    detailsModal.innerHTML = `
+        <div class="modal-content" style="max-width: 600px; z-index: 12001 !important;">
+            <div class="modal-header">
+                <h2 class="modal-title">Detalles del Pedido #${order.numero_pedido}</h2>
+                <button class="close-modal btn btn-secondary" onclick="this.closest('.modal').remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div style="padding: 1rem;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <strong>Cliente:</strong><br>
+                        ${order.cliente_nombre || 'N/A'}
+                    </div>
+                    <div>
+                        <strong>Monto:</strong><br>
+                        <span style="font-size: 1.2rem; font-weight: bold; color: #10b981;">
+                            ${formatCurrency(order.monto)}
+                        </span>
+                    </div>
+                    <div>
+                        <strong>Estado:</strong><br>
+                        <span class="status-badge status-${order.estado}">${order.estado}</span>
+                    </div>
+                    <div>
+                        <strong>Fecha:</strong><br>
+                        ${formatDate(order.fecha)}
+                    </div>
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <strong>Descripción:</strong><br>
+                    ${order.descripcion || 'Sin descripción'}
+                </div>
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                    <button class="btn btn-secondary" onclick="this.closest('.modal').remove()">
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(detailsModal);
+}
+
+function viewPaymentDetails(paymentId) {
+    console.log('Ver detalles del pago:', paymentId);
+    
+    const payment = payments.find(p => p.id == paymentId);
+    if (!payment) {
+        showNotification('Pago no encontrado', 'error');
+        return;
+    }
+    
+    // Crear modal de detalles dinámicamente
+    const detailsModal = document.createElement('div');
+    detailsModal.className = 'modal active';
+    detailsModal.style.cssText = `
+        display: flex !important;
+        z-index: 12000 !important;
+        background-color: rgba(0, 0, 0, 0.7) !important;
+    `;
+    
+    detailsModal.innerHTML = `
+        <div class="modal-content" style="max-width: 600px; z-index: 12001 !important;">
+            <div class="modal-header">
+                <h2 class="modal-title">Detalles del Pago</h2>
+                <button class="close-modal btn btn-secondary" onclick="this.closest('.modal').remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div style="padding: 1rem;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <strong>Cliente:</strong><br>
+                        ${payment.cliente_nombre || 'N/A'}
+                    </div>
+                    <div>
+                        <strong>Monto:</strong><br>
+                        <span style="font-size: 1.2rem; font-weight: bold; color: #10b981;">
+                            ${formatCurrency(payment.monto)}
+                        </span>
+                    </div>
+                    <div>
+                        <strong>Método:</strong><br>
+                        ${payment.metodo || 'N/A'}
+                    </div>
+                    <div>
+                        <strong>Fecha:</strong><br>
+                        ${formatDate(payment.fecha)}
+                    </div>
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <strong>Referencia:</strong><br>
+                    ${payment.referencia || 'Sin referencia'}
+                </div>
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                    <button class="btn btn-secondary" onclick="this.closest('.modal').remove()">
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(detailsModal);
 }
