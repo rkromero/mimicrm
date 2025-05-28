@@ -360,11 +360,11 @@ app.get('/api/productos', authenticateToken, async (req, res) => {
 // Crear producto
 app.post('/api/productos', authenticateToken, async (req, res) => {
     try {
-        const { nombre, descripcion, precio, categoria, codigo } = req.body;
+        const { nombre, descripcion, precio, stock } = req.body;
 
         const [result] = await db.execute(
-            'INSERT INTO productos (nombre, descripcion, precio, categoria, codigo, creado_por) VALUES (?, ?, ?, ?, ?, ?)',
-            [nombre, descripcion, precio, categoria, codigo, req.user.id]
+            'INSERT INTO productos (nombre, descripcion, precio, stock) VALUES (?, ?, ?, ?)',
+            [nombre, descripcion, precio, stock || 0]
         );
 
         res.status(201).json({ id: result.insertId, message: 'Producto creado exitosamente' });
@@ -384,7 +384,7 @@ app.get('/api/pedidos', authenticateToken, async (req, res) => {
             FROM pedidos p
             LEFT JOIN clientes c ON p.cliente_id = c.id
             LEFT JOIN usuarios u ON p.creado_por = u.id
-            WHERE p.activo = true
+            WHERE 1=1
         `;
         
         const params = [];
@@ -395,7 +395,7 @@ app.get('/api/pedidos', authenticateToken, async (req, res) => {
             params.push(req.user.id);
         }
 
-        query += ' ORDER BY p.fecha_creacion DESC';
+        query += ' ORDER BY p.created_at DESC';
 
         const [pedidos] = await db.execute(query, params);
         res.json(pedidos);
@@ -408,21 +408,24 @@ app.get('/api/pedidos', authenticateToken, async (req, res) => {
 // Crear pedido
 app.post('/api/pedidos', authenticateToken, async (req, res) => {
     try {
-        const { cliente_id, numero_pedido, descripcion, monto, estado, items } = req.body;
+        const { cliente_id, descripcion, monto, items } = req.body;
+
+        // Generar número de pedido único
+        const numero_pedido = `PED-${Date.now()}`;
 
         const [result] = await db.execute(
-            'INSERT INTO pedidos (cliente_id, numero_pedido, descripcion, monto, estado, creado_por) VALUES (?, ?, ?, ?, ?, ?)',
-            [cliente_id, numero_pedido, descripcion, monto, estado || 'pendiente', req.user.id]
+            'INSERT INTO pedidos (numero_pedido, cliente_id, descripcion, monto, fecha, creado_por) VALUES (?, ?, ?, ?, ?, ?)',
+            [numero_pedido, cliente_id, descripcion, monto, new Date().toISOString().split('T')[0], req.user.id]
         );
 
         const pedidoId = result.insertId;
 
-        // Si hay items, insertarlos en la tabla de pedidos_productos
+        // Si hay items, insertarlos en la tabla de pedido_items
         if (items && items.length > 0) {
             for (const item of items) {
                 await db.execute(
-                    'INSERT INTO pedidos_productos (pedido_id, producto_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?)',
-                    [pedidoId, item.producto_id, item.cantidad, item.precio_unitario]
+                    'INSERT INTO pedido_items (pedido_id, producto_id, cantidad, precio, subtotal) VALUES (?, ?, ?, ?, ?)',
+                    [pedidoId, item.producto_id, item.cantidad, item.precio, item.cantidad * item.precio]
                 );
             }
         }
@@ -445,7 +448,7 @@ app.get('/api/pagos', authenticateToken, async (req, res) => {
             LEFT JOIN clientes c ON p.cliente_id = c.id
             LEFT JOIN pedidos pe ON p.pedido_id = pe.id
             LEFT JOIN usuarios u ON p.creado_por = u.id
-            WHERE p.activo = true
+            WHERE 1=1
         `;
         
         const params = [];
@@ -456,7 +459,7 @@ app.get('/api/pagos', authenticateToken, async (req, res) => {
             params.push(req.user.id);
         }
 
-        query += ' ORDER BY p.fecha_pago DESC';
+        query += ' ORDER BY p.fecha DESC';
 
         const [pagos] = await db.execute(query, params);
         res.json(pagos);
@@ -469,11 +472,11 @@ app.get('/api/pagos', authenticateToken, async (req, res) => {
 // Crear pago
 app.post('/api/pagos', authenticateToken, async (req, res) => {
     try {
-        const { cliente_id, pedido_id, monto, metodo_pago, referencia, fecha_pago } = req.body;
+        const { cliente_id, pedido_id, monto, metodo, referencia } = req.body;
 
         const [result] = await db.execute(
-            'INSERT INTO pagos (cliente_id, pedido_id, monto, metodo_pago, referencia, fecha_pago, creado_por) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [cliente_id, pedido_id, monto, metodo_pago, referencia, fecha_pago || new Date(), req.user.id]
+            'INSERT INTO pagos (cliente_id, pedido_id, monto, metodo, referencia, fecha, creado_por) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [cliente_id, pedido_id, monto, metodo, referencia, new Date().toISOString().split('T')[0], req.user.id]
         );
 
         res.status(201).json({ id: result.insertId, message: 'Pago registrado exitosamente' });
@@ -489,7 +492,7 @@ app.post('/api/pagos', authenticateToken, async (req, res) => {
 app.get('/api/listas-precios', authenticateToken, async (req, res) => {
     try {
         const [listas] = await db.execute(
-            'SELECT * FROM listas_precios WHERE activo = true ORDER BY nombre'
+            'SELECT * FROM listas_precios WHERE activa = true ORDER BY nombre'
         );
         res.json(listas);
     } catch (error) {
@@ -504,8 +507,8 @@ app.post('/api/listas-precios', authenticateToken, async (req, res) => {
         const { nombre, descripcion, descuento } = req.body;
 
         const [result] = await db.execute(
-            'INSERT INTO listas_precios (nombre, descripcion, descuento, creado_por) VALUES (?, ?, ?, ?)',
-            [nombre, descripcion, descuento || 0, req.user.id]
+            'INSERT INTO listas_precios (nombre, descripcion, descuento) VALUES (?, ?, ?)',
+            [nombre, descripcion, descuento || 0]
         );
 
         res.status(201).json({ id: result.insertId, message: 'Lista de precios creada exitosamente' });
@@ -521,20 +524,16 @@ app.post('/api/listas-precios', authenticateToken, async (req, res) => {
 app.get('/api/contactos', authenticateToken, async (req, res) => {
     try {
         let query = `
-            SELECT co.*, c.nombre as cliente_nombre, u.nombre as creado_por_nombre
+            SELECT co.*, c.nombre as cliente_nombre
             FROM contactos co
             LEFT JOIN clientes c ON co.cliente_id = c.id
-            LEFT JOIN usuarios u ON co.creado_por = u.id
             WHERE co.activo = true
         `;
         
         const params = [];
 
-        // Filtrar por perfil de usuario
-        if (req.user.perfil === 'Vendedor') {
-            query += ' AND co.creado_por = ?';
-            params.push(req.user.id);
-        }
+        // Filtrar por perfil de usuario si es necesario
+        // (Los contactos no tienen campo creado_por en la tabla actual)
 
         query += ' ORDER BY co.nombre';
 
@@ -552,8 +551,8 @@ app.post('/api/contactos', authenticateToken, async (req, res) => {
         const { cliente_id, nombre, email, telefono, cargo, departamento } = req.body;
 
         const [result] = await db.execute(
-            'INSERT INTO contactos (cliente_id, nombre, email, telefono, cargo, departamento, creado_por) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [cliente_id, nombre, email, telefono, cargo, departamento, req.user.id]
+            'INSERT INTO contactos (cliente_id, nombre, email, telefono, cargo, departamento) VALUES (?, ?, ?, ?, ?, ?)',
+            [cliente_id, nombre, email, telefono, cargo, departamento]
         );
 
         res.status(201).json({ id: result.insertId, message: 'Contacto creado exitosamente' });
