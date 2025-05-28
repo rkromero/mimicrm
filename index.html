@@ -291,27 +291,27 @@
             <form id="new-client-form">
                 <div class="mb-4">
                     <label for="client-name-input">Nombre Completo</label>
-                    <input type="text" id="client-name-input" class="input" required>
+                    <input type="text" id="client-name-input" name="nombre" class="input" required>
                 </div>
                 <div class="mb-4">
                     <label for="client-rut-input">Documento</label>
-                    <input type="text" id="client-rut-input" class="input" required>
+                    <input type="text" id="client-rut-input" name="documento" class="input" required>
                 </div>
                 <div class="mb-4">
                     <label for="client-email-input">Email</label>
-                    <input type="email" id="client-email-input" class="input" required>
+                    <input type="email" id="client-email-input" name="email" class="input" required>
                 </div>
                 <div class="mb-4">
                     <label for="client-phone-input">Teléfono</label>
-                    <input type="tel" id="client-phone-input" class="input" required>
+                    <input type="tel" id="client-phone-input" name="telefono" class="input" required>
                 </div>
                 <div class="mb-4">
                     <label for="client-address-input">Dirección de Entrega</label>
-                    <input type="text" id="client-address-input" class="input" required>
+                    <input type="text" id="client-address-input" name="direccion" class="input" required>
                 </div>
                 <div class="mb-4">
                     <label for="client-province-input">Provincia</label>
-                    <select id="client-province-input" class="input" required>
+                    <select id="client-province-input" name="provincia" class="input" required>
                         <option value="">Seleccione una provincia</option>
                         <option value="Buenos Aires">Buenos Aires</option>
                         <option value="Ciudad Autonoma de Buenos Aires">Ciudad Autónoma de Buenos Aires</option>
@@ -341,23 +341,23 @@
                 </div>
                 <div class="mb-4">
                     <label for="client-city-input">Ciudad</label>
-                    <select id="client-city-input" class="input" required>
+                    <select id="client-city-input" name="ciudad" class="input" required>
                         <option value="">Seleccione una ciudad</option>
                     </select>
                 </div>
                 <div class="mb-4">
                     <label for="client-locality-input">Localidad</label>
-                    <select id="client-locality-input" class="input" required>
+                    <select id="client-locality-input" name="localidad" class="input" required>
                         <option value="">Seleccione una localidad</option>
                     </select>
                 </div>
                 <div class="mb-4">
                     <label for="client-zip-input">Código Postal</label>
-                    <input type="text" id="client-zip-input" class="input" required>
+                    <input type="text" id="client-zip-input" name="codigo_postal" class="input" required>
                 </div>
                 <div class="mb-4">
                     <label for="client-price-list">Lista de Precios</label>
-                    <select id="client-price-list" class="input" required>
+                    <select id="client-price-list" name="lista_precios_id" class="input" required>
                         <option value="">Seleccione una lista de precios</option>
                     </select>
                 </div>
@@ -761,27 +761,5 @@
     </div>
 
     <script src="script.js"></script>
-    <script>
-    document.getElementById('new-client-form').addEventListener('submit', function(event) {
-        event.preventDefault(); // Evitar el envío del formulario por defecto
-
-        // Obtener los valores de los campos
-        const nombre = document.getElementById('client-name-input').value;
-        const documento = document.getElementById('client-rut-input').value;
-        const email = document.getElementById('client-email-input').value;
-        const telefono = document.getElementById('client-phone-input').value;
-        const direccion = document.getElementById('client-address-input').value;
-        const provincia = document.getElementById('client-province-input').value;
-        const ciudad = document.getElementById('client-city-input').value;
-        const codigoPostal = document.getElementById('client-zip-input').value;
-
-        // Aquí puedes agregar la lógica para guardar los datos, por ejemplo, enviarlos a un servidor
-
-        console.log('Datos del cliente:', { nombre, documento, email, telefono, direccion, provincia, ciudad, codigoPostal });
-
-        // Cerrar el modal después de guardar
-        document.getElementById('new-client-modal').style.display = 'none';
-    });
-    </script>
 </body>
 </html>

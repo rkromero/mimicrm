@@ -744,6 +744,53 @@ function showModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {
         modal.style.display = 'block';
+        
+        // Si es el modal de nuevo cliente, cargar las listas de precios
+        if (modalId === 'new-client-modal') {
+            loadPriceListsIntoSelect();
+            setupProvinceAndCityListeners();
+        }
+    }
+}
+
+// Función para cargar listas de precios en el select
+function loadPriceListsIntoSelect() {
+    const priceListSelect = document.getElementById('client-price-list');
+    if (priceListSelect && priceLists.length > 0) {
+        // Limpiar opciones existentes excepto la primera
+        priceListSelect.innerHTML = '<option value="">Seleccione una lista de precios</option>';
+        
+        // Agregar las listas de precios
+        priceLists.forEach(priceList => {
+            const option = document.createElement('option');
+            option.value = priceList.id;
+            option.textContent = priceList.nombre;
+            priceListSelect.appendChild(option);
+        });
+    }
+}
+
+// Función para configurar listeners de provincia y ciudad
+function setupProvinceAndCityListeners() {
+    const provinceSelect = document.getElementById('client-province-input');
+    const citySelect = document.getElementById('client-city-input');
+    
+    if (provinceSelect) {
+        provinceSelect.addEventListener('change', function() {
+            actualizarCiudades(this.value);
+            // Limpiar localidad cuando cambia la provincia
+            const localitySelect = document.getElementById('client-locality-input');
+            if (localitySelect) {
+                localitySelect.innerHTML = '<option value="">Seleccione una localidad</option>';
+            }
+        });
+    }
+    
+    if (citySelect) {
+        citySelect.addEventListener('change', function() {
+            const provincia = provinceSelect.value;
+            actualizarLocalidades(provincia, this.value);
+        });
     }
 }
 
