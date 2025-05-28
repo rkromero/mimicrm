@@ -2027,9 +2027,10 @@ function editPayment(paymentId) {
             <form id="edit-payment-form-${payment.id}">
                 <div class="mb-4">
                     <label for="edit-payment-client-${payment.id}">Cliente</label>
-                    <select id="edit-payment-client-${payment.id}" class="input" required>
+                    <select id="edit-payment-client-${payment.id}" class="input" required disabled style="background-color: #f3f4f6; color: #6b7280;">
                         <option value="">Seleccione un cliente</option>
                     </select>
+                    <small style="color: #6b7280; font-size: 0.875rem;">El cliente no puede modificarse una vez creado el pago</small>
                 </div>
                 <div class="mb-4">
                     <label for="edit-payment-amount-${payment.id}">Monto</label>
@@ -2057,7 +2058,7 @@ function editPayment(paymentId) {
     
     document.body.appendChild(editModal);
     
-    // Poblar select de clientes
+    // Poblar select de clientes y preseleccionar el cliente actual
     const clientSelect = document.getElementById(`edit-payment-client-${payment.id}`);
     clients.forEach(client => {
         const option = document.createElement('option');
@@ -2074,7 +2075,7 @@ function editPayment(paymentId) {
         e.preventDefault();
         
         const paymentData = {
-            cliente_id: document.getElementById(`edit-payment-client-${payment.id}`).value,
+            cliente_id: payment.cliente_id, // Usar el cliente_id original, no del select
             monto: parseFloat(document.getElementById(`edit-payment-amount-${payment.id}`).value),
             metodo: document.getElementById(`edit-payment-method-${payment.id}`).value,
             referencia: document.getElementById(`edit-payment-reference-${payment.id}`).value
@@ -2387,9 +2388,10 @@ function editContact(contactId) {
             <form id="edit-contact-form-${contact.id}">
                 <div class="mb-4">
                     <label for="edit-contact-client-${contact.id}">Cliente</label>
-                    <select id="edit-contact-client-${contact.id}" class="input" required>
+                    <select id="edit-contact-client-${contact.id}" class="input" required disabled style="background-color: #f3f4f6; color: #6b7280;">
                         <option value="">Seleccione un cliente</option>
                     </select>
+                    <small style="color: #6b7280; font-size: 0.875rem;">El cliente no puede modificarse una vez creado el contacto</small>
                 </div>
                 <div class="mb-4">
                     <label for="edit-contact-name-${contact.id}">Nombre Completo</label>
@@ -2421,7 +2423,7 @@ function editContact(contactId) {
     
     document.body.appendChild(editModal);
     
-    // Poblar select de clientes
+    // Poblar select de clientes y preseleccionar el cliente actual
     const clientSelect = document.getElementById(`edit-contact-client-${contact.id}`);
     clients.forEach(client => {
         const option = document.createElement('option');
@@ -2438,7 +2440,7 @@ function editContact(contactId) {
         e.preventDefault();
         
         const contactData = {
-            cliente_id: document.getElementById(`edit-contact-client-${contact.id}`).value,
+            cliente_id: contact.cliente_id, // Usar el cliente_id original, no del select
             nombre: document.getElementById(`edit-contact-name-${contact.id}`).value,
             email: document.getElementById(`edit-contact-email-${contact.id}`).value,
             telefono: document.getElementById(`edit-contact-phone-${contact.id}`).value,
