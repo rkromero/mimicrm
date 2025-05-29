@@ -3155,9 +3155,9 @@ function runDOMDiagnostic() {
     };
     
     try {
-        // Verificar elementos críticos
+        // Verificar elementos críticos por ID
         const criticalElements = [
-            'sidebar', 'main-content', 'header', 'dashboard-section',
+            'sidebar', 'dashboard-section',
             'clientes-section', 'pedidos-section', 'pagos-section',
             'productos-section', 'contactos-section'
         ];
@@ -3172,6 +3172,21 @@ function runDOMDiagnostic() {
             
             if (!element) {
                 report.issues.push(`Elemento crítico faltante: ${id}`);
+            }
+        });
+        
+        // Verificar elementos críticos por clase
+        const criticalClasses = ['main-content', 'header'];
+        criticalClasses.forEach(className => {
+            const element = document.querySelector(`.${className}`);
+            report.elements[className] = {
+                exists: !!element,
+                visible: element ? element.style.display !== 'none' : false,
+                classList: element ? Array.from(element.classList) : []
+            };
+            
+            if (!element) {
+                report.issues.push(`Elemento crítico faltante: ${className}`);
             }
         });
         
