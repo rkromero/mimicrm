@@ -226,6 +226,13 @@ async function checkAuthentication() {
             }, 100);
         }
         
+        // Configurar visibilidad del menú para perfil Vendedor
+        if (user.perfil === 'Vendedor') {
+            setTimeout(() => {
+                configurarMenuVendedor();
+            }, 100);
+        }
+        
         return true;
         
     } catch (error) {
@@ -5571,5 +5578,26 @@ function setupModals() {
         
     } catch (error) {
         console.error('❌ Error configurando modales:', error);
+    }
+}
+
+// Función para configurar el menú específicamente para usuarios Vendedores
+function configurarMenuVendedor() {
+    console.log('🛒 Configurando menú para perfil Vendedor...');
+    
+    try {
+        // Ocultar la sección de Fábrica para vendedores
+        const fabricaNav = document.getElementById('fabrica-nav');
+        if (fabricaNav) {
+            fabricaNav.style.display = 'none';
+            console.log('🔒 Sección Fábrica ocultada para vendedor');
+        } else {
+            console.log('⚠️ Elemento fabrica-nav no encontrado');
+        }
+        
+        console.log('✅ Menú configurado exitosamente para perfil Vendedor');
+        
+    } catch (error) {
+        console.error('❌ Error configurando menú para vendedor:', error);
     }
 }
