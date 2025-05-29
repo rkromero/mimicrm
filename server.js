@@ -25,15 +25,24 @@ const dbConfig = {
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
     database: process.env.DB_NAME || 'mimi_crm',
-    port: process.env.DB_PORT || 3306
+    port: process.env.DB_PORT || 3306,
+    connectionLimit: 10,
+    acquireTimeout: 60000,
+    timeout: 60000,
+    reconnect: true
 };
 
-// Crear conexión a la base de datos
+// Crear pool de conexiones a la base de datos
 let db;
 
 async function connectDB() {
     try {
-        db = await mysql.createConnection(dbConfig);
+        db = mysql.createPool(dbConfig);
+        
+        // Probar la conexión
+        const connection = await db.getConnection();
+        connection.release();
+        
         console.log('✅ Conectado a la base de datos MySQL');
         
         // Crear las tablas si no existen
@@ -220,30 +229,43 @@ function authenticateToken(req, res, next) {
 // Login
 app.post('/api/auth/login', async (req, res) => {
     try {
+        console.log('🔐 Intento de login recibido');
         const { email, password } = req.body;
 
+        if (!email || !password) {
+            console.log('❌ Email o password faltante');
+            return res.status(400).json({ error: 'Email y contraseña son requeridos' });
+        }
+
+        console.log('📧 Buscando usuario con email:', email);
         const [users] = await db.execute(
             'SELECT * FROM usuarios WHERE email = ? AND activo = true',
             [email]
         );
 
         if (users.length === 0) {
+            console.log('❌ Usuario no encontrado o inactivo:', email);
             return res.status(401).json({ error: 'Credenciales inválidas' });
         }
 
         const user = users[0];
+        console.log('✅ Usuario encontrado:', user.nombre);
+        
         const validPassword = await bcrypt.compare(password, user.password);
 
         if (!validPassword) {
+            console.log('❌ Contraseña incorrecta para:', email);
             return res.status(401).json({ error: 'Credenciales inválidas' });
         }
 
+        console.log('✅ Contraseña válida, generando token...');
         const token = jwt.sign(
             { id: user.id, email: user.email, perfil: user.perfil },
             process.env.JWT_SECRET,
             { expiresIn: '24h' }
         );
 
+        console.log('✅ Login exitoso para:', user.nombre);
         res.json({
             token,
             user: {
@@ -257,7 +279,73 @@ app.post('/api/auth/login', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Error en login:', error);
+        console.error('❌ Error en login:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Registro (primer usuario será administrador)
+app.post('/api/auth/register', async (req, res) => {
+    try {
+        console.log('📝 Intento de registro recibido');
+        const { nombre, email, password } = req.body;
+
+        if (!nombre || !email || !password) {
+            console.log('❌ Datos faltantes en registro');
+            return res.status(400).json({ error: 'Nombre, email y contraseña son requeridos' });
+        }
+
+        // Verificar si ya existe un usuario con este email
+        const [existingUsers] = await db.execute(
+            'SELECT id FROM usuarios WHERE email = ?',
+            [email]
+        );
+
+        if (existingUsers.length > 0) {
+            console.log('❌ Email ya registrado:', email);
+            return res.status(400).json({ error: 'Ya existe un usuario con este email' });
+        }
+
+        // Verificar si es el primer usuario (será administrador)
+        const [totalUsers] = await db.execute('SELECT COUNT(*) as count FROM usuarios');
+        const isFirstUser = totalUsers[0].count === 0;
+        const perfil = isFirstUser ? 'Administrador' : 'Vendedor';
+
+        console.log(`👤 Creando usuario ${isFirstUser ? '(PRIMER USUARIO - ADMINISTRADOR)' : '(VENDEDOR)'}`);
+
+        // Encriptar contraseña
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Crear usuario
+        const [result] = await db.execute(
+            'INSERT INTO usuarios (nombre, email, password, perfil) VALUES (?, ?, ?, ?)',
+            [nombre, email, hashedPassword, perfil]
+        );
+
+        console.log(`✅ Usuario creado exitosamente: ${nombre} (${perfil})`);
+
+        // Generar token para login automático
+        const token = jwt.sign(
+            { id: result.insertId, email: email, perfil: perfil },
+            process.env.JWT_SECRET,
+            { expiresIn: '24h' }
+        );
+
+        res.status(201).json({
+            token,
+            user: {
+                id: result.insertId,
+                nombre: nombre,
+                email: email,
+                perfil: perfil,
+                avatar: null,
+                tema: 'light'
+            },
+            message: isFirstUser ? 'Primer usuario creado como Administrador' : 'Usuario creado exitosamente'
+        });
+
+    } catch (error) {
+        console.error('❌ Error en registro:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
