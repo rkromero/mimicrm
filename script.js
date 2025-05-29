@@ -853,6 +853,20 @@ document.addEventListener('DOMContentLoaded', async function() {
         debugLog('SETUP', 'Configurando modales...');
         setupModals();
         
+        debugLog('SETUP', 'Configurando tarjetas del dashboard...');
+        setupDashboardCards();
+        
+        // Cargar datos iniciales del dashboard
+        debugLog('DATA', 'Cargando datos del dashboard...');
+        try {
+            await loadInactiveClients();
+            await loadCompletedSales();
+            await loadPendingCollections();
+            debugLog('DATA', 'Datos del dashboard cargados');
+        } catch (error) {
+            console.error('Error cargando datos del dashboard:', error);
+        }
+        
         // Mostrar dashboard por defecto
         debugLog('UI', 'Mostrando dashboard por defecto...');
         showSection('dashboard');
@@ -5599,5 +5613,402 @@ function configurarMenuVendedor() {
         
     } catch (error) {
         console.error('❌ Error configurando menú para vendedor:', error);
+    }
+}
+
+// Función para cargar datos de clientes inactivos
+async function loadInactiveClients() {
+    console.log('📊 Cargando clientes inactivos...');
+    
+    try {
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+            console.error('❌ No hay token de autenticación');
+            return;
+        }
+
+        const response = await fetch('/api/clientes/inactivos', {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            
+            // Actualizar contador en la tarjeta
+            const countElement = document.getElementById('inactive-clients-count');
+            if (countElement) {
+                countElement.textContent = data.inactiveClients.length;
+            }
+            
+            // Actualizar fecha de última actividad
+            const lastActivityElement = document.getElementById('last-activity-date');
+            if (lastActivityElement && data.lastActivity) {
+                lastActivityElement.textContent = formatDate(data.lastActivity);
+            } else if (lastActivityElement) {
+                lastActivityElement.textContent = '-';
+            }
+            
+            console.log('✅ Clientes inactivos cargados:', data.inactiveClients.length);
+            return data.inactiveClients;
+        } else {
+            console.error('❌ Error cargando clientes inactivos:', response.status);
+            return [];
+        }
+    } catch (error) {
+        console.error('❌ Error de conexión cargando clientes inactivos:', error);
+        return [];
+    }
+}
+
+// Función para cargar ventas completadas
+async function loadCompletedSales(dateFrom = null, dateTo = null) {
+    console.log('📊 Cargando ventas completadas...');
+    
+    try {
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+            console.error('❌ No hay token de autenticación');
+            return;
+        }
+
+        let url = '/api/ventas/completadas';
+        const params = new URLSearchParams();
+        
+        if (dateFrom) params.append('dateFrom', dateFrom);
+        if (dateTo) params.append('dateTo', dateTo);
+        
+        if (params.toString()) {
+            url += '?' + params.toString();
+        }
+
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            
+            // Actualizar total vendido
+            const totalSalesElement = document.getElementById('total-sales-amount');
+            if (totalSalesElement) {
+                totalSalesElement.textContent = formatCurrency(data.totalAmount);
+            }
+            
+            // Actualizar cantidad de pedidos completados
+            const completedCountElement = document.getElementById('completed-orders-count');
+            if (completedCountElement) {
+                completedCountElement.textContent = data.completedOrders;
+            }
+            
+            console.log('✅ Ventas completadas cargadas:', data);
+            return data;
+        } else {
+            console.error('❌ Error cargando ventas completadas:', response.status);
+            return { totalAmount: 0, completedOrders: 0 };
+        }
+    } catch (error) {
+        console.error('❌ Error de conexión cargando ventas completadas:', error);
+        return { totalAmount: 0, completedOrders: 0 };
+    }
+}
+
+// Función para cargar datos de cobros pendientes
+async function loadPendingCollections() {
+    console.log('📊 Cargando cobros pendientes...');
+    
+    try {
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+            console.error('❌ No hay token de autenticación');
+            return;
+        }
+
+        const response = await fetch('/api/cobros/pendientes', {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            
+            // Actualizar monto pendiente
+            const pendingAmountElement = document.getElementById('pending-amount');
+            if (pendingAmountElement) {
+                pendingAmountElement.textContent = formatCurrency(data.pendingAmount);
+            }
+            
+            // Actualizar ratio pedidos vs pagos
+            const pendingRatioElement = document.getElementById('pending-ratio');
+            if (pendingRatioElement) {
+                const ratio = data.totalOrders > 0 ? 
+                    ((data.totalPayments / data.totalOrders) * 100).toFixed(1) + '%' : 
+                    '0%';
+                pendingRatioElement.textContent = ratio;
+            }
+            
+            console.log('✅ Cobros pendientes cargados:', data);
+            return data;
+        } else {
+            console.error('❌ Error cargando cobros pendientes:', response.status);
+            return { pendingAmount: 0, totalOrders: 0, totalPayments: 0 };
+        }
+    } catch (error) {
+        console.error('❌ Error de conexión cargando cobros pendientes:', error);
+        return { pendingAmount: 0, totalOrders: 0, totalPayments: 0 };
+    }
+}
+
+// Función para configurar los event listeners de las nuevas tarjetas
+function setupDashboardCards() {
+    console.log('🔧 Configurando tarjetas del dashboard...');
+    
+    try {
+        // Configurar tarjeta de clientes inactivos
+        const inactiveClientsCard = document.getElementById('inactive-clients-card');
+        if (inactiveClientsCard) {
+            inactiveClientsCard.addEventListener('click', async function() {
+                console.log('🔍 Abriendo modal de clientes inactivos...');
+                const inactiveClients = await loadInactiveClients();
+                showInactiveClientsModal(inactiveClients);
+            });
+        }
+        
+        // Configurar tarjeta de cobros pendientes
+        const pendingCollectionsCard = document.getElementById('pending-collections-card');
+        if (pendingCollectionsCard) {
+            pendingCollectionsCard.addEventListener('click', async function() {
+                console.log('🔍 Abriendo modal de cobros pendientes...');
+                showPendingCollectionsModal();
+            });
+        }
+        
+        // Configurar filtro de fechas para ventas
+        const filterSalesBtn = document.getElementById('filter-sales-btn');
+        if (filterSalesBtn) {
+            filterSalesBtn.addEventListener('click', function() {
+                const dateFrom = document.getElementById('sales-date-from').value;
+                const dateTo = document.getElementById('sales-date-to').value;
+                loadCompletedSales(dateFrom, dateTo);
+            });
+        }
+        
+        // Establecer fechas por defecto (último mes)
+        const today = new Date();
+        const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
+        
+        const dateFromInput = document.getElementById('sales-date-from');
+        const dateToInput = document.getElementById('sales-date-to');
+        
+        if (dateFromInput) {
+            dateFromInput.value = lastMonth.toISOString().split('T')[0];
+        }
+        if (dateToInput) {
+            dateToInput.value = today.toISOString().split('T')[0];
+        }
+        
+        console.log('✅ Tarjetas del dashboard configuradas');
+    } catch (error) {
+        console.error('❌ Error configurando tarjetas del dashboard:', error);
+    }
+}
+
+// Función para mostrar el modal de clientes inactivos
+function showInactiveClientsModal(inactiveClients) {
+    console.log('🔍 Mostrando modal de clientes inactivos...');
+    
+    try {
+        const modal = document.getElementById('inactive-clients-modal');
+        const tableBody = document.getElementById('inactive-clients-table-body');
+        const noClientsDiv = document.getElementById('no-inactive-clients');
+        
+        if (!modal || !tableBody) {
+            console.error('❌ Elementos del modal no encontrados');
+            return;
+        }
+        
+        // Limpiar tabla
+        tableBody.innerHTML = '';
+        
+        if (inactiveClients.length === 0) {
+            // Mostrar mensaje de que no hay clientes inactivos
+            tableBody.parentElement.style.display = 'none';
+            noClientsDiv.style.display = 'block';
+        } else {
+            // Mostrar tabla con clientes inactivos
+            tableBody.parentElement.style.display = 'table';
+            noClientsDiv.style.display = 'none';
+            
+            inactiveClients.forEach(client => {
+                const row = document.createElement('tr');
+                
+                const daysSinceLastOrder = client.lastOrderDate ? 
+                    Math.floor((new Date() - new Date(client.lastOrderDate)) / (1000 * 60 * 60 * 24)) : 
+                    'Nunca';
+                
+                row.innerHTML = `
+                    <td>${client.nombre}</td>
+                    <td>${client.email}</td>
+                    <td>${client.telefono}</td>
+                    <td>${client.lastOrderDate ? formatDate(client.lastOrderDate) : 'Nunca'}</td>
+                    <td>${daysSinceLastOrder === 'Nunca' ? 'Nunca' : daysSinceLastOrder + ' días'}</td>
+                    <td>
+                        <button class="btn btn-primary" onclick="viewClientDetails(${client.id})" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                            <i class="fas fa-eye"></i> Ver
+                        </button>
+                        <button class="btn btn-success" onclick="showModal('new-order-modal'); populateClientSelects('new-order-modal'); document.getElementById('order-client-select').value = ${client.id};" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-left: 0.25rem;">
+                            <i class="fas fa-plus"></i> Pedido
+                        </button>
+                    </td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+        }
+        
+        // Configurar búsqueda
+        const searchInput = document.getElementById('inactive-clients-search');
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const rows = tableBody.querySelectorAll('tr');
+                
+                rows.forEach(row => {
+                    const clientName = row.cells[0].textContent.toLowerCase();
+                    const clientEmail = row.cells[1].textContent.toLowerCase();
+                    
+                    if (clientName.includes(searchTerm) || clientEmail.includes(searchTerm)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+        }
+        
+        // Mostrar modal
+        modal.style.display = 'flex';
+        modal.classList.add('active');
+        
+        console.log('✅ Modal de clientes inactivos mostrado');
+    } catch (error) {
+        console.error('❌ Error mostrando modal de clientes inactivos:', error);
+    }
+}
+
+// Función para mostrar el modal de cobros pendientes
+async function showPendingCollectionsModal() {
+    console.log('🔍 Mostrando modal de cobros pendientes...');
+    
+    try {
+        const modal = document.getElementById('pending-collections-modal');
+        const tableBody = document.getElementById('pending-collections-table-body');
+        
+        if (!modal || !tableBody) {
+            console.error('❌ Elementos del modal no encontrados');
+            return;
+        }
+        
+        // Cargar datos detallados de cobros pendientes
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+            console.error('❌ No hay token de autenticación');
+            return;
+        }
+
+        const response = await fetch('/api/cobros/pendientes/detalle', {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            
+            // Actualizar resumen
+            document.getElementById('summary-total-orders').textContent = formatCurrency(data.summary.totalOrders);
+            document.getElementById('summary-total-payments').textContent = formatCurrency(data.summary.totalPayments);
+            document.getElementById('summary-pending-amount').textContent = formatCurrency(data.summary.pendingAmount);
+            
+            // Limpiar tabla
+            tableBody.innerHTML = '';
+            
+            // Llenar tabla con datos de clientes
+            data.clients.forEach(client => {
+                const row = document.createElement('tr');
+                
+                const percentagePaid = client.totalOrders > 0 ? 
+                    ((client.totalPayments / client.totalOrders) * 100).toFixed(1) : 
+                    0;
+                
+                const pendingAmount = client.totalOrders - client.totalPayments;
+                
+                row.innerHTML = `
+                    <td>${client.nombre}</td>
+                    <td>${formatCurrency(client.totalOrders)}</td>
+                    <td>${formatCurrency(client.totalPayments)}</td>
+                    <td style="color: ${pendingAmount > 0 ? '#dc2626' : '#059669'}; font-weight: bold;">
+                        ${formatCurrency(pendingAmount)}
+                    </td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <div style="background: #e5e7eb; border-radius: 10px; height: 8px; flex: 1; overflow: hidden;">
+                                <div style="background: ${percentagePaid >= 80 ? '#059669' : percentagePaid >= 50 ? '#f59e0b' : '#dc2626'}; height: 100%; width: ${percentagePaid}%; transition: width 0.3s;"></div>
+                            </div>
+                            <span style="font-size: 0.8rem; font-weight: 500;">${percentagePaid}%</span>
+                        </div>
+                    </td>
+                    <td>
+                        <button class="btn btn-primary" onclick="viewClientDetails(${client.id})" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                            <i class="fas fa-eye"></i> Ver
+                        </button>
+                        <button class="btn btn-success" onclick="showModal('new-payment-modal'); populateClientSelects('new-payment-modal'); document.getElementById('payment-client-select').value = ${client.id};" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-left: 0.25rem;">
+                            <i class="fas fa-money-bill-wave"></i> Pago
+                        </button>
+                    </td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+            
+            // Configurar búsqueda
+            const searchInput = document.getElementById('pending-collections-search');
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    const searchTerm = this.value.toLowerCase();
+                    const rows = tableBody.querySelectorAll('tr');
+                    
+                    rows.forEach(row => {
+                        const clientName = row.cells[0].textContent.toLowerCase();
+                        
+                        if (clientName.includes(searchTerm)) {
+                            row.style.display = '';
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+                });
+            }
+            
+            // Mostrar modal
+            modal.style.display = 'flex';
+            modal.classList.add('active');
+            
+            console.log('✅ Modal de cobros pendientes mostrado');
+        } else {
+            console.error('❌ Error cargando detalles de cobros pendientes:', response.status);
+            showNotification('Error al cargar detalles de cobros pendientes', 'error');
+        }
+    } catch (error) {
+        console.error('❌ Error mostrando modal de cobros pendientes:', error);
+        showNotification('Error al mostrar detalles de cobros pendientes', 'error');
     }
 }

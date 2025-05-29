@@ -289,6 +289,70 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- Segunda fila de tarjetas -->
+                <div class="dashboard-grid" style="margin-top: 1.5rem;">
+                    <div class="dashboard-card clickable-card" id="inactive-clients-card">
+                        <div class="card-header">
+                            <h3>Clientes Inactivos</h3>
+                            <i class="fas fa-user-clock"></i>
+                        </div>
+                        <div class="card-content">
+                            <div class="stat-item">
+                                <span class="stat-label">Sin pedidos últimos 30 días</span>
+                                <span class="stat-value" id="inactive-clients-count">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Última actividad</span>
+                                <span class="stat-value" id="last-activity-date">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <h3>Ventas Completadas</h3>
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="card-content">
+                            <div class="date-filter-section" style="margin-bottom: 1rem;">
+                                <div style="display: flex; gap: 0.5rem; align-items: center; font-size: 0.875rem;">
+                                    <input type="date" id="sales-date-from" class="input" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                                    <span>hasta</span>
+                                    <input type="date" id="sales-date-to" class="input" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                                    <button type="button" id="filter-sales-btn" class="btn btn-primary" style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">
+                                        <i class="fas fa-filter"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Total Vendido</span>
+                                <span class="stat-value" id="total-sales-amount">$0.00</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Pedidos Completados</span>
+                                <span class="stat-value" id="completed-orders-count">0</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="dashboard-card clickable-card" id="pending-collections-card">
+                        <div class="card-header">
+                            <h3>Por Cobrar</h3>
+                            <i class="fas fa-money-bill-alt"></i>
+                        </div>
+                        <div class="card-content">
+                            <div class="stat-item">
+                                <span class="stat-label">Monto Pendiente</span>
+                                <span class="stat-value" id="pending-amount">$0.00</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Pedidos vs Pagos</span>
+                                <span class="stat-value" id="pending-ratio">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Sección de Clientes -->
@@ -952,6 +1016,95 @@
                     <button type="submit" class="btn submit-btn">Guardar</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Modal de Clientes Inactivos -->
+    <div id="inactive-clients-modal" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Clientes Inactivos - Sin pedidos en 30 días</h2>
+                <button class="close-modal btn btn-secondary">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom: 1rem;">
+                    <input type="text" id="inactive-clients-search" class="input" placeholder="Buscar cliente..." style="width: 100%;">
+                </div>
+                <div class="table-responsive">
+                    <table class="clients-table">
+                        <thead>
+                            <tr>
+                                <th>Cliente</th>
+                                <th>Email</th>
+                                <th>Teléfono</th>
+                                <th>Último Pedido</th>
+                                <th>Días Sin Actividad</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inactive-clients-table-body">
+                            <!-- Los clientes inactivos se cargarán aquí -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="no-inactive-clients" style="display: none; text-align: center; padding: 2rem; color: #6b7280;">
+                    <i class="fas fa-thumbs-up" style="font-size: 3rem; color: #10b981; margin-bottom: 1rem;"></i>
+                    <h3 style="color: #10b981; margin: 0;">¡Excelente!</h3>
+                    <p style="margin: 0.5rem 0 0 0;">Todos los clientes han realizado pedidos recientemente</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Cobros Pendientes -->
+    <div id="pending-collections-modal" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Resumen de Cobros Pendientes</h2>
+                <button class="close-modal btn btn-secondary">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="summary-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                    <div style="background: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; padding: 1rem; text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: bold; color: #92400e;" id="summary-total-orders">$0</div>
+                        <div style="font-size: 0.875rem; color: #92400e;">Total Pedidos</div>
+                    </div>
+                    <div style="background: #d1fae5; border: 1px solid #6ee7b7; border-radius: 8px; padding: 1rem; text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: bold; color: #047857;" id="summary-total-payments">$0</div>
+                        <div style="font-size: 0.875rem; color: #047857;">Total Pagos</div>
+                    </div>
+                    <div style="background: #fee2e2; border: 1px solid #fca5a5; border-radius: 8px; padding: 1rem; text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: bold; color: #dc2626;" id="summary-pending-amount">$0</div>
+                        <div style="font-size: 0.875rem; color: #dc2626;">Por Cobrar</div>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <input type="text" id="pending-collections-search" class="input" placeholder="Buscar cliente..." style="width: 100%;">
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="clients-table">
+                        <thead>
+                            <tr>
+                                <th>Cliente</th>
+                                <th>Total Pedidos</th>
+                                <th>Total Pagos</th>
+                                <th>Saldo Pendiente</th>
+                                <th>% Pagado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pending-collections-table-body">
+                            <!-- Los datos de cobros se cargarán aquí -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 

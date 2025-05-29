@@ -1988,4 +1988,42 @@ body.theme-dark .user-menu a {
 body.theme-dark .user-menu a:hover {
     background: #33334a;
     color: #a5b4fc;
+}
+
+/* Tarjetas clickeables del dashboard */
+.clickable-card {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.clickable-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.clickable-card:active {
+    transform: translateY(-2px);
+}
+
+/* Estilos para filtros de fecha */
+.date-filter-section {
+    border-top: 1px solid #f0f0f0;
+    padding-top: 0.75rem;
+}
+
+.date-filter-section input[type="date"] {
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    max-width: 130px;
+}
+
+/* Tema oscuro para las nuevas tarjetas */
+body.theme-dark .date-filter-section {
+    border-top-color: #444;
+}
+
+body.theme-dark .date-filter-section input[type="date"] {
+    background: #23232a;
+    color: #f3f4f6;
+    border-color: #444;
 } 

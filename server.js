@@ -1377,6 +1377,191 @@ app.post('/api/admin/clear-database', async (req, res) => {
     }
 });
 
+// === NUEVOS ENDPOINTS PARA DASHBOARD ===
+
+// Endpoint para obtener clientes inactivos (sin pedidos en los últimos 30 días)
+app.get('/api/clientes/inactivos', authenticateToken, async (req, res) => {
+    try {
+        console.log('📊 Obteniendo clientes inactivos...');
+        
+        const [inactiveClients] = await db.execute(`
+            SELECT 
+                c.id,
+                c.nombre,
+                c.email,
+                c.telefono,
+                c.direccion,
+                MAX(p.fecha) as lastOrderDate
+            FROM clientes c
+            LEFT JOIN pedidos p ON c.id = p.cliente_id
+            WHERE c.activo = true
+            GROUP BY c.id, c.nombre, c.email, c.telefono, c.direccion
+            HAVING lastOrderDate IS NULL 
+                OR lastOrderDate < DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+            ORDER BY lastOrderDate ASC
+        `);
+        
+        // Obtener la fecha de la última actividad general
+        const [lastActivity] = await db.execute(`
+            SELECT MAX(fecha) as lastActivity 
+            FROM pedidos 
+            WHERE fecha >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+        `);
+        
+        console.log(`✅ ${inactiveClients.length} clientes inactivos encontrados`);
+        
+        res.json({
+            inactiveClients: inactiveClients,
+            lastActivity: lastActivity[0]?.lastActivity || null,
+            count: inactiveClients.length
+        });
+        
+    } catch (error) {
+        console.error('❌ Error obteniendo clientes inactivos:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Endpoint para obtener ventas completadas con filtro de fechas
+app.get('/api/ventas/completadas', authenticateToken, async (req, res) => {
+    try {
+        console.log('📊 Obteniendo ventas completadas...');
+        
+        const { dateFrom, dateTo } = req.query;
+        
+        let whereClause = "WHERE p.estado = 'completado'";
+        let params = [];
+        
+        if (dateFrom && dateTo) {
+            whereClause += " AND p.fecha BETWEEN ? AND ?";
+            params.push(dateFrom, dateTo);
+        } else if (dateFrom) {
+            whereClause += " AND p.fecha >= ?";
+            params.push(dateFrom);
+        } else if (dateTo) {
+            whereClause += " AND p.fecha <= ?";
+            params.push(dateTo);
+        }
+        
+        const [completedSales] = await db.execute(`
+            SELECT 
+                COUNT(*) as completedOrders,
+                COALESCE(SUM(p.monto), 0) as totalAmount
+            FROM pedidos p
+            ${whereClause}
+        `, params);
+        
+        console.log(`✅ Ventas completadas obtenidas:`, completedSales[0]);
+        
+        res.json({
+            completedOrders: completedSales[0].completedOrders,
+            totalAmount: parseFloat(completedSales[0].totalAmount) || 0
+        });
+        
+    } catch (error) {
+        console.error('❌ Error obteniendo ventas completadas:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Endpoint para obtener resumen de cobros pendientes
+app.get('/api/cobros/pendientes', authenticateToken, async (req, res) => {
+    try {
+        console.log('📊 Obteniendo cobros pendientes...');
+        
+        // Obtener totales de pedidos (excluyendo "pendiente de pago")
+        const [orderTotals] = await db.execute(`
+            SELECT COALESCE(SUM(monto), 0) as totalOrders
+            FROM pedidos 
+            WHERE estado != 'pendiente de pago'
+        `);
+        
+        // Obtener totales de pagos
+        const [paymentTotals] = await db.execute(`
+            SELECT COALESCE(SUM(monto), 0) as totalPayments
+            FROM pagos
+        `);
+        
+        const totalOrders = parseFloat(orderTotals[0].totalOrders) || 0;
+        const totalPayments = parseFloat(paymentTotals[0].totalPayments) || 0;
+        const pendingAmount = totalOrders - totalPayments;
+        
+        console.log(`✅ Cobros pendientes calculados: $${pendingAmount}`);
+        
+        res.json({
+            totalOrders: totalOrders,
+            totalPayments: totalPayments,
+            pendingAmount: pendingAmount
+        });
+        
+    } catch (error) {
+        console.error('❌ Error obteniendo cobros pendientes:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Endpoint para obtener detalles de cobros pendientes por cliente
+app.get('/api/cobros/pendientes/detalle', authenticateToken, async (req, res) => {
+    try {
+        console.log('📊 Obteniendo detalles de cobros pendientes por cliente...');
+        
+        // Obtener resumen general
+        const [orderTotals] = await db.execute(`
+            SELECT COALESCE(SUM(monto), 0) as totalOrders
+            FROM pedidos 
+            WHERE estado != 'pendiente de pago'
+        `);
+        
+        const [paymentTotals] = await db.execute(`
+            SELECT COALESCE(SUM(monto), 0) as totalPayments
+            FROM pagos
+        `);
+        
+        const totalOrders = parseFloat(orderTotals[0].totalOrders) || 0;
+        const totalPayments = parseFloat(paymentTotals[0].totalPayments) || 0;
+        const pendingAmount = totalOrders - totalPayments;
+        
+        // Obtener detalles por cliente
+        const [clientDetails] = await db.execute(`
+            SELECT 
+                c.id,
+                c.nombre,
+                COALESCE(SUM(CASE WHEN p.estado != 'pendiente de pago' THEN p.monto ELSE 0 END), 0) as totalOrders,
+                COALESCE(SUM(pg.monto), 0) as totalPayments
+            FROM clientes c
+            LEFT JOIN pedidos p ON c.id = p.cliente_id
+            LEFT JOIN pagos pg ON c.id = pg.cliente_id
+            WHERE c.activo = true
+            GROUP BY c.id, c.nombre
+            HAVING totalOrders > 0 OR totalPayments > 0
+            ORDER BY (totalOrders - totalPayments) DESC
+        `);
+        
+        // Procesar datos de clientes
+        const clients = clientDetails.map(client => ({
+            id: client.id,
+            nombre: client.nombre,
+            totalOrders: parseFloat(client.totalOrders) || 0,
+            totalPayments: parseFloat(client.totalPayments) || 0
+        }));
+        
+        console.log(`✅ Detalles de cobros obtenidos para ${clients.length} clientes`);
+        
+        res.json({
+            summary: {
+                totalOrders: totalOrders,
+                totalPayments: totalPayments,
+                pendingAmount: pendingAmount
+            },
+            clients: clients
+        });
+        
+    } catch (error) {
+        console.error('❌ Error obteniendo detalles de cobros pendientes:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
 // Servir archivos estáticos (debe ir al final)
 app.use(express.static(__dirname));
 
