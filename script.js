@@ -1282,10 +1282,9 @@ function setupForms() {
             btn.onclick = function() {
                 const modal = this.closest('.modal');
                 if (modal) {
+                    modal.style.display = 'none';
                     modal.classList.remove('active');
-                    // Limpiar estilos inline forzados
-                    modal.style.cssText = '';
-                    
+                    document.body.style.overflow = ''; // Restaurar scroll del body
                 }
             };
         });
@@ -1293,10 +1292,9 @@ function setupForms() {
         // Configurar cierre de modales al hacer clic fuera
         document.addEventListener('click', function(e) {
             if (e.target.classList.contains('modal')) {
+                e.target.style.display = 'none';
                 e.target.classList.remove('active');
-                // Limpiar estilos inline forzados
-                e.target.style.cssText = '';
-                
+                document.body.style.overflow = ''; // Restaurar scroll del body
             }
         });
         
@@ -1315,8 +1313,8 @@ function setupForms() {
                     e.stopPropagation();
                     
                     
+                    newUserModal.style.display = 'none';
                     newUserModal.classList.remove('active');
-                    newUserModal.style.cssText = 'display: none !important;';
                     
                     // Limpiar formulario
                     const form = newUserModal.querySelector('#new-user-form');
@@ -1332,8 +1330,8 @@ function setupForms() {
             newUserModal.onclick = function(e) {
                 if (e.target === newUserModal) {
                     
+                    newUserModal.style.display = 'none';
                     newUserModal.classList.remove('active');
-                    newUserModal.style.cssText = 'display: none !important;';
                     
                     // Limpiar formulario
                     const form = newUserModal.querySelector('#new-user-form');
@@ -1564,6 +1562,11 @@ function showModal(modalId) {
         // Mostrar el modal usando la clase active (para que funcione con las transiciones CSS)
         modal.classList.add('active');
         
+        // Asegurar que el modal se vea desde el inicio (scroll al top)
+        setTimeout(() => {
+            modal.scrollTop = 0;
+            document.body.style.overflow = 'hidden'; // Prevenir scroll del body
+        }, 50);
         
         // Configuraciones específicas por modal
         if (modalId === 'new-client-modal') {
@@ -5503,7 +5506,7 @@ function setupModals() {
                 if (modal) {
                     modal.style.display = 'none';
                     modal.classList.remove('active');
-                    
+                    document.body.style.overflow = ''; // Restaurar scroll del body
                 }
             });
         });
@@ -5516,7 +5519,7 @@ function setupModals() {
                 if (e.target === this) {
                     this.style.display = 'none';
                     this.classList.remove('active');
-                    
+                    document.body.style.overflow = ''; // Restaurar scroll del body
                 }
             });
         });
@@ -5528,7 +5531,7 @@ function setupModals() {
                 if (modalActivo) {
                     modalActivo.style.display = 'none';
                     modalActivo.classList.remove('active');
-                    
+                    document.body.style.overflow = ''; // Restaurar scroll del body
                 }
             }
         });
