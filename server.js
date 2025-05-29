@@ -295,7 +295,7 @@ app.get('/api/clientes', authenticateToken, async (req, res) => {
                 (COALESCE(SUM(p.monto), 0) - COALESCE(SUM(pa.monto), 0)) as saldo_real
             FROM clientes c
             LEFT JOIN usuarios u ON c.creado_por = u.id
-            LEFT JOIN pedidos p ON c.id = p.cliente_id AND p.estado NOT IN ('pendiente de pago')
+            LEFT JOIN pedidos p ON c.id = p.cliente_id
             LEFT JOIN pagos pa ON c.id = pa.cliente_id
             WHERE c.activo = true
         `;
