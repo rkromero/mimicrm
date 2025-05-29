@@ -1345,13 +1345,24 @@ app.get('/api/cobros/pendientes/detalle', authenticateToken, async (req, res) =>
             SELECT 
                 c.id,
                 c.nombre,
-                COALESCE(SUM(CASE WHEN p.estado != 'pendiente de pago' THEN p.monto ELSE 0 END), 0) as totalOrders,
-                COALESCE(SUM(pg.monto), 0) as totalPayments
+                COALESCE(pedidos_totals.totalOrders, 0) as totalOrders,
+                COALESCE(pagos_totals.totalPayments, 0) as totalPayments
             FROM clientes c
-            LEFT JOIN pedidos p ON c.id = p.cliente_id
-            LEFT JOIN pagos pg ON c.id = pg.cliente_id
+            LEFT JOIN (
+                SELECT 
+                    cliente_id,
+                    SUM(CASE WHEN estado != 'pendiente de pago' THEN monto ELSE 0 END) as totalOrders
+                FROM pedidos 
+                GROUP BY cliente_id
+            ) pedidos_totals ON c.id = pedidos_totals.cliente_id
+            LEFT JOIN (
+                SELECT 
+                    cliente_id,
+                    SUM(monto) as totalPayments
+                FROM pagos 
+                GROUP BY cliente_id
+            ) pagos_totals ON c.id = pagos_totals.cliente_id
             WHERE c.activo = true
-            GROUP BY c.id, c.nombre
             HAVING totalOrders > 0 OR totalPayments > 0
             ORDER BY (totalOrders - totalPayments) DESC
         `);
