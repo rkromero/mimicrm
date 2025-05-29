@@ -120,40 +120,7 @@ function translateOrderStatus(status) {
 }
 
 function formatDate(date) {
-    return new Date(date).toLocaleDateString('es-AR');
-}
-
-// Funciones simplificadas para manejo de ciudades y localidades
-function actualizarCiudades(provincia, selectId = 'client-city-input') {
-    const ciudadSelect = document.getElementById(selectId);
-    if (!ciudadSelect) return;
-    
-    ciudadSelect.innerHTML = '<option value="">Seleccione una ciudad</option>';
-    
-    if (provincia && provinciasYLocalidades[provincia]) {
-        Object.keys(provinciasYLocalidades[provincia]).forEach(ciudad => {
-            const option = document.createElement('option');
-            option.value = ciudad;
-            option.textContent = ciudad;
-            ciudadSelect.appendChild(option);
-        });
-    }
-}
-
-function actualizarLocalidades(provincia, ciudad, selectId = 'client-locality-input') {
-    const localidadSelect = document.getElementById(selectId);
-    if (!localidadSelect) return;
-    
-    localidadSelect.innerHTML = '<option value="">Seleccione una localidad</option>';
-    
-    if (provincia && ciudad && provinciasYLocalidades[provincia] && provinciasYLocalidades[provincia][ciudad]) {
-        provinciasYLocalidades[provincia][ciudad].forEach(localidad => {
-            const option = document.createElement('option');
-            option.value = localidad;
-            option.textContent = localidad;
-            localidadSelect.appendChild(option);
-        });
-    }
+    return new Date(date).toLocaleDateString('es-ES');
 }
 
 // === VERIFICACIÓN DE AUTENTICACIÓN ===
@@ -1675,48 +1642,9 @@ function populateClientSelects(modalId) {
 
 // Función para configurar listeners de provincia y ciudad
 function setupProvinceAndCityListeners() {
-    
-    
-    const provinceSelect = document.getElementById('client-province-input');
-    const citySelect = document.getElementById('client-city-input');
-    const localitySelect = document.getElementById('client-locality-input');
-    
-    if (!provinceSelect || !citySelect || !localitySelect) {
-        console.warn('⚠️ No se encontraron todos los elementos de provincia/ciudad/localidad');
-        return;
-    }
-    
-    // Limpiar opciones existentes
-    citySelect.innerHTML = '<option value="">Seleccione una ciudad</option>';
-    localitySelect.innerHTML = '<option value="">Seleccione una localidad</option>';
-    
-    // Configurar listener de provincia (sin clonar)
-    provinceSelect.onchange = function() {
-        
-        try {
-            actualizarCiudades(this.value);
-            // Limpiar localidad cuando cambia la provincia
-            const localitySelect = document.getElementById('client-locality-input');
-            if (localitySelect) {
-                localitySelect.innerHTML = '<option value="">Seleccione una localidad</option>';
-            }
-        } catch (error) {
-            console.error('❌ Error al actualizar ciudades:', error);
-        }
-    };
-    
-    // Configurar listener de ciudad (sin clonar)
-    citySelect.onchange = function() {
-        
-        try {
-            const provincia = provinceSelect.value;
-            actualizarLocalidades(provincia, this.value);
-        } catch (error) {
-            console.error('❌ Error al actualizar localidades:', error);
-        }
-    };
-    
-    
+    // Función simplificada - ya no necesita manejar dependencias entre provincia/ciudad/localidad
+    // Los campos de ciudad y localidad ahora son de texto libre
+    console.log('✅ Campos de ciudad y localidad configurados como texto libre');
 }
 
 // Función para manejar envío de nuevo cliente
@@ -2044,20 +1972,6 @@ function editClient(clientId) {
     document.getElementById('edit-client-city').value = client.ciudad || '';
     document.getElementById('edit-client-locality').value = client.localidad || '';
     document.getElementById('edit-client-zip').value = client.codigo_postal || '';
-    
-    // Actualizar ciudades y localidades si hay provincia seleccionada
-    if (client.provincia) {
-        actualizarCiudades(client.provincia, 'edit-client-city');
-        if (client.ciudad) {
-            setTimeout(() => {
-                document.getElementById('edit-client-city').value = client.ciudad;
-                actualizarLocalidades(client.provincia, client.ciudad, 'edit-client-locality');
-                setTimeout(() => {
-                    document.getElementById('edit-client-locality').value = client.localidad || '';
-                }, 100);
-            }, 100);
-        }
-    }
     
     // Guardar el ID del cliente que se está editando
     document.getElementById('edit-client-modal').setAttribute('data-client-id', clientId);
