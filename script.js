@@ -525,7 +525,7 @@ function renderClientsTable() {
                 
                 return `
                     <tr>
-                        <td>${client.nombre || client.name}</td>
+                        <td>${(client.nombre || client.name || '') + ' ' + (client.apellido || '')}</td>
                         <td>${client.documento || client.cuit}</td>
                         <td>${client.email}</td>
                         <td>${client.telefono || client.phone}</td>
@@ -1726,6 +1726,7 @@ async function handleNewClientSubmit(e) {
     const formData = new FormData(e.target);
     const clientData = {
         nombre: formData.get('nombre') || document.getElementById('client-name-input').value,
+        apellido: formData.get('apellido') || document.getElementById('client-lastname-input').value,
         cuit: formData.get('documento') || document.getElementById('client-rut-input').value,
         email: formData.get('email') || document.getElementById('client-email-input').value,
         telefono: formData.get('telefono') || document.getElementById('client-phone-input').value,
@@ -1739,7 +1740,7 @@ async function handleNewClientSubmit(e) {
     
     
     // Validar que los campos requeridos no estén vacíos
-    const requiredFields = ['nombre', 'cuit', 'email', 'telefono', 'direccion'];
+    const requiredFields = ['nombre', 'apellido', 'cuit', 'email', 'telefono', 'direccion'];
     const missingFields = requiredFields.filter(field => !clientData[field] || clientData[field].trim() === '');
     
     if (missingFields.length > 0) {
@@ -2034,6 +2035,7 @@ function editClient(clientId) {
     
     // Llenar el formulario de edición con los datos del cliente
     document.getElementById('edit-client-name').value = client.nombre || '';
+    document.getElementById('edit-client-lastname').value = client.apellido || '';
     document.getElementById('edit-client-cuit').value = client.cuit || client.documento || '';
     document.getElementById('edit-client-email').value = client.email || '';
     document.getElementById('edit-client-phone').value = client.telefono || '';
@@ -2831,6 +2833,7 @@ async function handleEditClientSubmit(e) {
     const formData = new FormData(e.target);
     const clientData = {
         nombre: document.getElementById('edit-client-name').value,
+        apellido: document.getElementById('edit-client-lastname').value,
         cuit: document.getElementById('edit-client-cuit').value,
         email: document.getElementById('edit-client-email').value,
         telefono: document.getElementById('edit-client-phone').value,
@@ -2844,7 +2847,7 @@ async function handleEditClientSubmit(e) {
     
     
     // Validar que los campos requeridos no estén vacíos
-    const requiredFields = ['nombre', 'cuit', 'email', 'telefono', 'direccion'];
+    const requiredFields = ['nombre', 'apellido', 'cuit', 'email', 'telefono', 'direccion'];
     const missingFields = requiredFields.filter(field => !clientData[field] || clientData[field].trim() === '');
     
     if (missingFields.length > 0) {
@@ -3983,7 +3986,7 @@ function viewClientDetails(clientId) {
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                         <div>
                             <strong>Nombre:</strong><br>
-                            ${client.nombre || 'N/A'}
+                            ${(client.nombre || client.name || '') + ' ' + (client.apellido || '')}
                         </div>
                         <div>
                             <strong>CUIT/Documento:</strong><br>

@@ -441,6 +441,21 @@ tr:hover {
         width: calc(100% - 16px) !important;
         margin: 0 8px;
     }
+
+    /* Campos dobles responsive - se apilan verticalmente en móvil */
+    .form-group-double {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .form-field input,
+    .form-field select,
+    .form-field textarea {
+        font-size: 16px; /* Evita zoom en iOS */
+        padding: 0.875rem 1rem;
+        width: calc(100% - 16px) !important;
+        margin: 0 8px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -457,7 +472,7 @@ tr:hover {
     }
 
     .modal-header {
-        padding: 2rem 2.5rem 1.25rem 2.5rem !important;
+        padding: 2rem 2.5rem 1rem 2.5rem !important;
     }
 
     .modal-title {
@@ -471,14 +486,21 @@ tr:hover {
     }
 
     .modal-actions {
-        padding: 1.75rem 2.5rem 2rem 2.5rem !important;
+        padding: 1.5rem 2.5rem 2rem 2.5rem !important;
         margin: 0 0.25rem;
     }
 
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
-        padding: 0.875rem 1rem;
+    /* Campos dobles responsive - se apilan verticalmente en móvil pequeño */
+    .form-group-double {
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+    }
+
+    .form-field input,
+    .form-field select,
+    .form-field textarea {
+        font-size: 16px;
+        padding: 0.75rem 0.875rem;
         width: calc(100% - 12px) !important;
         margin: 0 6px;
     }
@@ -2111,4 +2133,45 @@ body.theme-dark .date-filter-section input[type="date"] {
     background: #23232a;
     color: #f3f4f6;
     border-color: #444;
+}
+
+/* Campos dobles (nombre y apellido en la misma fila) */
+.form-group-double {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-field label {
+    display: block;
+    margin-bottom: 0.75rem;
+    color: #475569;
+    font-weight: 500;
+    font-size: 0.95rem;
+    margin-left: 4px;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+    width: calc(100% - 24px) !important;
+    padding: 1rem 1.25rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+    background-color: #fafbfc;
+    margin: 0 12px;
+    display: block;
+}
+
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus {
+    border-color: #3b82f6;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    background-color: #ffffff;
 } 

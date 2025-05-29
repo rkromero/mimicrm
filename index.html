@@ -417,9 +417,15 @@
             </div>
             <div class="modal-form">
                 <form id="new-client-form">
-                    <div class="form-group">
-                        <label for="client-name-input">Nombre Completo</label>
-                        <input type="text" id="client-name-input" name="nombre" class="input" autocomplete="name" required>
+                    <div class="form-group form-group-double">
+                        <div class="form-field">
+                            <label for="client-name-input">Nombre</label>
+                            <input type="text" id="client-name-input" name="nombre" class="input" autocomplete="given-name" required>
+                        </div>
+                        <div class="form-field">
+                            <label for="client-lastname-input">Apellido</label>
+                            <input type="text" id="client-lastname-input" name="apellido" class="input" autocomplete="family-name" required>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="client-rut-input">Documento</label>
@@ -773,9 +779,15 @@
             </div>
             <div class="modal-form">
                 <form id="edit-client-form">
-                    <div class="form-group">
-                        <label for="edit-client-name">Nombre</label>
-                        <input type="text" id="edit-client-name" class="input" required>
+                    <div class="form-group form-group-double">
+                        <div class="form-field">
+                            <label for="edit-client-name">Nombre</label>
+                            <input type="text" id="edit-client-name" class="input" required>
+                        </div>
+                        <div class="form-field">
+                            <label for="edit-client-lastname">Apellido</label>
+                            <input type="text" id="edit-client-lastname" class="input" required>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="edit-client-cuit">Documento</label>

@@ -91,6 +91,7 @@ async function createTables() {
             CREATE TABLE IF NOT EXISTS clientes (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 nombre VARCHAR(255) NOT NULL,
+                apellido VARCHAR(255),
                 cuit VARCHAR(50) NOT NULL,
                 email VARCHAR(255),
                 telefono VARCHAR(50),
@@ -195,6 +196,9 @@ async function createTables() {
         // Insertar datos iniciales
         await insertInitialData();
         
+        // Ejecutar migraciones
+        await runMigrations();
+        
     } catch (error) {
         console.error('❌ Error creando tablas:', error);
     }
@@ -204,6 +208,28 @@ async function createTables() {
 async function insertInitialData() {
     // Función vacía - no insertar datos de prueba
     console.log('✅ Base de datos lista - sin datos de prueba');
+}
+
+// Función para ejecutar migraciones
+async function runMigrations() {
+    try {
+        // Verificar si existe la columna apellido en clientes
+        const [columns] = await db.execute(`
+            SHOW COLUMNS FROM clientes LIKE 'apellido'
+        `);
+        
+        if (columns.length === 0) {
+            console.log('🔄 Agregando columna apellido a tabla clientes...');
+            await db.execute(`
+                ALTER TABLE clientes ADD COLUMN apellido VARCHAR(255) AFTER nombre
+            `);
+            console.log('✅ Columna apellido agregada exitosamente');
+        } else {
+            console.log('✅ Columna apellido ya existe');
+        }
+    } catch (error) {
+        console.error('❌ Error ejecutando migraciones:', error);
+    }
 }
 
 // Middleware de autenticación
@@ -424,17 +450,17 @@ app.get('/api/clientes', authenticateToken, async (req, res) => {
 app.post('/api/clientes', authenticateToken, async (req, res) => {
     try {
         const {
-            nombre, cuit, email, telefono, direccion, provincia,
+            nombre, apellido, cuit, email, telefono, direccion, provincia,
             ciudad, localidad, codigo_postal
         } = req.body;
 
         const [result] = await db.execute(
             `INSERT INTO clientes (
-                nombre, cuit, email, telefono, direccion, provincia,
+                nombre, apellido, cuit, email, telefono, direccion, provincia,
                 ciudad, localidad, codigo_postal, creado_por
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
-                nombre, cuit, email, telefono, direccion, provincia,
+                nombre, apellido, cuit, email, telefono, direccion, provincia,
                 ciudad, localidad, codigo_postal, req.user.id
             ]
         );
@@ -451,7 +477,7 @@ app.put('/api/clientes/:id', authenticateToken, async (req, res) => {
     try {
         const clienteId = req.params.id;
         const {
-            nombre, cuit, email, telefono, direccion, provincia,
+            nombre, apellido, cuit, email, telefono, direccion, provincia,
             ciudad, localidad, codigo_postal
         } = req.body;
 
@@ -485,11 +511,11 @@ app.put('/api/clientes/:id', authenticateToken, async (req, res) => {
         // Actualizar el cliente
         await db.execute(
             `UPDATE clientes SET 
-                nombre = ?, cuit = ?, email = ?, telefono = ?, direccion = ?, 
+                nombre = ?, apellido = ?, cuit = ?, email = ?, telefono = ?, direccion = ?, 
                 provincia = ?, ciudad = ?, localidad = ?, codigo_postal = ?
             WHERE id = ?`,
             [
-                nombre, cuit, email, telefono, direccion, provincia,
+                nombre, apellido, cuit, email, telefono, direccion, provincia,
                 ciudad, localidad, codigo_postal, clienteId
             ]
         );
