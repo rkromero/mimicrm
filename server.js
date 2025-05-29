@@ -1109,173 +1109,6 @@ app.delete('/api/usuarios/:id', authenticateToken, async (req, res) => {
     }
 });
 
-
-        }
-
-        // Intentar obtener permisos de la base de datos
-        try {
-            const [rows] = await db.execute('SELECT * FROM permisos_perfil ORDER BY perfil, modulo');
-            
-            if (rows.length > 0) {
-                // Convertir filas a estructura anidada
-                const permisos = {};
-                rows.forEach(row => {
-                    if (!permisos[row.perfil]) {
-                        permisos[row.perfil] = {};
-                    }
-                    permisos[row.perfil][row.modulo] = {
-                        crear: Boolean(row.crear),
-                        leer: Boolean(row.leer),
-                        editar: Boolean(row.editar),
-                        eliminar: Boolean(row.eliminar)
-                    };
-                });
-                
-                console.log('✅ Permisos cargados desde base de datos');
-                return res.json({ permisos });
-            }
-        } catch (dbError) {
-            console.log('⚠️ Tabla permisos_perfil no existe, usando permisos por defecto');
-        }
-
-        // Si no hay datos en BD o no existe la tabla, usar permisos por defecto
-        const permisosDefecto = {
-            'Administrador': {
-                clientes: { crear: true, leer: true, editar: true, eliminar: true },
-                pedidos: { crear: true, leer: true, editar: true, eliminar: true },
-                pagos: { crear: true, leer: true, editar: true, eliminar: true },
-                productos: { crear: true, leer: true, editar: true, eliminar: true },
-                contactos: { crear: true, leer: true, editar: true, eliminar: true },
-                usuarios: { crear: true, leer: true, editar: true, eliminar: true }
-            },
-            'Vendedor': {
-                clientes: { crear: true, leer: true, editar: true, eliminar: false },
-                pedidos: { crear: true, leer: true, editar: true, eliminar: true },
-                pagos: { crear: true, leer: true, editar: true, eliminar: true },
-                productos: { crear: false, leer: true, editar: false, eliminar: false },
-                contactos: { crear: true, leer: true, editar: true, eliminar: true },
-                usuarios: { crear: false, leer: false, editar: false, eliminar: false }
-            },
-            'Produccion': {
-                clientes: { crear: false, leer: true, editar: false, eliminar: false },
-                pedidos: { crear: false, leer: true, editar: true, eliminar: false },
-                pagos: { crear: false, leer: true, editar: false, eliminar: false },
-                productos: { crear: true, leer: true, editar: true, eliminar: false },
-                contactos: { crear: false, leer: true, editar: false, eliminar: false },
-                usuarios: { crear: false, leer: false, editar: false, eliminar: false }
-            }
-        };
-
-        console.log('✅ Enviando permisos por defecto');
-        res.json({ permisos: permisosDefecto });
-
-    } catch (error) {
-        console.error('❌ Error obteniendo permisos:', error);
-        res.status(500).json({ error: 'Error interno del servidor' });
-    }
-});
-
-
-        }
-
-        const { permisos } = req.body;
-        
-        if (!permisos) {
-            return res.status(400).json({ error: 'Datos de permisos requeridos' });
-        }
-
-        console.log('📊 Permisos a guardar:', JSON.stringify(permisos, null, 2));
-
-        try {
-            // Intentar crear la tabla si no existe
-            await db.execute(`
-                CREATE TABLE IF NOT EXISTS permisos_perfil (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    perfil VARCHAR(50) NOT NULL,
-                    modulo VARCHAR(50) NOT NULL,
-                    crear BOOLEAN DEFAULT FALSE,
-                    leer BOOLEAN DEFAULT FALSE,
-                    editar BOOLEAN DEFAULT FALSE,
-                    eliminar BOOLEAN DEFAULT FALSE,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                    UNIQUE KEY unique_perfil_modulo (perfil, modulo)
-                )
-            `);
-            
-            console.log('✅ Tabla permisos_perfil verificada/creada');
-
-            // Limpiar permisos existentes
-            await db.execute('DELETE FROM permisos_perfil');
-            console.log('🗑️ Permisos anteriores eliminados');
-
-            // Insertar nuevos permisos
-            const insertPromises = [];
-            Object.keys(permisos).forEach(perfil => {
-                Object.keys(permisos[perfil]).forEach(modulo => {
-                    const permisoModulo = permisos[perfil][modulo];
-                    insertPromises.push(
-                        db.execute(
-                            'INSERT INTO permisos_perfil (perfil, modulo, crear, leer, editar, eliminar) VALUES (?, ?, ?, ?, ?, ?)',
-                            [perfil, modulo, permisoModulo.crear, permisoModulo.leer, permisoModulo.editar, permisoModulo.eliminar]
-                        )
-                    );
-                });
-            });
-
-            await Promise.all(insertPromises);
-            console.log(`✅ ${insertPromises.length} permisos guardados en base de datos`);
-
-            res.json({ 
-                message: 'Permisos guardados exitosamente',
-                count: insertPromises.length
-            });
-
-        } catch (dbError) {
-            console.error('❌ Error de base de datos guardando permisos:', dbError);
-            res.status(500).json({ error: 'Error de base de datos al guardar permisos' });
-        }
-
-    } catch (error) {
-        console.error('❌ Error guardando permisos:', error);
-        res.status(500).json({ error: 'Error interno del servidor' });
-    }
-});
-
-// Eliminar producto
-app.delete('/api/productos/:id', authenticateToken, async (req, res) => {
-    try {
-        const productoId = req.params.id;
-
-        // Verificar que el producto existe
-        const [existingProducto] = await db.execute(
-            'SELECT * FROM productos WHERE id = ?',
-            [productoId]
-        );
-
-        if (existingProducto.length === 0) {
-            return res.status(404).json({ error: 'Producto no encontrado' });
-        }
-
-        // Verificar que no esté siendo usado en pedidos
-        const [pedidosConProducto] = await db.execute(
-            'SELECT COUNT(*) as count FROM pedido_items WHERE producto_id = ?',
-            [productoId]
-        );
-
-        if (pedidosConProducto[0].count > 0) {
-            return res.status(400).json({ error: 'No se puede eliminar el producto porque está siendo usado en pedidos' });
-        }
-
-        // Eliminar el producto
-        await db.execute('DELETE FROM productos WHERE id = ?', [productoId]);
-
-        res.json({ message: 'Producto eliminado exitosamente' });
-    } catch (error) {
-        console.error('Error eliminando producto:', error);
-        res.status(500).json({ error: 'Error interno del servidor' });
-    }
-});
-
 // Ruta para servir la aplicación
 app.get('/', (req, res) => {
     res.redirect('/login.html');
@@ -1544,6 +1377,41 @@ app.get('/api/cobros/pendientes/detalle', authenticateToken, async (req, res) =>
         
     } catch (error) {
         console.error('❌ Error obteniendo detalles de cobros pendientes:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Eliminar producto
+app.delete('/api/productos/:id', authenticateToken, async (req, res) => {
+    try {
+        const productoId = req.params.id;
+
+        // Verificar que el producto existe
+        const [existingProducto] = await db.execute(
+            'SELECT * FROM productos WHERE id = ?',
+            [productoId]
+        );
+
+        if (existingProducto.length === 0) {
+            return res.status(404).json({ error: 'Producto no encontrado' });
+        }
+
+        // Verificar que no esté siendo usado en pedidos
+        const [pedidosConProducto] = await db.execute(
+            'SELECT COUNT(*) as count FROM pedido_items WHERE producto_id = ?',
+            [productoId]
+        );
+
+        if (pedidosConProducto[0].count > 0) {
+            return res.status(400).json({ error: 'No se puede eliminar el producto porque está siendo usado en pedidos' });
+        }
+
+        // Eliminar el producto
+        await db.execute('DELETE FROM productos WHERE id = ?', [productoId]);
+
+        res.json({ message: 'Producto eliminado exitosamente' });
+    } catch (error) {
+        console.error('Error eliminando producto:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
