@@ -501,79 +501,80 @@
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <form id="new-order-form">
-                <div class="mb-4">
-                    <label for="order-client-select">Cliente</label>
-                    <select id="order-client-select" class="input" autocomplete="off" required>
-                        <option value="">Seleccione un cliente</option>
-                    </select>
-                </div>
-                
-                <div class="mb-4">
-                    <label for="order-description">Descripción del Pedido</label>
-                    <textarea id="order-description" class="input" autocomplete="off" placeholder="Descripción general del pedido" required></textarea>
-                </div>
-
-                <!-- Sección de Productos -->
-                <div class="mb-4">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                        <label style="margin: 0; font-weight: 600;">Productos del Pedido</label>
-                        <button type="button" id="add-product-btn" class="btn btn-success" style="padding: 0.5rem 1rem;">
-                            <i class="fas fa-plus"></i> Agregar Producto
-                        </button>
+            <div class="modal-form">
+                <form id="new-order-form">
+                    <div class="form-group">
+                        <label for="order-client-select">Cliente</label>
+                        <select id="order-client-select" class="input" autocomplete="off" required>
+                            <option value="">Seleccione un cliente</option>
+                        </select>
                     </div>
                     
-                    <!-- Selector de producto (inicialmente oculto) -->
-                    <div id="product-selector" style="display: none; background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-                        <div style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 1rem; align-items: end;">
-                            <div>
-                                <label for="product-select">Producto</label>
-                                <select id="product-select" class="input">
-                                    <option value="">Seleccione un producto</option>
-                                </select>
+                    <div class="form-group">
+                        <label for="order-description">Descripción del Pedido</label>
+                        <textarea id="order-description" class="input" autocomplete="off" placeholder="Descripción general del pedido" required></textarea>
+                    </div>
+
+                    <!-- Sección de Productos -->
+                    <div class="form-group">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <label style="margin: 0; font-weight: 600;">Productos del Pedido</label>
+                            <button type="button" id="add-product-btn" class="btn btn-success" style="padding: 0.5rem 1rem;">
+                                <i class="fas fa-plus"></i> Agregar Producto
+                            </button>
+                        </div>
+                        
+                        <!-- Selector de producto (inicialmente oculto) -->
+                        <div id="product-selector" style="display: none; background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 1rem; align-items: end;">
+                                <div>
+                                    <label for="product-select">Producto</label>
+                                    <select id="product-select" class="input">
+                                        <option value="">Seleccione un producto</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="product-quantity">Cantidad</label>
+                                    <input type="number" id="product-quantity" class="input" min="1" value="1">
+                                </div>
+                                <div>
+                                    <label for="product-price">Precio Unitario</label>
+                                    <input type="number" id="product-price" class="input" step="0.01" min="0">
+                                </div>
+                                <div>
+                                    <button type="button" id="confirm-add-product" class="btn btn-primary" style="padding: 0.75rem;">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    <button type="button" id="cancel-add-product" class="btn btn-secondary" style="padding: 0.75rem; margin-left: 0.5rem;">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
                             </div>
-                            <div>
-                                <label for="product-quantity">Cantidad</label>
-                                <input type="number" id="product-quantity" class="input" min="1" value="1">
-                            </div>
-                            <div>
-                                <label for="product-price">Precio Unitario</label>
-                                <input type="number" id="product-price" class="input" step="0.01" min="0">
-                            </div>
-                            <div>
-                                <button type="button" id="confirm-add-product" class="btn btn-primary" style="padding: 0.75rem;">
-                                    <i class="fas fa-check"></i>
-                                </button>
-                                <button type="button" id="cancel-add-product" class="btn btn-secondary" style="padding: 0.75rem; margin-left: 0.5rem;">
-                                    <i class="fas fa-times"></i>
-                                </button>
+                        </div>
+
+                        <!-- Lista de productos agregados -->
+                        <div id="order-products-list">
+                            <div id="no-products-message" style="text-align: center; padding: 2rem; color: #6b7280; background: #f9fafb; border-radius: 8px;">
+                                <i class="fas fa-box-open" style="font-size: 2rem; margin-bottom: 0.5rem; display: block; color: #d1d5db;"></i>
+                                <p style="margin: 0;">No hay productos agregados al pedido</p>
+                                <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem;">Haga clic en "Agregar Producto" para comenzar</p>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Lista de productos agregados -->
-                    <div id="order-products-list">
-                        <div id="no-products-message" style="text-align: center; padding: 2rem; color: #6b7280; background: #f9fafb; border-radius: 8px;">
-                            <i class="fas fa-box-open" style="font-size: 2rem; margin-bottom: 0.5rem; display: block; color: #d1d5db;"></i>
-                            <p style="margin: 0;">No hay productos agregados al pedido</p>
-                            <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem;">Haga clic en "Agregar Producto" para comenzar</p>
+                    <!-- Total del pedido -->
+                    <div class="form-group" style="background: #f0f9ff; padding: 1rem; border-radius: 8px; border-left: 4px solid #0ea5e9;">
+                        <div style="display: flex; justify-content: between; align-items: center;">
+                            <span style="font-weight: 600; color: #0c4a6e;">Total del Pedido:</span>
+                            <span id="order-total" style="font-size: 1.5rem; font-weight: bold; color: #0ea5e9;">$0.00</span>
                         </div>
                     </div>
-                </div>
-
-                <!-- Total del pedido -->
-                <div class="mb-4" style="background: #f0f9ff; padding: 1rem; border-radius: 8px; border-left: 4px solid #0ea5e9;">
-                    <div style="display: flex; justify-content: between; align-items: center;">
-                        <span style="font-weight: 600; color: #0c4a6e;">Total del Pedido:</span>
-                        <span id="order-total" style="font-size: 1.5rem; font-weight: bold; color: #0ea5e9;">$0.00</span>
-                    </div>
-                </div>
-
-                <div class="flex justify-between">
-                    <button type="button" class="btn btn-secondary close-modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary" id="submit-order-btn" disabled>Crear Pedido</button>
-                </div>
-            </form>
+                </form>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary close-modal cancel-btn">Cancelar</button>
+                <button type="submit" form="new-order-form" class="btn btn-primary submit-btn" id="submit-order-btn" disabled>Crear Pedido</button>
+            </div>
         </div>
     </div>
 
@@ -586,34 +587,36 @@
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <form id="new-payment-form">
-                <div class="mb-4">
-                    <label for="payment-client-select">Cliente</label>
-                    <select id="payment-client-select" class="input" autocomplete="off" required>
-                        <option value="">Seleccione un cliente</option>
-                    </select>
-                </div>
-                <div class="mb-4">
-                    <label for="payment-amount">Monto</label>
-                    <input type="number" id="payment-amount" class="input" autocomplete="off" required>
-                </div>
-                <div class="mb-4">
-                    <label for="payment-method">Método de Pago</label>
-                    <select id="payment-method" class="input" autocomplete="off" required>
-                        <option value="efectivo">Efectivo</option>
-                        <option value="transferencia">Transferencia</option>
-                        <option value="tarjeta">Tarjeta</option>
-                    </select>
-                </div>
-                <div class="mb-4">
-                    <label for="payment-reference">Referencia</label>
-                    <input type="text" id="payment-reference" class="input" autocomplete="off" required>
-                </div>
-                <div class="flex justify-between">
-                    <button type="button" class="btn btn-secondary close-modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Guardar</button>
-                </div>
-            </form>
+            <div class="modal-form">
+                <form id="new-payment-form">
+                    <div class="form-group">
+                        <label for="payment-client-select">Cliente</label>
+                        <select id="payment-client-select" class="input" autocomplete="off" required>
+                            <option value="">Seleccione un cliente</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="payment-amount">Monto</label>
+                        <input type="number" id="payment-amount" class="input" autocomplete="off" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="payment-method">Método de Pago</label>
+                        <select id="payment-method" class="input" autocomplete="off" required>
+                            <option value="efectivo">Efectivo</option>
+                            <option value="transferencia">Transferencia</option>
+                            <option value="tarjeta">Tarjeta</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="payment-reference">Referencia</label>
+                        <input type="text" id="payment-reference" class="input" autocomplete="off" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary close-modal cancel-btn">Cancelar</button>
+                <button type="submit" form="new-payment-form" class="btn btn-primary submit-btn">Guardar</button>
+            </div>
         </div>
     </div>
 
@@ -626,89 +629,90 @@
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <form id="edit-order-form">
-                <div class="mb-4">
-                    <label for="edit-order-client-select">Cliente</label>
-                    <select id="edit-order-client-select" class="input" autocomplete="off" required>
-                        <option value="">Seleccione un cliente</option>
-                    </select>
-                </div>
-                
-                <div class="mb-4">
-                    <label for="edit-order-description">Descripción del Pedido</label>
-                    <textarea id="edit-order-description" class="input" autocomplete="off" placeholder="Descripción general del pedido" required></textarea>
-                </div>
-
-                <div class="mb-4">
-                    <label for="edit-order-status">Estado</label>
-                    <select id="edit-order-status" class="input" autocomplete="off" required>
-                        <option value="pendiente de pago">Pendiente de Pago</option>
-                        <option value="fabricar">Fabricar</option>
-                        <option value="sale fabrica">Sale Fábrica</option>
-                        <option value="completado">Completado</option>
-                    </select>
-                </div>
-
-                <!-- Sección de Productos -->
-                <div class="mb-4">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                        <label style="margin: 0; font-weight: 600;">Productos del Pedido</label>
-                        <button type="button" id="edit-add-product-btn" class="btn btn-success" style="padding: 0.5rem 1rem;">
-                            <i class="fas fa-plus"></i> Agregar Producto
-                        </button>
+            <div class="modal-form">
+                <form id="edit-order-form">
+                    <div class="form-group">
+                        <label for="edit-order-client-select">Cliente</label>
+                        <select id="edit-order-client-select" class="input" autocomplete="off" required>
+                            <option value="">Seleccione un cliente</option>
+                        </select>
                     </div>
                     
-                    <!-- Selector de producto (inicialmente oculto) -->
-                    <div id="edit-product-selector" style="display: none; background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-                        <div style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 1rem; align-items: end;">
-                            <div>
-                                <label for="edit-product-select">Producto</label>
-                                <select id="edit-product-select" class="input">
-                                    <option value="">Seleccione un producto</option>
-                                </select>
+                    <div class="form-group">
+                        <label for="edit-order-description">Descripción del Pedido</label>
+                        <textarea id="edit-order-description" class="input" autocomplete="off" placeholder="Descripción general del pedido" required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="edit-order-status">Estado</label>
+                        <select id="edit-order-status" class="input" autocomplete="off" required>
+                            <option value="pendiente de pago">Pendiente de Pago</option>
+                            <option value="fabricar">Fabricar</option>
+                            <option value="sale fabrica">Sale Fábrica</option>
+                            <option value="completado">Completado</option>
+                        </select>
+                    </div>
+
+                    <!-- Sección de Productos -->
+                    <div class="form-group">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <label style="margin: 0; font-weight: 600;">Productos del Pedido</label>
+                            <button type="button" id="edit-add-product-btn" class="btn btn-success" style="padding: 0.5rem 1rem;">
+                                <i class="fas fa-plus"></i> Agregar Producto
+                            </button>
+                        </div>
+                        
+                        <!-- Selector de producto (inicialmente oculto) -->
+                        <div id="edit-product-selector" style="display: none; background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 1rem; align-items: end;">
+                                <div>
+                                    <label for="edit-product-select">Producto</label>
+                                    <select id="edit-product-select" class="input">
+                                        <option value="">Seleccione un producto</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="edit-product-quantity">Cantidad</label>
+                                    <input type="number" id="edit-product-quantity" class="input" min="1" value="1">
+                                </div>
+                                <div>
+                                    <label for="edit-product-price">Precio Unitario</label>
+                                    <input type="number" id="edit-product-price" class="input" step="0.01" min="0">
+                                </div>
+                                <div>
+                                    <button type="button" id="edit-confirm-add-product" class="btn btn-primary" style="padding: 0.75rem;">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    <button type="button" id="edit-cancel-add-product" class="btn btn-secondary" style="padding: 0.75rem; margin-left: 0.5rem;">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
                             </div>
-                            <div>
-                                <label for="edit-product-quantity">Cantidad</label>
-                                <input type="number" id="edit-product-quantity" class="input" min="1" value="1">
-                            </div>
-                            <div>
-                                <label for="edit-product-price">Precio Unitario</label>
-                                <input type="number" id="edit-product-price" class="input" step="0.01" min="0">
-                            </div>
-                            <div>
-                                <button type="button" id="edit-confirm-add-product" class="btn btn-primary" style="padding: 0.75rem;">
-                                    <i class="fas fa-check"></i>
-                                </button>
-                                <button type="button" id="edit-cancel-add-product" class="btn btn-secondary" style="padding: 0.75rem; margin-left: 0.5rem;">
-                                    <i class="fas fa-times"></i>
-                                </button>
+                        </div>
+
+                        <!-- Lista de productos agregados -->
+                        <div id="edit-order-products-list">
+                            <div id="edit-no-products-message" style="text-align: center; padding: 2rem; color: #6b7280; background: #f9fafb; border-radius: 8px;">
+                                <i class="fas fa-box-open" style="font-size: 2rem; margin-bottom: 0.5rem; display: block; color: #d1d5db;"></i>
+                                <p style="margin: 0;">No hay productos en este pedido</p>
+                                <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem;">Haga clic en "Agregar Producto" para añadir productos</p>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Lista de productos agregados -->
-                    <div id="edit-order-products-list">
-                        <div id="edit-no-products-message" style="text-align: center; padding: 2rem; color: #6b7280; background: #f9fafb; border-radius: 8px;">
-                            <i class="fas fa-box-open" style="font-size: 2rem; margin-bottom: 0.5rem; display: block; color: #d1d5db;"></i>
-                            <p style="margin: 0;">No hay productos en este pedido</p>
-                            <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem;">Haga clic en "Agregar Producto" para añadir productos</p>
+                    <!-- Total del pedido -->
+                    <div class="form-group" style="background: #f0f9ff; padding: 1rem; border-radius: 8px; border-left: 4px solid #0ea5e9;">
+                        <div style="display: flex; justify-content: between; align-items: center;">
+                            <span style="font-weight: 600; color: #0c4a6e;">Total del Pedido:</span>
+                            <span id="edit-order-total" style="font-size: 1.5rem; font-weight: bold; color: #0ea5e9;">$0.00</span>
                         </div>
                     </div>
-                </div>
-
-                <!-- Total del pedido -->
-                <div class="mb-4" style="background: #f0f9ff; padding: 1rem; border-radius: 8px; border-left: 4px solid #0ea5e9;">
-                    <div style="display: flex; justify-content: between; align-items: center;">
-                        <span style="font-weight: 600; color: #0c4a6e;">Total del Pedido:</span>
-                        <span id="edit-order-total" style="font-size: 1.5rem; font-weight: bold; color: #0ea5e9;">$0.00</span>
-                    </div>
-                </div>
-
-                <div class="flex justify-between">
-                    <button type="button" class="btn btn-secondary close-modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-                </div>
-            </form>
+                </form>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary close-modal cancel-btn">Cancelar</button>
+                <button type="submit" form="edit-order-form" class="btn btn-primary submit-btn">Guardar Cambios</button>
+            </div>
         </div>
     </div>
 
@@ -721,38 +725,40 @@
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <form id="new-contact-form">
-                <div class="mb-4">
-                    <label for="contact-client-select">Cliente</label>
-                    <select id="contact-client-select" class="input" autocomplete="off" required>
-                        <option value="">Seleccione un cliente</option>
-                    </select>
-                </div>
-                <div class="mb-4">
-                    <label for="contact-name-input">Nombre Completo</label>
-                    <input type="text" id="contact-name-input" class="input" autocomplete="name" required>
-                </div>
-                <div class="mb-4">
-                    <label for="contact-email-input">Email</label>
-                    <input type="email" id="contact-email-input" class="input" autocomplete="email" required>
-                </div>
-                <div class="mb-4">
-                    <label for="contact-phone-input">Teléfono</label>
-                    <input type="tel" id="contact-phone-input" class="input" autocomplete="tel" required>
-                </div>
-                <div class="mb-4">
-                    <label for="contact-position-input">Cargo</label>
-                    <input type="text" id="contact-position-input" class="input" autocomplete="organization-title" required>
-                </div>
-                <div class="mb-4">
-                    <label for="contact-department-input">Departamento</label>
-                    <input type="text" id="contact-department-input" class="input" autocomplete="off">
-                </div>
-                <div class="flex justify-between">
-                    <button type="button" class="btn btn-secondary close-modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary" style="background-color: #FF6B00;">Guardar</button>
-                </div>
-            </form>
+            <div class="modal-form">
+                <form id="new-contact-form">
+                    <div class="form-group">
+                        <label for="contact-client-select">Cliente</label>
+                        <select id="contact-client-select" class="input" autocomplete="off" required>
+                            <option value="">Seleccione un cliente</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="contact-name-input">Nombre Completo</label>
+                        <input type="text" id="contact-name-input" class="input" autocomplete="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="contact-email-input">Email</label>
+                        <input type="email" id="contact-email-input" class="input" autocomplete="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="contact-phone-input">Teléfono</label>
+                        <input type="tel" id="contact-phone-input" class="input" autocomplete="tel" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="contact-position-input">Cargo</label>
+                        <input type="text" id="contact-position-input" class="input" autocomplete="organization-title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="contact-department-input">Departamento</label>
+                        <input type="text" id="contact-department-input" class="input" autocomplete="off">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary close-modal cancel-btn">Cancelar</button>
+                <button type="submit" form="new-contact-form" class="btn btn-primary submit-btn" style="background-color: #FF6B00;">Guardar</button>
+            </div>
         </div>
     </div>
 
@@ -765,78 +771,80 @@
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <form id="edit-client-form">
-                <div class="mb-4">
-                    <label for="edit-client-name">Nombre</label>
-                    <input type="text" id="edit-client-name" class="input" required>
-                </div>
-                <div class="mb-4">
-                    <label for="edit-client-cuit">Documento</label>
-                    <input type="text" id="edit-client-cuit" class="input" required>
-                </div>
-                <div class="mb-4">
-                    <label for="edit-client-email">Email</label>
-                    <input type="email" id="edit-client-email" class="input" required>
-                </div>
-                <div class="mb-4">
-                    <label for="edit-client-phone">Teléfono</label>
-                    <input type="tel" id="edit-client-phone" class="input" required>
-                </div>
-                <div class="mb-4">
-                    <label for="edit-client-address">Dirección de Entrega</label>
-                    <input type="text" id="edit-client-address" class="input" required>
-                </div>
-                <div class="mb-4">
-                    <label for="edit-client-province">Provincia</label>
-                    <select id="edit-client-province" class="input" required>
-                        <option value="">Seleccione una provincia</option>
-                        <option value="Buenos Aires">Buenos Aires</option>
-                        <option value="Ciudad Autonoma de Buenos Aires">Ciudad Autónoma de Buenos Aires</option>
-                        <option value="Catamarca">Catamarca</option>
-                        <option value="Chaco">Chaco</option>
-                        <option value="Chubut">Chubut</option>
-                        <option value="Cordoba">Córdoba</option>
-                        <option value="Corrientes">Corrientes</option>
-                        <option value="Entre Rios">Entre Ríos</option>
-                        <option value="Formosa">Formosa</option>
-                        <option value="Jujuy">Jujuy</option>
-                        <option value="La Pampa">La Pampa</option>
-                        <option value="La Rioja">La Rioja</option>
-                        <option value="Mendoza">Mendoza</option>
-                        <option value="Misiones">Misiones</option>
-                        <option value="Neuquen">Neuquén</option>
-                        <option value="Rio Negro">Río Negro</option>
-                        <option value="Salta">Salta</option>
-                        <option value="San Juan">San Juan</option>
-                        <option value="San Luis">San Luis</option>
-                        <option value="Santa Cruz">Santa Cruz</option>
-                        <option value="Santa Fe">Santa Fe</option>
-                        <option value="Santiago del Estero">Santiago del Estero</option>
-                        <option value="Tierra del Fuego">Tierra del Fuego</option>
-                        <option value="Tucuman">Tucumán</option>
-                    </select>
-                </div>
-                <div class="mb-4">
-                    <label for="edit-client-city">Ciudad</label>
-                    <select id="edit-client-city" class="input" required>
-                        <option value="">Seleccione una ciudad</option>
-                    </select>
-                </div>
-                <div class="mb-4">
-                    <label for="edit-client-locality">Localidad</label>
-                    <select id="edit-client-locality" class="input" required>
-                        <option value="">Seleccione una localidad</option>
-                    </select>
-                </div>
-                <div class="mb-4">
-                    <label for="edit-client-zip">Código Postal</label>
-                    <input type="text" id="edit-client-zip" class="input" required>
-                </div>
-                <div class="flex justify-between">
-                    <button type="button" class="btn btn-secondary close-modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-                </div>
-            </form>
+            <div class="modal-form">
+                <form id="edit-client-form">
+                    <div class="form-group">
+                        <label for="edit-client-name">Nombre</label>
+                        <input type="text" id="edit-client-name" class="input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-client-cuit">Documento</label>
+                        <input type="text" id="edit-client-cuit" class="input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-client-email">Email</label>
+                        <input type="email" id="edit-client-email" class="input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-client-phone">Teléfono</label>
+                        <input type="tel" id="edit-client-phone" class="input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-client-address">Dirección de Entrega</label>
+                        <input type="text" id="edit-client-address" class="input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-client-province">Provincia</label>
+                        <select id="edit-client-province" class="input" required>
+                            <option value="">Seleccione una provincia</option>
+                            <option value="Buenos Aires">Buenos Aires</option>
+                            <option value="Ciudad Autonoma de Buenos Aires">Ciudad Autónoma de Buenos Aires</option>
+                            <option value="Catamarca">Catamarca</option>
+                            <option value="Chaco">Chaco</option>
+                            <option value="Chubut">Chubut</option>
+                            <option value="Cordoba">Córdoba</option>
+                            <option value="Corrientes">Corrientes</option>
+                            <option value="Entre Rios">Entre Ríos</option>
+                            <option value="Formosa">Formosa</option>
+                            <option value="Jujuy">Jujuy</option>
+                            <option value="La Pampa">La Pampa</option>
+                            <option value="La Rioja">La Rioja</option>
+                            <option value="Mendoza">Mendoza</option>
+                            <option value="Misiones">Misiones</option>
+                            <option value="Neuquen">Neuquén</option>
+                            <option value="Rio Negro">Río Negro</option>
+                            <option value="Salta">Salta</option>
+                            <option value="San Juan">San Juan</option>
+                            <option value="San Luis">San Luis</option>
+                            <option value="Santa Cruz">Santa Cruz</option>
+                            <option value="Santa Fe">Santa Fe</option>
+                            <option value="Santiago del Estero">Santiago del Estero</option>
+                            <option value="Tierra del Fuego">Tierra del Fuego</option>
+                            <option value="Tucuman">Tucumán</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-client-city">Ciudad</label>
+                        <select id="edit-client-city" class="input" required>
+                            <option value="">Seleccione una ciudad</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-client-locality">Localidad</label>
+                        <select id="edit-client-locality" class="input" required>
+                            <option value="">Seleccione una localidad</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-client-zip">Código Postal</label>
+                        <input type="text" id="edit-client-zip" class="input" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary close-modal cancel-btn">Cancelar</button>
+                <button type="submit" form="edit-client-form" class="btn btn-primary submit-btn">Guardar Cambios</button>
+            </div>
         </div>
     </div>
 
@@ -952,28 +960,30 @@
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <form id="new-product-form">
-                <div class="mb-4">
-                    <label for="product-name-input">Nombre del Producto</label>
-                    <input type="text" id="product-name-input" name="nombre" class="input" required>
-                </div>
-                <div class="mb-4">
-                    <label for="product-description-input">Descripción</label>
-                    <textarea id="product-description-input" name="descripcion" class="input" rows="3"></textarea>
-                </div>
-                <div class="mb-4">
-                    <label for="product-price-input">Precio</label>
-                    <input type="number" id="product-price-input" name="precio" class="input" step="0.01" required>
-                </div>
-                <div class="mb-4">
-                    <label for="product-stock-input">Stock</label>
-                    <input type="number" id="product-stock-input" name="stock" class="input" min="0" required>
-                </div>
-                <div class="flex justify-between">
-                    <button type="button" class="btn btn-secondary close-modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Guardar</button>
-                </div>
-            </form>
+            <div class="modal-form">
+                <form id="new-product-form">
+                    <div class="form-group">
+                        <label for="product-name-input">Nombre del Producto</label>
+                        <input type="text" id="product-name-input" name="nombre" class="input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="product-description-input">Descripción</label>
+                        <textarea id="product-description-input" name="descripcion" class="input" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="product-price-input">Precio</label>
+                        <input type="number" id="product-price-input" name="precio" class="input" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="product-stock-input">Stock</label>
+                        <input type="number" id="product-stock-input" name="stock" class="input" min="0" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary close-modal cancel-btn">Cancelar</button>
+                <button type="submit" form="new-product-form" class="btn btn-primary submit-btn">Guardar</button>
+            </div>
         </div>
     </div>
 
