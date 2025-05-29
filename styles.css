@@ -1916,6 +1916,13 @@ body.theme-dark .modal-content {
     gap: 0.5rem;
     margin-bottom: 0.5rem;
     cursor: pointer;
+    transition: background 0.2s;
+    padding: 0.25rem;
+    border-radius: 4px;
+}
+
+.user-info:hover {
+    background: #f1f5f9;
 }
 
 .user-menu {
@@ -1954,7 +1961,8 @@ body.theme-dark .modal-content {
     text-align: center;
 }
 
-.sidebar-user:hover .user-menu {
+/* Mostrar menú cuando tenga la clase 'show' en lugar de hover */
+.sidebar-user .user-menu.show {
     display: flex;
 }
 
@@ -1962,6 +1970,10 @@ body.theme-dark .modal-content {
 body.theme-dark .sidebar-user {
     background: #23232a;
     border-top-color: #444;
+}
+
+body.theme-dark .user-info:hover {
+    background: #33334a;
 }
 
 body.theme-dark .user-menu {

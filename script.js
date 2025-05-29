@@ -833,6 +833,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         debugLog('SETUP', 'Configurando botones del header...');
         setupHeaderButtons();
         
+        debugLog('SETUP', 'Configurando menú de usuario...');
+        setupUserMenu();
+        
         // Mostrar dashboard por defecto
         debugLog('UI', 'Mostrando dashboard por defecto...');
         showSection('dashboard');
@@ -5232,5 +5235,51 @@ async function markAsProduced(orderId) {
     } catch (error) {
         console.error('❌ Error marcando pedido como producido:', error);
         showNotification('Error al actualizar el estado del pedido', 'error');
+    }
+}
+
+// Función para configurar el menú del usuario con comportamiento click
+function setupUserMenu() {
+    console.log('🔧 Configurando menú del usuario...');
+    
+    try {
+        const userInfo = document.querySelector('.sidebar-user .user-info');
+        const userMenu = document.querySelector('.sidebar-user .user-menu');
+        
+        if (!userInfo || !userMenu) {
+            console.error('❌ Elementos del menú del usuario no encontrados');
+            return;
+        }
+        
+        // Agregar event listener para click en la información del usuario
+        userInfo.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Toggle la clase 'show' en el menú
+            userMenu.classList.toggle('show');
+            
+            console.log('🖱️ Click en menú de usuario:', userMenu.classList.contains('show') ? 'Mostrado' : 'Ocultado');
+        });
+        
+        // Cerrar el menú al hacer click fuera de él
+        document.addEventListener('click', function(e) {
+            const sidebarUser = document.querySelector('.sidebar-user');
+            
+            // Si el click no fue dentro del área del usuario, cerrar el menú
+            if (sidebarUser && !sidebarUser.contains(e.target)) {
+                userMenu.classList.remove('show');
+            }
+        });
+        
+        // Prevenir que el menú se cierre al hacer click dentro de él
+        userMenu.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+        
+        console.log('✅ Menú del usuario configurado correctamente');
+        
+    } catch (error) {
+        console.error('❌ Error configurando menú del usuario:', error);
     }
 }
