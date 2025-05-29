@@ -234,7 +234,7 @@ tr:hover {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 2.5rem 3rem 1.5rem 3rem;
+    padding: 3rem 4rem 2rem 4rem !important;
     border-bottom: 1px solid #e2e8f0;
 }
 
@@ -246,14 +246,16 @@ tr:hover {
 }
 
 .modal-form {
-    padding: 2.5rem 3rem;
+    padding: 3rem 4rem !important;
     display: flex;
     flex-direction: column;
-    gap: 1.75rem;
+    gap: 2rem;
+    margin: 0 1rem;
 }
 
 .form-group {
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
+    position: relative;
 }
 
 .form-group label {
@@ -262,12 +264,13 @@ tr:hover {
     color: #475569;
     font-weight: 500;
     font-size: 0.95rem;
+    margin-left: 4px;
 }
 
 .form-group input,
 .form-group select,
 .form-group textarea {
-    width: 100%;
+    width: calc(100% - 24px) !important;
     padding: 1rem 1.25rem;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
@@ -275,6 +278,8 @@ tr:hover {
     transition: border-color 0.2s, box-shadow 0.2s;
     box-sizing: border-box;
     background-color: #fafbfc;
+    margin: 0 12px;
+    display: block;
 }
 
 .form-group input:focus,
@@ -290,9 +295,10 @@ tr:hover {
     display: flex;
     justify-content: flex-end;
     gap: 1rem;
-    padding: 2rem 3rem 2.5rem 3rem;
+    padding: 2.5rem 4rem 3rem 4rem !important;
     border-top: 1px solid #e2e8f0;
     background: #f8fafc;
+    margin: 0 1rem;
 }
 
 .modal-actions button {
@@ -400,18 +406,20 @@ tr:hover {
     }
 
     .modal-header {
-        padding: 2rem 2.5rem 1.25rem 2.5rem;
+        padding: 2.5rem 3rem 1.5rem 3rem !important;
     }
 
     .modal-form {
-        padding: 2rem 2.5rem;
-        gap: 1.5rem;
+        padding: 2.5rem 3rem !important;
+        gap: 1.75rem;
+        margin: 0 0.5rem;
     }
 
     .modal-actions {
-        padding: 1.5rem 2.5rem 2rem 2.5rem;
+        padding: 2rem 3rem 2.5rem 3rem !important;
         flex-direction: column-reverse;
         gap: 0.75rem;
+        margin: 0 0.5rem;
     }
 
     .modal-actions button {
@@ -424,6 +432,8 @@ tr:hover {
     .form-group textarea {
         font-size: 16px; /* Evita zoom en iOS */
         padding: 0.875rem 1rem;
+        width: calc(100% - 16px) !important;
+        margin: 0 8px;
     }
 }
 
@@ -439,7 +449,7 @@ tr:hover {
     }
 
     .modal-header {
-        padding: 1.75rem 2rem 1rem 2rem;
+        padding: 2rem 2.5rem 1.25rem 2.5rem !important;
     }
 
     .modal-title {
@@ -447,18 +457,22 @@ tr:hover {
     }
 
     .modal-form {
-        padding: 1.75rem 2rem;
-        gap: 1.25rem;
+        padding: 2rem 2.5rem !important;
+        gap: 1.5rem;
+        margin: 0 0.25rem;
     }
 
     .modal-actions {
-        padding: 1.25rem 2rem 1.75rem 2rem;
+        padding: 1.75rem 2.5rem 2rem 2.5rem !important;
+        margin: 0 0.25rem;
     }
 
     .form-group input,
     .form-group select,
     .form-group textarea {
         padding: 0.875rem 1rem;
+        width: calc(100% - 12px) !important;
+        margin: 0 6px;
     }
 }
 
