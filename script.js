@@ -94,10 +94,6 @@ const provinciasYLocalidades = {
     }
 };
 
-}
-
-}
-
 // Funciones de utilidad
 function formatCurrency(amount) {
     if (amount === null || amount === undefined) return '$0.00';
@@ -862,7 +858,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             
             // Hacer el reporte disponible globalmente para debugging
             
-            console.log('💡 Tip: Usa 
             console.log('💡 Tip: Usa window.debugModal("modal-id") para probar modales');
             console.log('💡 Tip: Usa window.runDiagnostic() para ejecutar diagnóstico manual');
         }, 1000);
