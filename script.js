@@ -94,32 +94,8 @@ const provinciasYLocalidades = {
     }
 };
 
-function actualizarCiudades(provincia, selectId = 'client-city-input') {
-    const ciudadSelect = document.getElementById(selectId);
-    ciudadSelect.innerHTML = '<option value="">Seleccione una ciudad</option>';
-    
-    if (provincia && provinciasYLocalidades[provincia]) {
-        Object.keys(provinciasYLocalidades[provincia]).forEach(ciudad => {
-            const option = document.createElement('option');
-            option.value = ciudad;
-            option.textContent = ciudad;
-            ciudadSelect.appendChild(option);
-        });
-    }
 }
 
-function actualizarLocalidades(provincia, ciudad, selectId = 'client-locality-input') {
-    const localidadSelect = document.getElementById(selectId);
-    localidadSelect.innerHTML = '<option value="">Seleccione una localidad</option>';
-    
-    if (provincia && ciudad && provinciasYLocalidades[provincia] && provinciasYLocalidades[provincia][ciudad]) {
-        provinciasYLocalidades[provincia][ciudad].forEach(localidad => {
-            const option = document.createElement('option');
-            option.value = localidad;
-            option.textContent = localidad;
-            localidadSelect.appendChild(option);
-        });
-    }
 }
 
 // Funciones de utilidad
@@ -214,7 +190,7 @@ async function checkAuthentication() {
             const adminNav = document.getElementById('admin-profiles-nav');
             if (adminNav) {
                 adminNav.style.display = 'block';
-                debugLog('AUTH', 'Panel de administración habilitado para usuario administrador');
+                
             }
         }
         
@@ -363,7 +339,7 @@ async function loadProducts() {
         if (response.ok) {
             products = await response.json();
             renderProductsTable(); // Renderizar la tabla después de cargar los datos
-            debugLog('DATA', 'Productos cargados');
+            
         } else {
             console.error('Error cargando productos:', response.statusText);
         }
@@ -393,7 +369,7 @@ async function loadOrders() {
                 renderFabricaTable();
             }
             
-            debugLog('DATA', 'Pedidos cargados');
+            
         } else {
             console.error('Error cargando pedidos:', response.statusText);
         }
@@ -416,7 +392,7 @@ async function loadPayments() {
         if (response.ok) {
             payments = await response.json();
             renderPaymentsTable(); // Renderizar la tabla después de cargar los datos
-            debugLog('DATA', 'Pagos cargados');
+            
         } else {
             console.error('Error cargando pagos:', response.statusText);
         }
@@ -439,7 +415,7 @@ async function loadContacts() {
         if (response.ok) {
             contacts = await response.json();
             renderContactsTable(); // Renderizar la tabla después de cargar los datos
-            debugLog('DATA', 'Contactos cargados');
+            
         } else {
             console.error('Error cargando contactos:', response.statusText);
         }
@@ -752,16 +728,12 @@ window.addEventListener('unhandledrejection', function(e) {
 });
 
 // Función para logging detallado
-function debugLog(context, message, data = null) {
-    const timestamp = new Date().toISOString();
-    console.log(`[${timestamp}] 🔍 ${context}: ${message}`, data || '');
-}
 
 // Función para capturar errores en funciones específicas
 function safeExecute(fn, context = 'Unknown') {
     return function(...args) {
         try {
-            debugLog(context, 'Ejecutando función', { args });
+            
             const result = fn.apply(this, args);
             
             // Si es una promesa, manejar errores async
@@ -773,7 +745,7 @@ function safeExecute(fn, context = 'Unknown') {
                 });
             }
             
-            debugLog(context, 'Función ejecutada exitosamente');
+            
             return result;
         } catch (error) {
             console.error(`🚨 Error en ${context}:`, error);
@@ -788,92 +760,92 @@ function safeExecute(fn, context = 'Unknown') {
 document.addEventListener('DOMContentLoaded', async function() {
     try {
         console.log('🚀 Iniciando aplicación MIMI CRM...');
-        debugLog('INIT', 'Comenzando inicialización de la aplicación');
+        
         
         // Verificar autenticación
-        debugLog('AUTH', 'Verificando autenticación...');
+        
         const isAuthenticated = await checkAuthentication();
         if (!isAuthenticated) {
             console.log('❌ Usuario no autenticado');
             return;
         }
-        debugLog('AUTH', 'Usuario autenticado correctamente');
+        
         
         // Cargar datos desde la API con manejo de errores individual
-        debugLog('DATA', 'Iniciando carga de datos...');
+        
         
         try {
             await loadClients();
-            debugLog('DATA', 'Clientes cargados');
+            
         } catch (error) {
             console.error('Error cargando clientes:', error);
         }
         
         try {
             await loadProducts();
-            debugLog('DATA', 'Productos cargados');
+            
         } catch (error) {
             console.error('Error cargando productos:', error);
         }
         
         try {
             await loadOrders();
-            debugLog('DATA', 'Pedidos cargados');
+            
         } catch (error) {
             console.error('Error cargando pedidos:', error);
         }
         
         try {
             await loadPayments();
-            debugLog('DATA', 'Pagos cargados');
+            
         } catch (error) {
             console.error('Error cargando pagos:', error);
         }
         
         try {
             await loadContacts();
-            debugLog('DATA', 'Contactos cargados');
+            
         } catch (error) {
             console.error('Error cargando contactos:', error);
         }
         
         // Configurar componentes con manejo de errores
-        debugLog('SETUP', 'Configurando navegación...');
+        
         setupNavigation();
         
-        debugLog('SETUP', 'Configurando formularios...');
+        
         setupForms();
         
-        debugLog('SETUP', 'Configurando botones del header...');
+        
         setupHeaderButtons();
         
-        debugLog('SETUP', 'Configurando menú de usuario...');
+        
         setupUserMenu();
         
-        debugLog('SETUP', 'Configurando modales...');
+        
         setupModals();
         
-        debugLog('SETUP', 'Configurando tarjetas del dashboard...');
+        
         setupDashboardCards();
         
         // Cargar datos iniciales del dashboard
-        debugLog('DATA', 'Cargando datos del dashboard...');
+        
         try {
             await loadInactiveClients();
             await loadCompletedSales();
             await loadPendingCollections();
-            debugLog('DATA', 'Datos del dashboard cargados');
+            
         } catch (error) {
             console.error('Error cargando datos del dashboard:', error);
         }
         
         // Mostrar dashboard por defecto
-        debugLog('UI', 'Mostrando dashboard por defecto...');
+        
         showSection('dashboard');
         updateHeaderTitle('dashboard');
         
         // Marcar dashboard como activo en la navegación
-        debugLog('UI', 'Configurando navegación activa...');
+        
         document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
         const dashboardNav = document.querySelector('.nav-item');
         if (dashboardNav) {
@@ -881,16 +853,16 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
         
         console.log('✅ Aplicación inicializada correctamente');
-        debugLog('INIT', 'Inicialización completada exitosamente');
+        
         
         // Ejecutar diagnóstico final
         setTimeout(() => {
-            debugLog('INIT', 'Ejecutando diagnóstico post-inicialización...');
+            
             const diagnosticReport = runDOMDiagnostic();
             
             // Hacer el reporte disponible globalmente para debugging
-            window.MIMI_DIAGNOSTIC = diagnosticReport;
-            console.log('💡 Tip: Usa window.MIMI_DIAGNOSTIC para ver el reporte completo');
+            
+            console.log('💡 Tip: Usa 
             console.log('💡 Tip: Usa window.debugModal("modal-id") para probar modales');
             console.log('💡 Tip: Usa window.runDiagnostic() para ejecutar diagnóstico manual');
         }, 1000);
@@ -1542,7 +1514,7 @@ function clearOrderItems() {
 // Función para mostrar modales con debugging mejorado
 function showModal(modalId) {
     try {
-        debugLog('MODAL', `Intentando mostrar modal: ${modalId}`);
+        
         
         // Verificar que modalId sea válido
         if (!modalId || typeof modalId !== 'string') {
@@ -1554,11 +1526,7 @@ function showModal(modalId) {
             throw new Error(`No se encontró el modal con ID: ${modalId}`);
         }
         
-        debugLog('MODAL', `Modal encontrado: ${modalId}`, {
-            element: modal,
-            currentDisplay: modal.style.display,
-            classList: Array.from(modal.classList)
-        });
+        
         
         // Verificar que el modal tenga la clase correcta
         if (!modal.classList.contains('modal')) {
@@ -1567,49 +1535,49 @@ function showModal(modalId) {
         
         // Mostrar el modal usando la clase active (para que funcione con las transiciones CSS)
         modal.classList.add('active');
-        debugLog('MODAL', `Modal ${modalId} mostrado exitosamente`);
+        
         
         // Configuraciones específicas por modal
         if (modalId === 'new-client-modal') {
-            debugLog('MODAL', 'Configurando modal de nuevo cliente...');
+            
             try {
                 setupProvinceAndCityListeners();
-                debugLog('MODAL', 'Configuración de provincia/ciudad completada');
+                
             } catch (error) {
                 console.error('❌ Error al configurar modal de nuevo cliente:', error);
                 throw error;
             }
         } else if (modalId === 'new-order-modal' || modalId === 'new-payment-modal' || modalId === 'new-contact-modal') {
-            debugLog('MODAL', `Configurando selects de clientes para ${modalId}...`);
+            
             try {
                 populateClientSelects(modalId);
-                debugLog('MODAL', `Selects de clientes configurados para ${modalId}`);
+                
                 
                 // Configuración específica para el modal de nuevo pedido
                 if (modalId === 'new-order-modal') {
                     clearOrderItems(); // Limpiar productos del pedido anterior
                     setupOrderProductHandlers(); // Configurar manejadores de productos
-                    debugLog('MODAL', 'Modal de nuevo pedido configurado con productos');
+                    
                 }
             } catch (error) {
                 console.error('❌ Error al cargar lista de clientes:', error);
                 throw error;
             }
         } else if (modalId === 'edit-order-modal') {
-            debugLog('MODAL', `Configurando selects de clientes para ${modalId}...`);
+            
             try {
                 populateClientSelects(modalId);
                 clearEditOrderItems(); // Limpiar productos del pedido anterior
                 setupEditOrderProductHandlers(); // Configurar manejadores de productos
-                debugLog('MODAL', `Selects de clientes configurados para ${modalId}`);
-                debugLog('MODAL', 'Modal de editar pedido configurado con productos');
+                
+                
             } catch (error) {
                 console.error('❌ Error al cargar lista de clientes:', error);
                 throw error;
             }
         }
         
-        debugLog('MODAL', `Modal ${modalId} configurado completamente`);
+        
         
     } catch (error) {
         console.error(`🚨 ERROR EN showModal(${modalId}):`, error);
@@ -1730,7 +1698,7 @@ async function handleNewClientSubmit(e) {
         codigo_postal: formData.get('codigo_postal') || document.getElementById('client-zip-input').value
     };
     
-    debugLog('FORM', 'Datos del cliente a enviar:', clientData);
+    
     
     // Validar que los campos requeridos no estén vacíos
     const requiredFields = ['nombre', 'cuit', 'email', 'telefono', 'direccion'];
@@ -1752,9 +1720,9 @@ async function handleNewClientSubmit(e) {
     try {
         const token = localStorage.getItem('authToken');
         
-        debugLog('HTTP', 'Enviando petición POST a /api/clientes');
-        debugLog('HTTP', 'Token de autorización:', token ? 'Presente' : 'Ausente');
-        debugLog('HTTP', 'Cuerpo de la petición:', JSON.stringify(clientData, null, 2));
+        
+        
+        
         
         const response = await fetch('/api/clientes', {
             method: 'POST',
@@ -1765,11 +1733,7 @@ async function handleNewClientSubmit(e) {
             body: JSON.stringify(clientData)
         });
         
-        debugLog('HTTP', 'Respuesta recibida:', {
-            status: response.status,
-            statusText: response.statusText,
-            headers: Object.fromEntries(response.headers.entries())
-        });
+        
         
         if (response.ok) {
             showNotification('Cliente creado exitosamente', 'success');
@@ -1823,7 +1787,7 @@ async function handleNewOrderSubmit(e) {
         }))
     };
     
-    debugLog('ORDER', 'Datos del pedido a enviar:', orderData);
+    
     
     try {
         const token = localStorage.getItem('authToken');
@@ -1976,7 +1940,7 @@ async function handleNewUserSubmit(e) {
         password: document.getElementById('new-user-password').value
     };
     
-    debugLog('FORM', 'Datos del usuario a enviar:', { ...userData, password: '[OCULTA]' });
+    
     
     // Validar que los campos requeridos no estén vacíos
     const requiredFields = ['nombre', 'email', 'perfil', 'password'];
@@ -1991,7 +1955,7 @@ async function handleNewUserSubmit(e) {
     try {
         const token = localStorage.getItem('authToken');
         
-        debugLog('HTTP', 'Enviando petición POST a /api/usuarios');
+        
         
         const response = await fetch('/api/usuarios', {
             method: 'POST',
@@ -2082,7 +2046,7 @@ async function deleteClientFromServer(clientId) {
     try {
         const token = localStorage.getItem('authToken');
         
-        debugLog('HTTP', `Enviando petición DELETE a /api/clientes/${clientId}`);
+        
         
         const response = await fetch(`/api/clientes/${clientId}`, {
             method: 'DELETE',
@@ -2164,7 +2128,7 @@ async function loadEditOrderItems(orderId) {
             
             renderEditOrderProducts();
             updateEditOrderTotal();
-            debugLog('EDIT_ORDER', `Productos cargados para pedido ${orderId}:`, editOrderItems);
+            
         } else {
             console.error('Error cargando items del pedido:', response.statusText);
             editOrderItems = [];
@@ -2199,7 +2163,7 @@ async function deleteOrderFromServer(orderId) {
     try {
         const token = localStorage.getItem('authToken');
         
-        debugLog('HTTP', `Enviando petición DELETE a /api/pedidos/${orderId}`);
+        
         
         const response = await fetch(`/api/pedidos/${orderId}`, {
             method: 'DELETE',
@@ -2353,7 +2317,7 @@ async function deletePaymentFromServer(paymentId) {
     try {
         const token = localStorage.getItem('authToken');
         
-        debugLog('HTTP', `Enviando petición DELETE a /api/pagos/${paymentId}`);
+        
         
         const response = await fetch(`/api/pagos/${paymentId}`, {
             method: 'DELETE',
@@ -2560,7 +2524,7 @@ async function deleteProductFromServer(productId) {
     try {
         const token = localStorage.getItem('authToken');
         
-        debugLog('HTTP', `Enviando petición DELETE a /api/productos/${productId}`);
+        
         
         const response = await fetch(`/api/productos/${productId}`, {
             method: 'DELETE',
@@ -2792,7 +2756,7 @@ async function deleteContactFromServer(contactId) {
     try {
         const token = localStorage.getItem('authToken');
         
-        debugLog('HTTP', `Enviando petición DELETE a /api/contactos/${contactId}`);
+        
         
         const response = await fetch(`/api/contactos/${contactId}`, {
             method: 'DELETE',
@@ -2839,7 +2803,7 @@ async function handleEditClientSubmit(e) {
         codigo_postal: document.getElementById('edit-client-zip').value
     };
     
-    debugLog('FORM', 'Datos del cliente a actualizar:', clientData);
+    
     
     // Validar que los campos requeridos no estén vacíos
     const requiredFields = ['nombre', 'cuit', 'email', 'telefono', 'direccion'];
@@ -2861,7 +2825,7 @@ async function handleEditClientSubmit(e) {
     try {
         const token = localStorage.getItem('authToken');
         
-        debugLog('HTTP', `Enviando petición PUT a /api/clientes/${clientId}`);
+        
         
         const response = await fetch(`/api/clientes/${clientId}`, {
             method: 'PUT',
@@ -2924,7 +2888,7 @@ async function handleEditOrderSubmit(e) {
         }))
     };
     
-    debugLog('FORM', 'Datos del pedido a actualizar:', orderData);
+    
     
     // Validar que los campos requeridos no estén vacíos
     if (!orderData.cliente_id || !orderData.descripcion || !orderData.estado) {
@@ -2937,7 +2901,7 @@ async function handleEditOrderSubmit(e) {
     try {
         const token = localStorage.getItem('authToken');
         
-        debugLog('HTTP', `Enviando petición PUT a /api/pedidos/${orderId}`);
+        
         
         const response = await fetch(`/api/pedidos/${orderId}`, {
             method: 'PUT',
@@ -2969,7 +2933,7 @@ async function handleEditOrderSubmit(e) {
 
 // Función para configurar botones del header con debugging mejorado
 function setupHeaderButtons() {
-    debugLog('BUTTONS', 'Iniciando configuración de botones del header...');
+    
     
     try {
         // Lista de botones a configurar
@@ -2986,20 +2950,15 @@ function setupHeaderButtons() {
         
         buttonsConfig.forEach(config => {
             try {
-                debugLog('BUTTONS', `Configurando botón: ${config.name} (${config.id})`);
+                
                 
                 const button = document.getElementById(config.id);
                 if (!button) {
-                    debugLog('BUTTONS', `⚠️ Botón no encontrado: ${config.id}`);
+                    
                     return;
                 }
                 
-                debugLog('BUTTONS', `Botón encontrado: ${config.name}`, {
-                    element: button,
-                    tagName: button.tagName,
-                    className: button.className,
-                    innerHTML: button.innerHTML.substring(0, 50) + '...'
-                });
+                
                 
                 // Crear función onclick con manejo de errores específico para nuevo usuario
                 if (config.id === 'new-user-btn') {
@@ -3070,12 +3029,12 @@ function setupHeaderButtons() {
                 } else {
                     // Para otros botones, usar la función normal
                     button.onclick = safeExecute(function() {
-                        debugLog('CLICK', `Botón clickeado: ${config.name}`);
+                        
                         showModal(config.modal);
                     }, `Click ${config.name}`);
                 }
                 
-                debugLog('BUTTONS', `✅ Botón configurado exitosamente: ${config.name}`);
+                
                 
             } catch (error) {
                 console.error(`❌ Error configurando botón ${config.name}:`, error);
@@ -3083,12 +3042,12 @@ function setupHeaderButtons() {
         });
         
         // Verificar que todos los modales existan
-        debugLog('BUTTONS', 'Verificando existencia de modales...');
+        
         const modalIds = ['new-client-modal', 'new-order-modal', 'new-payment-modal', 'new-contact-modal', 'new-product-modal', 'new-user-modal'];
         modalIds.forEach(modalId => {
             const modal = document.getElementById(modalId);
             if (modal) {
-                debugLog('BUTTONS', `✅ Modal encontrado: ${modalId}`);
+                
             } else {
                 console.warn(`⚠️ Modal no encontrado: ${modalId}`);
             }
@@ -3098,7 +3057,7 @@ function setupHeaderButtons() {
         const backToDashboardBtn = document.getElementById('back-to-dashboard-btn');
         if (backToDashboardBtn) {
             backToDashboardBtn.onclick = function() {
-                debugLog('CLICK', 'Volver al Dashboard clickeado');
+                
                 
                 // Restaurar estilos normales del panel de administración
                 const adminSection = document.getElementById('admin-profiles-section');
@@ -3117,10 +3076,10 @@ function setupHeaderButtons() {
                     dashboardNav.classList.add('active');
                 }
             };
-            debugLog('BUTTONS', '✅ Botón "Volver al Dashboard" configurado');
+            
         }
         
-        debugLog('BUTTONS', 'Configuración de botones completada exitosamente');
+        
         
     } catch (error) {
         console.error('🚨 ERROR CRÍTICO en setupHeaderButtons:', error);
@@ -3160,7 +3119,7 @@ function updateDashboardStats() {
 
 // Función de diagnóstico completo del DOM
 function runDOMDiagnostic() {
-    debugLog('DIAGNOSTIC', 'Iniciando diagnóstico completo del DOM...');
+    
     
     const report = {
         timestamp: new Date().toISOString(),
@@ -3262,7 +3221,7 @@ function runDOMDiagnostic() {
         if (report.issues.length > 0) {
             console.warn('⚠️ PROBLEMAS DETECTADOS:', report.issues);
         } else {
-            debugLog('DIAGNOSTIC', 'No se detectaron problemas críticos');
+            
         }
         
         return report;
@@ -3279,7 +3238,7 @@ function runDOMDiagnostic() {
 // Función para cargar usuarios para el panel de administración
 async function loadUsersForAdmin() {
     try {
-        debugLog('ADMIN', 'Iniciando carga de usuarios...');
+        
         
         const token = localStorage.getItem('authToken');
         if (!token) {
@@ -3291,9 +3250,8 @@ async function loadUsersForAdmin() {
         // Cargar permisos primero
         await loadPermissions();
         
-        debugLog('ADMIN', 'Enviando petición GET a /api/usuarios');
         
-        
+
         const response = await fetch('/api/usuarios', {
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -3301,14 +3259,14 @@ async function loadUsersForAdmin() {
             }
         });
         
-        debugLog('ADMIN', `Respuesta recibida: ${response.status} ${response.statusText}`);
+        
         
         if (response.ok) {
             const users = await response.json();
-            debugLog('ADMIN', `Usuarios recibidos:`, users);
+            
             renderUsersTable(users);
             renderPermissionsTable(); // Agregar tabla de permisos
-            debugLog('ADMIN', `✅ ${users.length} usuarios cargados exitosamente`);
+            
         } else {
             const errorData = await response.text();
             console.error('❌ Error cargando usuarios:', response.status, response.statusText);
@@ -3328,7 +3286,7 @@ async function loadUsersForAdmin() {
 
 // Función para renderizar la tabla de usuarios
 function renderUsersTable(users) {
-    debugLog('ADMIN', 'Iniciando renderizado de tabla de usuarios...');
+    
     
     let container = document.querySelector('.users-table-container');
     if (!container) {
@@ -3362,7 +3320,7 @@ function renderUsersTable(users) {
             }
             
             container = newContainer;
-            debugLog('ADMIN', 'Contenedor de usuarios creado exitosamente');
+            
         } else {
             console.error('❌ No se pudo encontrar ningún contenedor para la tabla de usuarios');
             showNotification('Error: No se encontró el contenedor de usuarios', 'error');
@@ -3370,7 +3328,7 @@ function renderUsersTable(users) {
         }
     }
     
-    debugLog('ADMIN', `Renderizando ${users.length} usuarios`);
+    
     
     // Agregar indicador visual de que el contenedor existe
     container.style.backgroundColor = '#f9fafb';
@@ -3384,7 +3342,7 @@ function renderUsersTable(users) {
                 <p style="font-size: 0.875rem; color: #9ca3af;">Usa el botón "Nuevo Usuario" para crear el primer usuario.</p>
             </div>
         `;
-        debugLog('ADMIN', 'Mensaje de "no usuarios" renderizado');
+        
         return;
     }
     
@@ -3444,7 +3402,7 @@ function renderUsersTable(users) {
         }
     }, 3000);
     
-    debugLog('ADMIN', '✅ Tabla de usuarios renderizada exitosamente');
+    
 }
 
 // Funciones placeholder para administración de usuarios
@@ -3800,11 +3758,6 @@ window.testNewUserButton = function() {
     }
 };
 
-window.runDiagnostic = function() {
-    console.log('🔧 DEBUG: Ejecutando diagnóstico manual...');
-    return runDOMDiagnostic();
-};
-
 window.testAllModals = function() {
     console.log('🔧 DEBUG: Probando todos los modales...');
     const modalIds = ['new-client-modal', 'new-order-modal', 'new-payment-modal', 'new-contact-modal', 'new-product-modal'];
@@ -3823,18 +3776,6 @@ window.testAllModals = function() {
             }
         }, index * 2000);
     });
-};
-
-window.showDebugInfo = function() {
-    console.log('🔧 DEBUG INFO:');
-    console.log('- Clientes cargados:', clients.length);
-    console.log('- Pedidos cargados:', orders.length);
-    console.log('- Pagos cargados:', payments.length);
-    console.log('- Productos cargados:', products.length);
-    console.log('- Contactos cargados:', contacts.length);
-    console.log('- Estado del DOM:', document.readyState);
-    console.log('- Modales en DOM:', document.querySelectorAll('.modal').length);
-    console.log('- Botones con onclick:', document.querySelectorAll('button[onclick], button').length);
 };
 
 // Función para monitorear clicks en tiempo real
@@ -4613,7 +4554,7 @@ function clearEditOrderItems() {
 
 // Función para renderizar la tabla de permisos por perfil
 function renderPermissionsTable() {
-    debugLog('ADMIN', 'Iniciando renderizado de tabla de permisos...');
+    
     
     // Verificar si el usuario actual es administrador
     const currentUser = getCurrentUserFromAuth();
@@ -4652,7 +4593,7 @@ function renderPermissionsTable() {
             }
             
             container = newContainer;
-            debugLog('ADMIN', 'Contenedor de permisos creado exitosamente');
+            
         } else {
             console.error('❌ No se pudo encontrar ningún contenedor para la tabla de permisos');
             showNotification('Error: No se encontró el contenedor de permisos', 'error');
@@ -4688,7 +4629,7 @@ function renderPermissionsTable() {
         }
     };
     
-    debugLog('ADMIN', 'Renderizando tabla de permisos por perfil');
+    
     
     // Agregar indicador visual de que el contenedor existe
     container.style.backgroundColor = '#f9fafb';
@@ -4825,7 +4766,7 @@ function renderPermissionsTable() {
         }
     }, 3000);
     
-    debugLog('ADMIN', '✅ Tabla de permisos renderizada exitosamente');
+    
 }
 
 // Funciones para administración de usuarios
@@ -6012,3 +5953,7 @@ async function showPendingCollectionsModal() {
         showNotification('Error al mostrar detalles de cobros pendientes', 'error');
     }
 }
+
+
+
+

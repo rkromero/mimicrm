@@ -1109,14 +1109,7 @@ app.delete('/api/usuarios/:id', authenticateToken, async (req, res) => {
     }
 });
 
-// Obtener permisos por perfil
-app.get('/api/permisos', authenticateToken, async (req, res) => {
-    try {
-        console.log('📋 Solicitud de permisos recibida por usuario:', req.user.perfil);
-        
-        // Solo administradores pueden ver permisos
-        if (req.user.perfil !== 'Administrador') {
-            return res.status(403).json({ error: 'Acceso denegado. Solo administradores pueden ver permisos.' });
+
         }
 
         // Intentar obtener permisos de la base de datos
@@ -1182,14 +1175,7 @@ app.get('/api/permisos', authenticateToken, async (req, res) => {
     }
 });
 
-// Guardar permisos por perfil
-app.put('/api/permisos', authenticateToken, async (req, res) => {
-    try {
-        console.log('💾 Solicitud de guardado de permisos recibida por usuario:', req.user.perfil);
-        
-        // Solo administradores pueden modificar permisos
-        if (req.user.perfil !== 'Administrador') {
-            return res.status(403).json({ error: 'Acceso denegado. Solo administradores pueden modificar permisos.' });
+
         }
 
         const { permisos } = req.body;
