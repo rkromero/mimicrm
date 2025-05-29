@@ -211,6 +211,14 @@ async function checkAuthentication() {
             }
         }
         
+        // Configurar visibilidad del menú para perfil Produccion
+        if (user.perfil === 'Produccion') {
+            // Usar setTimeout para asegurar que el DOM esté completamente cargado
+            setTimeout(() => {
+                configurarMenuProduccion();
+            }, 100);
+        }
+        
         return true;
         
     } catch (error) {
@@ -236,6 +244,71 @@ function logoutUser() {
     localStorage.removeItem('authToken');
     localStorage.removeItem('currentUser');
     window.location.href = '/login.html';
+}
+
+// Función para configurar el menú específicamente para usuarios de Producción
+function configurarMenuProduccion() {
+    console.log('🏭 Configurando menú para perfil Producción...');
+    
+    try {
+        // Array de textos de navegación a ocultar para producción
+        const textosAOcultar = [
+            'Dashboard',
+            'Clientes',  
+            'Pedidos',
+            'Pagos',
+            'Productos',
+            'Contactos',
+            'Administrar Perfiles'
+        ];
+        
+        // Obtener todos los elementos de navegación
+        const navItems = document.querySelectorAll('.nav-item');
+        
+        // Ocultar elementos basándose en el texto del span
+        navItems.forEach(navItem => {
+            const span = navItem.querySelector('span');
+            if (span && textosAOcultar.includes(span.textContent.trim())) {
+                navItem.style.display = 'none';
+                console.log(`🔒 Elemento "${span.textContent.trim()}" ocultado`);
+            }
+        });
+        
+        // Asegurar que el elemento de Fábrica esté visible
+        const fabricaNav = document.getElementById('fabrica-nav');
+        if (fabricaNav) {
+            fabricaNav.style.display = 'block';
+            console.log('✅ Navegación de Fábrica visible');
+            
+            // Hacer click automáticamente en Fábrica para mostrarla por defecto
+            setTimeout(() => {
+                fabricaNav.click();
+                console.log('🎯 Navegación automática a Fábrica activada');
+            }, 200);
+        } else {
+            console.error('❌ Elemento fabrica-nav no encontrado');
+        }
+        
+        // También ocultar los botones del header para usuarios de producción
+        const headerButtons = [
+            'new-client-btn',
+            'new-order-btn', 
+            'new-payment-btn'
+        ];
+        
+        headerButtons.forEach(buttonId => {
+            const button = document.getElementById(buttonId);
+            if (button) {
+                button.style.display = 'none';
+                console.log(`🔒 Botón ${buttonId} ocultado para producción`);
+            }
+        });
+        
+        console.log('✅ Menú configurado exitosamente para perfil Producción');
+        
+    } catch (error) {
+        console.error('❌ Error configurando menú para producción:', error);
+    }
 }
 
 // === FUNCIONES DE CARGA DE DATOS DESDE API ===
