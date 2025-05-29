@@ -1288,11 +1288,10 @@ app.get('/api/cobros/pendientes', authenticateToken, async (req, res) => {
     try {
         console.log('📊 Obteniendo cobros pendientes...');
         
-        // Obtener totales de pedidos (excluyendo "pendiente de pago")
+        // Obtener totales de pedidos (incluyendo todos los estados)
         const [orderTotals] = await db.execute(`
             SELECT COALESCE(SUM(monto), 0) as totalOrders
-            FROM pedidos 
-            WHERE estado != 'pendiente de pago'
+            FROM pedidos
         `);
         
         // Obtener totales de pagos
@@ -1324,11 +1323,10 @@ app.get('/api/cobros/pendientes/detalle', authenticateToken, async (req, res) =>
     try {
         console.log('📊 Obteniendo detalles de cobros pendientes por cliente...');
         
-        // Obtener resumen general
+        // Obtener resumen general (incluyendo todos los pedidos)
         const [orderTotals] = await db.execute(`
             SELECT COALESCE(SUM(monto), 0) as totalOrders
-            FROM pedidos 
-            WHERE estado != 'pendiente de pago'
+            FROM pedidos
         `);
         
         const [paymentTotals] = await db.execute(`
@@ -1340,7 +1338,7 @@ app.get('/api/cobros/pendientes/detalle', authenticateToken, async (req, res) =>
         const totalPayments = parseFloat(paymentTotals[0].totalPayments) || 0;
         const pendingAmount = totalOrders - totalPayments;
         
-        // Obtener detalles por cliente
+        // Obtener detalles por cliente (incluyendo todos los pedidos)
         const [clientDetails] = await db.execute(`
             SELECT 
                 c.id,
@@ -1351,7 +1349,7 @@ app.get('/api/cobros/pendientes/detalle', authenticateToken, async (req, res) =>
             LEFT JOIN (
                 SELECT 
                     cliente_id,
-                    SUM(CASE WHEN estado != 'pendiente de pago' THEN monto ELSE 0 END) as totalOrders
+                    SUM(monto) as totalOrders
                 FROM pedidos 
                 GROUP BY cliente_id
             ) pedidos_totals ON c.id = pedidos_totals.cliente_id
