@@ -1565,8 +1565,15 @@ function showModal(modalId) {
         // Asegurar que el modal se vea desde el inicio (scroll al top)
         setTimeout(() => {
             modal.scrollTop = 0;
+            const modalContent = modal.querySelector('.modal-content');
+            if (modalContent) {
+                modalContent.scrollTop = 0;
+            }
             document.body.style.overflow = 'hidden'; // Prevenir scroll del body
-        }, 50);
+            
+            // Forzar posicionamiento al inicio de la viewport
+            modal.scrollIntoView({ block: 'start', behavior: 'instant' });
+        }, 10);
         
         // Configuraciones específicas por modal
         if (modalId === 'new-client-modal') {
