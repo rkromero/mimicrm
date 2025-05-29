@@ -234,7 +234,7 @@ function logoutUser() {
 
 // Función para configurar el menú específicamente para usuarios de Producción
 function configurarMenuProduccion() {
-    console.log('🏭 Configurando menú para perfil Producción...');
+    
     
     try {
         // Array de textos de navegación a ocultar para producción
@@ -256,7 +256,7 @@ function configurarMenuProduccion() {
             const span = navItem.querySelector('span');
             if (span && textosAOcultar.includes(span.textContent.trim())) {
                 navItem.style.display = 'none';
-                console.log(`🔒 Elemento "${span.textContent.trim()}" ocultado`);
+                
             }
         });
         
@@ -264,12 +264,12 @@ function configurarMenuProduccion() {
         const fabricaNav = document.getElementById('fabrica-nav');
         if (fabricaNav) {
             fabricaNav.style.display = 'block';
-            console.log('✅ Navegación de Fábrica visible');
+            
             
             // Hacer click automáticamente en Fábrica para mostrarla por defecto
             setTimeout(() => {
                 fabricaNav.click();
-                console.log('🎯 Navegación automática a Fábrica activada');
+                
             }, 200);
         } else {
             console.error('❌ Elemento fabrica-nav no encontrado');
@@ -286,11 +286,11 @@ function configurarMenuProduccion() {
             const button = document.getElementById(buttonId);
             if (button) {
                 button.style.display = 'none';
-                console.log(`🔒 Botón ${buttonId} ocultado para producción`);
+                
             }
         });
         
-        console.log('✅ Menú configurado exitosamente para perfil Producción');
+        
         
     } catch (error) {
         console.error('❌ Error configurando menú para producción:', error);
@@ -755,14 +755,14 @@ function safeExecute(fn, context = 'Unknown') {
 // Event listener principal con manejo de errores mejorado
 document.addEventListener('DOMContentLoaded', async function() {
     try {
-        console.log('🚀 Iniciando aplicación MIMI CRM...');
+        
         
         
         // Verificar autenticación
         
         const isAuthenticated = await checkAuthentication();
         if (!isAuthenticated) {
-            console.log('❌ Usuario no autenticado');
+            
             return;
         }
         
@@ -848,7 +848,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             dashboardNav.classList.add('active');
         }
         
-        console.log('✅ Aplicación inicializada correctamente');
+        
         
         
         // Ejecutar diagnóstico final
@@ -858,8 +858,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             
             // Hacer el reporte disponible globalmente para debugging
             
-            console.log('💡 Tip: Usa window.debugModal("modal-id") para probar modales');
-            console.log('💡 Tip: Usa window.runDiagnostic() para ejecutar diagnóstico manual');
+            
+            
         }, 1000);
         
     } catch (error) {
@@ -886,17 +886,17 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 // Función para configurar la navegación
 function setupNavigation() {
-    console.log('🔧 Configurando navegación...');
+    
     
     // Configurar navegación del sidebar
     const navItems = document.querySelectorAll('.nav-item');
-    console.log(`🔍 Encontrados ${navItems.length} elementos de navegación`);
+    
     
     navItems.forEach((item, index) => {
         // Usar onclick en lugar de addEventListener para evitar duplicados
         item.onclick = function(e) {
             e.preventDefault();
-            console.log('🖱️ Click en navegación:', this.textContent.trim());
+            
             
             try {
                 // Remover clase active de todos los items
@@ -907,7 +907,7 @@ function setupNavigation() {
                 
                 // Obtener la sección desde el data-section o el texto
                 const section = this.getAttribute('data-section') || this.textContent.trim().toLowerCase();
-                console.log('📍 Navegando a sección:', section);
+                
                 
                 // Actualizar el título del header
                 updateHeaderTitle(section);
@@ -925,13 +925,13 @@ function setupNavigation() {
     if (logoutBtn) {
         logoutBtn.onclick = function(e) {
             e.preventDefault();
-            console.log('🚪 Cerrando sesión...');
+            
             logoutUser();
         };
-        console.log('✅ Event listener de logout configurado');
+        
     }
     
-    console.log('✅ Navegación configurada correctamente');
+    
 }
 
 // Función para actualizar el título del header
@@ -972,7 +972,7 @@ function updateHeaderTitle(section) {
 
 // Función para mostrar secciones
 function showSection(section) {
-    console.log('🔄 Cambiando a sección:', section);
+    
     
     // Restaurar estilos del panel de administración si no estamos navegando a él
     if (section !== 'administrar perfiles' && section !== 'admin') {
@@ -1054,7 +1054,7 @@ function showSection(section) {
                 
                 // Aplicar automáticamente el forzado de visibilidad
                 setTimeout(() => {
-                    console.log('🔧 Aplicando forzado automático de visibilidad del panel admin...');
+                    
                     
                     // Aplicar los mismos estilos que la función forceShowAdminPanel
                     adminSection.style.cssText = `
@@ -1147,7 +1147,7 @@ function showSection(section) {
                         `;
                     }
                     
-                    console.log('✅ Forzado automático aplicado al panel de administración');
+                    
                 }, 200);
             }
             break;
@@ -1162,19 +1162,19 @@ function showSection(section) {
             }
     }
     
-    console.log('✅ Sección mostrada:', section);
+    
 }
 
 // Función para configurar formularios
 function setupForms() {
-    console.log('🔧 Configurando formularios...');
+    
     
     try {
         // Configurar formulario de nuevo cliente
         const newClientForm = document.getElementById('new-client-form');
         if (newClientForm) {
             newClientForm.onsubmit = handleNewClientSubmit;
-            console.log('✅ Event listener del formulario de cliente configurado');
+            
         } else {
             console.warn('⚠️ No se encontró el formulario new-client-form');
         }
@@ -1183,7 +1183,7 @@ function setupForms() {
         const newOrderForm = document.getElementById('new-order-form');
         if (newOrderForm) {
             newOrderForm.onsubmit = handleNewOrderSubmit;
-            console.log('✅ Event listener del formulario de pedido configurado');
+            
         } else {
             console.warn('⚠️ No se encontró el formulario new-order-form');
         }
@@ -1192,7 +1192,7 @@ function setupForms() {
         const newPaymentForm = document.getElementById('new-payment-form');
         if (newPaymentForm) {
             newPaymentForm.onsubmit = handleNewPaymentSubmit;
-            console.log('✅ Event listener del formulario de pago configurado');
+            
         } else {
             console.warn('⚠️ No se encontró el formulario new-payment-form');
         }
@@ -1201,7 +1201,7 @@ function setupForms() {
         const newContactForm = document.getElementById('new-contact-form');
         if (newContactForm) {
             newContactForm.onsubmit = handleNewContactSubmit;
-            console.log('✅ Event listener del formulario de contacto configurado');
+            
         } else {
             console.warn('⚠️ No se encontró el formulario new-contact-form');
         }
@@ -1210,7 +1210,7 @@ function setupForms() {
         const newProductForm = document.getElementById('new-product-form');
         if (newProductForm) {
             newProductForm.onsubmit = handleNewProductSubmit;
-            console.log('✅ Event listener del formulario de producto configurado');
+            
         } else {
             console.warn('⚠️ No se encontró el formulario new-product-form');
         }
@@ -1219,7 +1219,7 @@ function setupForms() {
         const newUserForm = document.getElementById('new-user-form');
         if (newUserForm) {
             newUserForm.onsubmit = handleNewUserSubmit;
-            console.log('✅ Event listener del formulario de usuario configurado');
+            
         } else {
             console.warn('⚠️ No se encontró el formulario new-user-form');
         }
@@ -1228,7 +1228,7 @@ function setupForms() {
         const editClientForm = document.getElementById('edit-client-form');
         if (editClientForm) {
             editClientForm.onsubmit = handleEditClientSubmit;
-            console.log('✅ Event listener del formulario de edición de cliente configurado');
+            
         } else {
             console.warn('⚠️ No se encontró el formulario edit-client-form');
         }
@@ -1237,14 +1237,14 @@ function setupForms() {
         const editOrderForm = document.getElementById('edit-order-form');
         if (editOrderForm) {
             editOrderForm.onsubmit = handleEditOrderSubmit;
-            console.log('✅ Event listener del formulario de edición de pedido configurado');
+            
         } else {
             console.warn('⚠️ No se encontró el formulario edit-order-form');
         }
         
         // Configurar cierre de modales
         const closeModalBtns = document.querySelectorAll('.close-modal');
-        console.log(`🔍 Encontrados ${closeModalBtns.length} botones de cerrar modal`);
+        
         closeModalBtns.forEach(btn => {
             btn.onclick = function() {
                 const modal = this.closest('.modal');
@@ -1252,7 +1252,7 @@ function setupForms() {
                     modal.classList.remove('active');
                     // Limpiar estilos inline forzados
                     modal.style.cssText = '';
-                    console.log('✅ Modal cerrado');
+                    
                 }
             };
         });
@@ -1263,24 +1263,24 @@ function setupForms() {
                 e.target.classList.remove('active');
                 // Limpiar estilos inline forzados
                 e.target.style.cssText = '';
-                console.log('✅ Modal cerrado al hacer clic fuera');
+                
             }
         });
         
         // Configuración específica para el modal de nuevo usuario
         const newUserModal = document.getElementById('new-user-modal');
         if (newUserModal) {
-            console.log('🔧 Configurando eventos específicos para modal de nuevo usuario...');
+            
             
             // Configurar todos los botones de cierre del modal de nuevo usuario
             const closeButtons = newUserModal.querySelectorAll('.close-modal, .cancel-btn');
-            console.log(`🔍 Encontrados ${closeButtons.length} botones de cierre en modal de nuevo usuario`);
+            
             
             closeButtons.forEach(btn => {
                 btn.onclick = function(e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log('🔧 Cerrando modal de nuevo usuario...');
+                    
                     
                     newUserModal.classList.remove('active');
                     newUserModal.style.cssText = 'display: none !important;';
@@ -1291,14 +1291,14 @@ function setupForms() {
                         form.reset();
                     }
                     
-                    console.log('✅ Modal de nuevo usuario cerrado exitosamente');
+                    
                 };
             });
             
             // Configurar cierre al hacer clic fuera del modal
             newUserModal.onclick = function(e) {
                 if (e.target === newUserModal) {
-                    console.log('🔧 Cerrando modal de nuevo usuario (clic fuera)...');
+                    
                     newUserModal.classList.remove('active');
                     newUserModal.style.cssText = 'display: none !important;';
                     
@@ -1308,16 +1308,16 @@ function setupForms() {
                         form.reset();
                     }
                     
-                    console.log('✅ Modal de nuevo usuario cerrado exitosamente (clic fuera)');
+                    
                 }
             };
             
-            console.log('✅ Eventos específicos del modal de nuevo usuario configurados');
+            
         } else {
             console.warn('⚠️ Modal de nuevo usuario no encontrado para configurar eventos');
         }
         
-        console.log('✅ Configuración de formularios completada');
+        
     } catch (error) {
         console.error('❌ Error configurando formularios:', error);
     }
@@ -1434,7 +1434,7 @@ function renderOrderProducts() {
 
     // Validar que los elementos existan (el modal podría estar cerrado)
     if (!productsList || !noProductsMessage || !submitBtn) {
-        console.log('⚠️ Elementos del modal de pedido no encontrados, probablemente el modal está cerrado');
+        
         return;
     }
 
@@ -1496,7 +1496,7 @@ function updateOrderTotal() {
     if (orderTotalElement) {
         orderTotalElement.textContent = formatCurrency(total);
     } else {
-        console.log('⚠️ Elemento order-total no encontrado, probablemente el modal está cerrado');
+        
     }
 }
 
@@ -1580,10 +1580,10 @@ function showModal(modalId) {
         showNotification(`Error al abrir modal: ${error.message}`, 'error');
         
         // Intentar diagnóstico adicional
-        console.log('🔍 DIAGNÓSTICO DEL ERROR:');
-        console.log('- Todos los modales en el DOM:', document.querySelectorAll('.modal'));
-        console.log('- Modal específico buscado:', document.getElementById(modalId));
-        console.log('- Estado actual del DOM:', document.readyState);
+        
+        
+        
+        
         
         throw error;
     }
@@ -1627,12 +1627,12 @@ function populateClientSelects(modalId) {
         clientSelect.appendChild(option);
     });
     
-    console.log(`✅ Select ${selectId} poblado con ${clients.length} clientes`);
+    
 }
 
 // Función para configurar listeners de provincia y ciudad
 function setupProvinceAndCityListeners() {
-    console.log('🔧 Configurando listeners de provincia y ciudad...');
+    
     
     const provinceSelect = document.getElementById('client-province-input');
     const citySelect = document.getElementById('client-city-input');
@@ -1649,7 +1649,7 @@ function setupProvinceAndCityListeners() {
     
     // Configurar listener de provincia (sin clonar)
     provinceSelect.onchange = function() {
-        console.log('🌍 Provincia seleccionada:', this.value);
+        
         try {
             actualizarCiudades(this.value);
             // Limpiar localidad cuando cambia la provincia
@@ -1664,7 +1664,7 @@ function setupProvinceAndCityListeners() {
     
     // Configurar listener de ciudad (sin clonar)
     citySelect.onchange = function() {
-        console.log('🏙️ Ciudad seleccionada:', this.value);
+        
         try {
             const provincia = provinceSelect.value;
             actualizarLocalidades(provincia, this.value);
@@ -1673,7 +1673,7 @@ function setupProvinceAndCityListeners() {
         }
     };
     
-    console.log('✅ Listeners de provincia y ciudad configurados');
+    
 }
 
 // Función para manejar envío de nuevo cliente
@@ -1980,7 +1980,7 @@ async function handleNewUserSubmit(e) {
 
 // Funciones de edición y eliminación
 function editClient(clientId) {
-    console.log('Editar cliente:', clientId);
+    
     
     // Buscar el cliente en el array
     const client = clients.find(c => c.id == clientId);
@@ -2066,7 +2066,7 @@ async function deleteClientFromServer(clientId) {
 }
 
 function editOrder(orderId) {
-    console.log('Editar pedido:', orderId);
+    
     
     // Buscar el pedido en el array
     const order = orders.find(o => o.id == orderId);
@@ -2183,7 +2183,7 @@ async function deleteOrderFromServer(orderId) {
 }
 
 function editPayment(paymentId) {
-    console.log('Editar pago:', paymentId);
+    
     
     // Buscar el pago en el array
     const payment = payments.find(p => p.id == paymentId);
@@ -2337,7 +2337,7 @@ async function deletePaymentFromServer(paymentId) {
 }
 
 function viewProductDetails(productId) {
-    console.log('Ver detalles del producto:', productId);
+    
     
     const product = products.find(p => p.id == productId);
     if (!product) {
@@ -2409,7 +2409,7 @@ function viewProductDetails(productId) {
 }
 
 function editProduct(productId) {
-    console.log('Editar producto:', productId);
+    
     
     // Buscar el producto en el array
     const product = products.find(p => p.id == productId);
@@ -2544,7 +2544,7 @@ async function deleteProductFromServer(productId) {
 }
 
 function editContact(contactId) {
-    console.log('Editar contacto:', contactId);
+    
     
     // Buscar el contacto en el array
     const contact = contacts.find(c => c.id == contactId);
@@ -2660,7 +2660,7 @@ function editContact(contactId) {
 }
 
 function viewContactDetails(contactId) {
-    console.log('Ver detalles del contacto:', contactId);
+    
     
     const contact = contacts.find(c => c.id == contactId);
     if (!contact) {
@@ -2958,20 +2958,20 @@ function setupHeaderButtons() {
                 // Crear función onclick con manejo de errores específico para nuevo usuario
                 if (config.id === 'new-user-btn') {
                     button.onclick = function() {
-                        console.log('🔧 DEBUG: Botón Nuevo Usuario clickeado');
-                        console.log('🔍 Verificando modal new-user-modal...');
+                        
+                        
                         
                         const modal = document.getElementById('new-user-modal');
-                        console.log('📋 Modal existe:', !!modal);
-                        console.log('📋 Modal classList:', modal ? Array.from(modal.classList) : 'N/A');
-                        console.log('📋 Modal display:', modal ? modal.style.display : 'N/A');
-                        console.log('📋 Modal computed display:', modal ? getComputedStyle(modal).display : 'N/A');
+                        
+                        
+                        
+                        
                         
                         if (modal) {
-                            console.log('🎯 Aplicando clase active al modal...');
+                            
                             modal.classList.add('active');
-                            console.log('✅ Clase active agregada');
-                            console.log('📋 Modal classList después:', Array.from(modal.classList));
+                            
+                            
                             
                             // IMPORTANTE: Asegurar que el modal aparezca por encima del panel de administración
                             modal.style.cssText = `
@@ -3004,17 +3004,12 @@ function setupHeaderButtons() {
                                 `;
                             }
                             
-                            console.log('✅ Modal forzado a aparecer por encima del panel de administración');
+                            
                             
                             // Verificar si el modal es visible después de agregar la clase
                             setTimeout(() => {
                                 const computedStyle = getComputedStyle(modal);
-                                console.log('🔍 Estilos computados después de 100ms:', {
-                                    display: computedStyle.display,
-                                    visibility: computedStyle.visibility,
-                                    opacity: computedStyle.opacity,
-                                    zIndex: computedStyle.zIndex
-                                });
+                                
                             }, 100);
                         } else {
                             console.error('❌ Modal new-user-modal no encontrado en el DOM');
@@ -3058,7 +3053,7 @@ function setupHeaderButtons() {
                 const adminSection = document.getElementById('admin-profiles-section');
                 if (adminSection) {
                     adminSection.style.cssText = 'display: none;';
-                    console.log('✅ Estilos del panel de administración restaurados');
+                    
                 }
                 
                 showSection('dashboard');
@@ -3085,7 +3080,7 @@ function setupHeaderButtons() {
 
 // Función para actualizar las estadísticas del dashboard
 function updateDashboardStats() {
-    console.log('📊 Actualizando estadísticas del dashboard...');
+    
     
     try {
         // Actualizar total de clientes
@@ -3106,7 +3101,7 @@ function updateDashboardStats() {
             totalProductsElement.textContent = products.length;
         }
         
-        console.log('✅ Estadísticas actualizadas');
+        
     } catch (error) {
         console.error('❌ Error actualizando estadísticas:', error);
     }
@@ -3211,7 +3206,7 @@ function runDOMDiagnostic() {
             contacts: contacts.length
         };
         
-        console.log('🔍 REPORTE DE DIAGNÓSTICO COMPLETO:', report);
+        
         
         if (report.issues.length > 0) {
             console.warn('⚠️ PROBLEMAS DETECTADOS:', report.issues);
@@ -3290,7 +3285,7 @@ function renderUsersTable(users) {
         // Intentar encontrar contenedores alternativos
         const altContainer = document.querySelector('#admin-profiles-section .admin-panel');
         if (altContainer) {
-            console.log('🔄 Creando contenedor de tabla de usuarios...');
+            
             const newContainer = document.createElement('div');
             newContainer.className = 'users-table-container';
             newContainer.style.minHeight = '200px';
@@ -3402,76 +3397,70 @@ function renderUsersTable(users) {
 
 // Funciones placeholder para administración de usuarios
 function editUser(userId) {
-    console.log('Editar usuario:', userId);
+    
     showNotification('Función de edición de usuarios en desarrollo', 'info');
 }
 
 function deleteUser(userId) {
     if (confirm('¿Está seguro de que desea eliminar este usuario?')) {
-        console.log('Eliminar usuario:', userId);
+        
         showNotification('Función de eliminación de usuarios en desarrollo', 'info');
     }
 }
 
 // Función de debugging específica para el panel de administración
 window.debugAdminPanel = function() {
-    console.log('🔧 DEBUG PANEL DE ADMINISTRACIÓN:');
+    
     
     // Verificar si el usuario es administrador
     const currentUser = getCurrentUserFromAuth();
-    console.log('👤 Usuario actual:', currentUser);
-    console.log('🔑 Es administrador:', currentUser?.perfil === 'Administrador');
+    
+    
     
     // Verificar elementos del DOM
     const adminSection = document.getElementById('admin-profiles-section');
-    console.log('📄 Sección admin existe:', !!adminSection);
-    console.log('📄 Sección admin visible:', adminSection?.style.display !== 'none');
-    console.log('📄 Sección admin display:', adminSection?.style.display);
-    console.log('📄 Sección admin computed style:', adminSection ? getComputedStyle(adminSection).display : 'N/A');
+    
+    
+    
+    
     
     const adminPanel = document.querySelector('.admin-panel');
-    console.log('📦 Panel admin existe:', !!adminPanel);
-    console.log('📦 Panel admin visible:', adminPanel ? getComputedStyle(adminPanel).display : 'N/A');
+    
+    
     
     const usersContainer = document.querySelector('.users-table-container');
-    console.log('📋 Contenedor usuarios existe:', !!usersContainer);
-    console.log('📋 Contenedor usuarios innerHTML length:', usersContainer?.innerHTML?.length || 0);
-    console.log('📋 Contenedor usuarios visible:', usersContainer ? getComputedStyle(usersContainer).display : 'N/A');
+    
+    
+    
     
     // Verificar si hay tabla dentro del contenedor
     const table = usersContainer?.querySelector('table');
-    console.log('📊 Tabla existe:', !!table);
-    console.log('📊 Tabla visible:', table ? getComputedStyle(table).display : 'N/A');
+    
+    
     
     const newUserBtn = document.getElementById('new-user-btn');
-    console.log('🆕 Botón nuevo usuario existe:', !!newUserBtn);
-    console.log('🆕 Botón nuevo usuario tiene onclick:', typeof newUserBtn?.onclick === 'function');
-    console.log('🆕 Botón nuevo usuario visible:', newUserBtn ? getComputedStyle(newUserBtn).display : 'N/A');
+    
+    
+    
     
     // Verificar token
     const token = localStorage.getItem('authToken');
-    console.log('🔐 Token presente:', !!token);
+    
     
     // Verificar posicionamiento
     if (adminSection) {
         const rect = adminSection.getBoundingClientRect();
-        console.log('📐 Posición de la sección admin:', {
-            top: rect.top,
-            left: rect.left,
-            width: rect.width,
-            height: rect.height,
-            visible: rect.width > 0 && rect.height > 0
-        });
+        
     }
     
     // Intentar cargar usuarios manualmente
-    console.log('🔄 Intentando cargar usuarios...');
+    
     loadUsersForAdmin();
 };
 
 // Función para forzar la visibilidad del panel de administración
 window.forceShowAdminPanel = function() {
-    console.log('🔧 FORZANDO VISIBILIDAD DEL PANEL DE ADMINISTRACIÓN...');
+    
     
     // Primero, ocultar TODAS las otras secciones
     const allSections = document.querySelectorAll('#dashboard-section, #clientes-section, #pedidos-section, #pagos-section, #productos-section, #contactos-section, .page-content, #fabrica-section');
@@ -3497,7 +3486,7 @@ window.forceShowAdminPanel = function() {
             background: #f3f4f6 !important;
             overflow-y: auto !important;
         `;
-        console.log('✅ Sección admin forzada a pantalla completa');
+        
     }
     
     const pageContent = adminSection?.querySelector('.page-content');
@@ -3511,7 +3500,7 @@ window.forceShowAdminPanel = function() {
             margin: 0 auto !important;
             background: transparent !important;
         `;
-        console.log('✅ Page content forzado a visible');
+        
     }
     
     const adminPanel = document.querySelector('.admin-panel');
@@ -3529,7 +3518,7 @@ window.forceShowAdminPanel = function() {
             width: 95% !important;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
         `;
-        console.log('✅ Panel admin forzado a visible');
+        
     }
     
     const usersContainer = document.querySelector('.users-table-container');
@@ -3547,10 +3536,10 @@ window.forceShowAdminPanel = function() {
             width: 100% !important;
             overflow: visible !important;
         `;
-        console.log('✅ Contenedor usuarios forzado a visible');
+        
         
         // Verificar contenido
-        console.log('📋 Contenido del contenedor:', usersContainer.innerHTML.length, 'caracteres');
+        
         
         // Si no hay contenido visible, agregar mensaje de prueba
         if (!usersContainer.innerHTML || usersContainer.innerHTML.trim() === '') {
@@ -3577,7 +3566,7 @@ window.forceShowAdminPanel = function() {
                     background: white !important;
                     border-collapse: collapse !important;
                 `;
-                console.log('✅ Tabla forzada a visible');
+                
             }
         }
     }
@@ -3596,7 +3585,7 @@ window.forceShowAdminPanel = function() {
             cursor: pointer !important;
             font-weight: 500 !important;
         `;
-        console.log('✅ Botón nuevo usuario forzado a visible');
+        
     }
     
     // Agregar mensaje de confirmación visual en pantalla
@@ -3623,17 +3612,17 @@ window.forceShowAdminPanel = function() {
         }
     }, 5000);
     
-    console.log('🎯 Panel de administración forzado a pantalla completa');
+    
 };
 
 // === FUNCIONES DE DEBUGGING GLOBALES ===
 
 // Hacer funciones disponibles globalmente para debugging manual
 window.debugModal = function(modalId) {
-    console.log(`🔧 DEBUG: Intentando abrir modal ${modalId}`);
+    
     try {
         showModal(modalId);
-        console.log(`✅ Modal ${modalId} abierto exitosamente`);
+        
     } catch (error) {
         console.error(`❌ Error abriendo modal ${modalId}:`, error);
     }
@@ -3641,24 +3630,24 @@ window.debugModal = function(modalId) {
 
 // Función específica para debuggear el modal de nuevo usuario
 window.debugNewUserModal = function() {
-    console.log('🔧 DEBUG ESPECÍFICO: Modal de Nuevo Usuario');
+    
     
     const modal = document.getElementById('new-user-modal');
-    console.log('📋 Modal existe:', !!modal);
+    
     
     if (modal) {
-        console.log('📋 Modal classList inicial:', Array.from(modal.classList));
-        console.log('📋 Modal display inicial:', modal.style.display);
-        console.log('📋 Modal computed display inicial:', getComputedStyle(modal).display);
+        
+        
+        
         
         // Intentar agregar clase active
-        console.log('🎯 Agregando clase active...');
+        
         modal.classList.add('active');
         
-        console.log('📋 Modal classList después:', Array.from(modal.classList));
+        
         
         // Forzar estilos inmediatamente con z-index alto
-        console.log('⚠️ Forzando visibilidad con z-index alto...');
+        
         modal.style.cssText = `
             display: flex !important;
             visibility: visible !important;
@@ -3689,52 +3678,46 @@ window.debugNewUserModal = function() {
             `;
         }
         
-        console.log('✅ Estilos forzados aplicados con z-index 15000');
+        
         
         // Verificar estilos después de un momento
         setTimeout(() => {
             const computedStyle = getComputedStyle(modal);
-            console.log('🔍 Estilos computados después de 200ms:', {
-                display: computedStyle.display,
-                visibility: computedStyle.visibility,
-                opacity: computedStyle.opacity,
-                zIndex: computedStyle.zIndex,
-                position: computedStyle.position
-            });
+            
         }, 200);
         
         // Verificar contenido del modal
         const modalContentElement = modal.querySelector('.modal-content');
-        console.log('📄 Modal content existe:', !!modalContentElement);
+        
         
         const form = modal.querySelector('#new-user-form');
-        console.log('📝 Formulario existe:', !!form);
+        
         
         const inputs = modal.querySelectorAll('input, select');
-        console.log('📝 Inputs encontrados:', inputs.length);
+        
         
     } else {
         console.error('❌ Modal new-user-modal no encontrado');
         
         // Buscar todos los modales disponibles
         const allModals = document.querySelectorAll('.modal');
-        console.log('📋 Modales disponibles:', Array.from(allModals).map(m => m.id));
+        
     }
 };
 
 // Función para probar el botón de nuevo usuario
 window.testNewUserButton = function() {
-    console.log('🔧 DEBUG: Probando botón de nuevo usuario');
+    
     
     const button = document.getElementById('new-user-btn');
-    console.log('🔘 Botón existe:', !!button);
+    
     
     if (button) {
-        console.log('🔘 Botón onclick:', typeof button.onclick);
-        console.log('🔘 Botón visible:', getComputedStyle(button).display !== 'none');
+        
+        
         
         // Simular click
-        console.log('🖱️ Simulando click...');
+        
         button.click();
     } else {
         console.error('❌ Botón new-user-btn no encontrado');
@@ -3745,21 +3728,17 @@ window.testNewUserButton = function() {
             btn.textContent.toLowerCase().includes('usuario') || 
             btn.id.includes('user')
         );
-        console.log('🔘 Botones relacionados con usuario:', userButtons.map(btn => ({
-            id: btn.id,
-            text: btn.textContent.trim(),
-            onclick: typeof btn.onclick
-        })));
+        
     }
 };
 
 window.testAllModals = function() {
-    console.log('🔧 DEBUG: Probando todos los modales...');
+    
     const modalIds = ['new-client-modal', 'new-order-modal', 'new-payment-modal', 'new-contact-modal', 'new-product-modal'];
     
     modalIds.forEach((modalId, index) => {
         setTimeout(() => {
-            console.log(`Probando modal: ${modalId}`);
+            
             try {
                 showModal(modalId);
                 setTimeout(() => {
@@ -3775,50 +3754,44 @@ window.testAllModals = function() {
 
 // Función para monitorear clicks en tiempo real
 window.enableClickMonitoring = function() {
-    console.log('🔧 DEBUG: Habilitando monitoreo de clicks...');
+    
     
     document.addEventListener('click', function(e) {
-        console.log('👆 CLICK DETECTADO:', {
-            target: e.target,
-            tagName: e.target.tagName,
-            id: e.target.id,
-            className: e.target.className,
-            innerHTML: e.target.innerHTML.substring(0, 50) + '...'
-        });
+        
     }, true);
     
-    console.log('✅ Monitoreo de clicks habilitado');
+    
 };
 
 // Función para probar la conectividad con el servidor
 window.testServerConnection = async function() {
-    console.log('🔧 DEBUG: Probando conexión con el servidor...');
+    
     
     const token = localStorage.getItem('authToken');
     
     try {
         // Probar endpoint de verificación de auth
-        console.log('1. Probando /api/auth/verify...');
+        
         const authResponse = await fetch('/api/auth/verify', {
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             }
         });
-        console.log('Auth response:', authResponse.status, authResponse.statusText);
+        
         
         // Probar endpoint de clientes (GET)
-        console.log('2. Probando GET /api/clientes...');
+        
         const clientsResponse = await fetch('/api/clientes', {
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             }
         });
-        console.log('Clients GET response:', clientsResponse.status, clientsResponse.statusText);
+        
         
         // Probar con datos de prueba
-        console.log('3. Probando POST /api/clientes con datos de prueba...');
+        
         const testData = {
             nombre: 'Cliente de Prueba',
             cuit: '12345678',
@@ -3840,14 +3813,14 @@ window.testServerConnection = async function() {
             body: JSON.stringify(testData)
         });
         
-        console.log('Test POST response:', testResponse.status, testResponse.statusText);
+        
         
         if (!testResponse.ok) {
             const errorText = await testResponse.text();
             console.error('Error details:', errorText);
         } else {
             const result = await testResponse.json();
-            console.log('Success result:', result);
+            
         }
         
     } catch (error) {
@@ -3888,13 +3861,13 @@ function restoreAdminPanelStyles() {
             newUserBtn.style.cssText = '';
         }
         
-        console.log('✅ Estilos del panel de administración restaurados a valores normales');
+        
     }
 }
 
 // Funciones para mostrar detalles
 function viewClientDetails(clientId) {
-    console.log('Ver detalles del cliente:', clientId);
+    
     
     const client = clients.find(c => c.id == clientId);
     if (!client) {
@@ -3909,14 +3882,7 @@ function viewClientDetails(clientId) {
     const clientPayments = payments.filter(payment => payment.cliente_id == clientId);
     
     // Debug: mostrar datos encontrados
-    console.log('🔍 Datos del cliente:', {
-        clientId,
-        clientName: client.nombre,
-        ordersFound: clientOrders.length,
-        paymentsFound: clientPayments.length,
-        orders: clientOrders.map(o => ({ id: o.id, monto: o.monto, tipo: typeof o.monto })),
-        payments: clientPayments.map(p => ({ id: p.id, monto: p.monto, tipo: typeof p.monto }))
-    });
+    
     
     // Calcular totales con conversión explícita a números
     const totalPedidos = clientOrders.reduce((sum, order) => {
@@ -3933,12 +3899,7 @@ function viewClientDetails(clientId) {
     const saldoActual = parseFloat(client.saldo) || 0;
     
     // Debug: mostrar cálculos
-    console.log('💰 Cálculos financieros:', {
-        totalPedidos,
-        totalPagos,
-        saldoPendiente,
-        saldoActual
-    });
+    
     
     // Crear modal de detalles dinámicamente
     const detailsModal = document.createElement('div');
@@ -4122,7 +4083,7 @@ function viewClientDetails(clientId) {
 }
 
 function viewOrderDetails(orderId) {
-    console.log('Ver detalles del pedido:', orderId);
+    
     
     const order = orders.find(o => o.id == orderId);
     if (!order) {
@@ -4248,7 +4209,7 @@ function viewOrderDetails(orderId) {
 }
 
 function viewPaymentDetails(paymentId) {
-    console.log('Ver detalles del pago:', paymentId);
+    
     
     const payment = payments.find(p => p.id == paymentId);
     if (!payment) {
@@ -4347,7 +4308,7 @@ async function updatePedidosTableStructure() {
         
         if (response.ok) {
             const result = await response.json();
-            console.log('✅ Estructura de tabla actualizada:', result.message);
+            
             showNotification('Estructura de base de datos actualizada correctamente', 'success');
         } else {
             console.error('❌ Error actualizando estructura:', response.status);
@@ -4462,13 +4423,13 @@ function renderEditOrderProducts() {
 
         // Validar que los elementos existan
         if (!productsList || !noProductsMessage) {
-            console.log('⚠️ Elementos del modal de editar pedido no encontrados, reintentando...');
+            
             // Intentar de nuevo después de otro pequeño delay
             setTimeout(() => {
                 const productsList2 = document.getElementById('edit-order-products-list');
                 const noProductsMessage2 = document.getElementById('edit-no-products-message');
                 if (!productsList2 || !noProductsMessage2) {
-                    console.log('⚠️ Elementos del modal de editar pedido definitivamente no encontrados');
+                    
                     return;
                 }
                 renderEditOrderProductsInternal(productsList2, noProductsMessage2);
@@ -4537,7 +4498,7 @@ function updateEditOrderTotal() {
     if (orderTotalElement) {
         orderTotalElement.textContent = formatCurrency(total);
     } else {
-        console.log('⚠️ Elemento edit-order-total no encontrado');
+        
     }
 }
 
@@ -4562,7 +4523,7 @@ function renderPermissionsTable() {
         // Intentar encontrar contenedores alternativos
         const altContainer = document.querySelector('#admin-profiles-section .admin-panel');
         if (altContainer) {
-            console.log('🔄 Creando contenedor de tabla de permisos...');
+            
             const newContainer = document.createElement('div');
             newContainer.className = 'perms-table-container';
             newContainer.style.minHeight = '200px';
@@ -4766,7 +4727,7 @@ function renderPermissionsTable() {
 
 // Funciones para administración de usuarios
 async function editUser(userId) {
-    console.log('Editar usuario:', userId);
+    
     
     try {
         // Obtener datos del usuario
@@ -4783,7 +4744,7 @@ async function editUser(userId) {
         }
         
         const user = await response.json();
-        console.log('Datos del usuario obtenidos:', user);
+        
         
         // Llenar el modal de edición
         const modal = document.getElementById('edit-user-modal');
@@ -4830,7 +4791,7 @@ async function editUser(userId) {
             };
         }
         
-        console.log('✅ Modal de edición de usuario abierto');
+        
         
     } catch (error) {
         console.error('❌ Error obteniendo datos del usuario:', error);
@@ -4855,7 +4816,7 @@ async function handleEditUserSubmit(e, userId) {
             userData.password = password;
         }
         
-        console.log('Datos de usuario a actualizar:', userData);
+        
         
         const token = localStorage.getItem('authToken');
         const response = await fetch(`/api/usuarios/${userId}`, {
@@ -4891,7 +4852,7 @@ async function handleEditUserSubmit(e, userId) {
 
 // Función para actualizar permisos en tiempo real
 function updatePermission(perfil, modulo, accion, valor) {
-    console.log(`Actualizando permiso: ${perfil} -> ${modulo} -> ${accion} = ${valor}`);
+    
     
     // Verificar que el usuario sea administrador
     const currentUser = getCurrentUserFromAuth();
@@ -4903,7 +4864,7 @@ function updatePermission(perfil, modulo, accion, valor) {
     // Actualizar el valor en la estructura global
     if (window.permisosPorPerfil && window.permisosPorPerfil[perfil] && window.permisosPorPerfil[perfil][modulo]) {
         window.permisosPorPerfil[perfil][modulo][accion] = valor;
-        console.log('✅ Permiso actualizado en memoria');
+        
         
         // Mostrar notificación de cambio
         showNotification(`Permiso ${valor ? 'otorgado' : 'revocado'}: ${perfil} - ${modulo} - ${accion}`, 'info');
@@ -4915,7 +4876,7 @@ function updatePermission(perfil, modulo, accion, valor) {
 
 // Función para guardar permisos en el servidor
 async function savePermissions() {
-    console.log('Guardando permisos en el servidor...');
+    
     
     // Verificar que el usuario sea administrador
     const currentUser = getCurrentUserFromAuth();
@@ -4934,7 +4895,7 @@ async function savePermissions() {
             saveButton.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 0.5rem;"></i>Guardando...';
         }
         
-        console.log('📤 Enviando permisos al servidor:', window.permisosPorPerfil);
+        
         
         const response = await fetch('/api/permisos', {
             method: 'PUT',
@@ -4947,12 +4908,12 @@ async function savePermissions() {
             })
         });
         
-        console.log('📥 Respuesta del servidor:', response.status, response.statusText);
+        
         
         if (response.ok) {
             const result = await response.json();
             showNotification(`Permisos guardados exitosamente (${result.count} registros)`, 'success');
-            console.log('✅ Permisos guardados en el servidor:', result);
+            
         } else {
             // Intentar leer la respuesta como JSON
             let errorData;
@@ -4971,7 +4932,7 @@ async function savePermissions() {
             
             // Si no existe el endpoint, simular guardado local
             if (response.status === 404) {
-                console.log('ℹ️ Endpoint de permisos no implementado, guardando localmente...');
+                
                 localStorage.setItem('permisosPorPerfil', JSON.stringify(window.permisosPorPerfil));
                 showNotification('Permisos guardados localmente (endpoint en desarrollo)', 'warning');
             } else if (response.status === 403) {
@@ -4998,7 +4959,7 @@ async function savePermissions() {
 
 // Función para cargar permisos desde el servidor o localStorage
 async function loadPermissions() {
-    console.log('Cargando permisos...');
+    
     
     try {
         const token = localStorage.getItem('authToken');
@@ -5013,15 +4974,15 @@ async function loadPermissions() {
         if (response.ok) {
             const data = await response.json();
             window.permisosPorPerfil = data.permisos;
-            console.log('✅ Permisos cargados desde el servidor');
+            
         } else if (response.status === 404) {
             // Si no existe el endpoint, usar permisos por defecto o localStorage
             const savedPermissions = localStorage.getItem('permisosPorPerfil');
             if (savedPermissions) {
                 window.permisosPorPerfil = JSON.parse(savedPermissions);
-                console.log('✅ Permisos cargados desde localStorage');
+                
             } else {
-                console.log('ℹ️ Usando permisos por defecto');
+                
             }
         } else {
             throw new Error(`Error ${response.status}: ${response.statusText}`);
@@ -5033,9 +4994,9 @@ async function loadPermissions() {
         const savedPermissions = localStorage.getItem('permisosPorPerfil');
         if (savedPermissions) {
             window.permisosPorPerfil = JSON.parse(savedPermissions);
-            console.log('✅ Permisos cargados desde localStorage como respaldo');
+            
         } else {
-            console.log('ℹ️ Usando permisos por defecto debido a error');
+            
         }
     }
 }
@@ -5145,7 +5106,7 @@ function renderFabricaTable() {
         </tr>
     `).join('');
     
-    console.log(`✅ Tabla de fábrica renderizada con ${pedidosFabrica.length} pedidos`);
+    
 }
 
 // Función para marcar un pedido como producido (cambiar estado a 'sale fabrica')
@@ -5170,7 +5131,7 @@ async function markAsProduced(orderId) {
             estado: 'sale fabrica' // Cambiar a siguiente estado
         };
         
-        console.log(`🔄 Marcando pedido ${orderId} como producido...`);
+        
         
         const token = localStorage.getItem('authToken');
         const response = await fetch(`/api/pedidos/${orderId}`, {
@@ -5194,7 +5155,7 @@ async function markAsProduced(orderId) {
             // También recargar pedidos desde el servidor para mantener sincronización
             await loadOrders();
             
-            console.log(`✅ Pedido ${orderId} marcado como 'sale fabrica'`);
+            
         } else {
             const error = await response.json();
             showNotification(error.message || 'Error al actualizar el pedido', 'error');
@@ -5207,7 +5168,7 @@ async function markAsProduced(orderId) {
 
 // Función para configurar el menú del usuario con comportamiento click
 function setupUserMenu() {
-    console.log('🔧 Configurando menú del usuario...');
+    
     
     try {
         const userInfo = document.querySelector('.sidebar-user .user-info');
@@ -5226,7 +5187,7 @@ function setupUserMenu() {
             // Toggle la clase 'show' en el menú
             userMenu.classList.toggle('show');
             
-            console.log('🖱️ Click en menú de usuario:', userMenu.classList.contains('show') ? 'Mostrado' : 'Ocultado');
+            
         });
         
         // Cerrar el menú al hacer click fuera de él
@@ -5257,11 +5218,11 @@ function setupUserMenu() {
                 // Abrir modal de preferencias
                 abrirModalPreferencias();
                 
-                console.log('🔧 Modal de preferencias de usuario abierto');
+                
             });
         }
         
-        console.log('✅ Menú del usuario configurado correctamente');
+        
         
     } catch (error) {
         console.error('❌ Error configurando menú del usuario:', error);
@@ -5270,7 +5231,7 @@ function setupUserMenu() {
 
 // Función para abrir el modal de preferencias de usuario
 function abrirModalPreferencias() {
-    console.log('🔧 Abriendo modal de preferencias de usuario...');
+    
     
     try {
         const modal = document.getElementById('user-config-modal');
@@ -5335,7 +5296,7 @@ function abrirModalPreferencias() {
         modal.style.display = 'flex';
         modal.classList.add('active');
         
-        console.log('✅ Modal de preferencias abierto correctamente');
+        
         
     } catch (error) {
         console.error('❌ Error abriendo modal de preferencias:', error);
@@ -5345,7 +5306,7 @@ function abrirModalPreferencias() {
 // Función para manejar el cambio de tema
 function handleThemeChange(e) {
     const tema = e.target.value;
-    console.log('🎨 Cambiando tema a:', tema);
+    
     
     try {
         // Aplicar el tema inmediatamente
@@ -5362,7 +5323,7 @@ function handleThemeChange(e) {
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
         }
         
-        console.log('✅ Tema aplicado correctamente');
+        
         
     } catch (error) {
         console.error('❌ Error aplicando tema:', error);
@@ -5374,7 +5335,7 @@ function handleAvatarChange(e) {
     const file = e.target.files[0];
     if (!file) return;
     
-    console.log('🖼️ Procesando cambio de avatar...');
+    
     
     try {
         // Verificar que sea una imagen
@@ -5395,7 +5356,7 @@ function handleAvatarChange(e) {
             const avatarPreview = document.getElementById('user-avatar-preview');
             if (avatarPreview) {
                 avatarPreview.src = event.target.result;
-                console.log('✅ Preview de avatar actualizado');
+                
             }
         };
         reader.readAsDataURL(file);
@@ -5409,7 +5370,7 @@ function handleAvatarChange(e) {
 // Función para manejar el envío del formulario de preferencias
 async function handleUserConfigSubmit(e) {
     e.preventDefault();
-    console.log('💾 Guardando preferencias de usuario...');
+    
     
     try {
         const currentUser = getCurrentUserFromAuth();
@@ -5443,7 +5404,7 @@ async function handleUserConfigSubmit(e) {
         }
         
         // Enviar al servidor (simular por ahora, ya que no tenemos endpoint)
-        console.log('📤 Datos a enviar:', userData);
+        
         
         // Actualizar localStorage
         const updatedUser = { ...currentUser, ...userData };
@@ -5470,7 +5431,7 @@ async function handleUserConfigSubmit(e) {
         }
         
         showNotification('Preferencias guardadas correctamente', 'success');
-        console.log('✅ Preferencias guardadas exitosamente');
+        
         
     } catch (error) {
         console.error('❌ Error guardando preferencias:', error);
@@ -5480,7 +5441,7 @@ async function handleUserConfigSubmit(e) {
 
 // Función para configurar el comportamiento de todos los modales
 function setupModals() {
-    console.log('🔧 Configurando comportamiento de modales...');
+    
     
     try {
         // Configurar todos los botones de cerrar modal
@@ -5494,7 +5455,7 @@ function setupModals() {
                 if (modal) {
                     modal.style.display = 'none';
                     modal.classList.remove('active');
-                    console.log('🔒 Modal cerrado:', modal.id);
+                    
                 }
             });
         });
@@ -5507,7 +5468,7 @@ function setupModals() {
                 if (e.target === this) {
                     this.style.display = 'none';
                     this.classList.remove('active');
-                    console.log('🔒 Modal cerrado por click externo:', this.id);
+                    
                 }
             });
         });
@@ -5519,12 +5480,12 @@ function setupModals() {
                 if (modalActivo) {
                     modalActivo.style.display = 'none';
                     modalActivo.classList.remove('active');
-                    console.log('🔒 Modal cerrado con Escape:', modalActivo.id);
+                    
                 }
             }
         });
         
-        console.log('✅ Comportamiento de modales configurado correctamente');
+        
         
     } catch (error) {
         console.error('❌ Error configurando modales:', error);
@@ -5533,19 +5494,19 @@ function setupModals() {
 
 // Función para configurar el menú específicamente para usuarios Vendedores
 function configurarMenuVendedor() {
-    console.log('🛒 Configurando menú para perfil Vendedor...');
+    
     
     try {
         // Ocultar la sección de Fábrica para vendedores
         const fabricaNav = document.getElementById('fabrica-nav');
         if (fabricaNav) {
             fabricaNav.style.display = 'none';
-            console.log('🔒 Sección Fábrica ocultada para vendedor');
+            
         } else {
-            console.log('⚠️ Elemento fabrica-nav no encontrado');
+            
         }
         
-        console.log('✅ Menú configurado exitosamente para perfil Vendedor');
+        
         
     } catch (error) {
         console.error('❌ Error configurando menú para vendedor:', error);
@@ -5554,7 +5515,7 @@ function configurarMenuVendedor() {
 
 // Función para cargar datos de clientes inactivos
 async function loadInactiveClients() {
-    console.log('📊 Cargando clientes inactivos...');
+    
     
     try {
         const token = localStorage.getItem('authToken');
@@ -5587,7 +5548,7 @@ async function loadInactiveClients() {
                 lastActivityElement.textContent = '-';
             }
             
-            console.log('✅ Clientes inactivos cargados:', data.inactiveClients.length);
+            
             return data.inactiveClients;
         } else {
             console.error('❌ Error cargando clientes inactivos:', response.status);
@@ -5601,7 +5562,7 @@ async function loadInactiveClients() {
 
 // Función para cargar ventas completadas
 async function loadCompletedSales(dateFrom = null, dateTo = null) {
-    console.log('📊 Cargando ventas completadas...');
+    
     
     try {
         const token = localStorage.getItem('authToken');
@@ -5642,7 +5603,7 @@ async function loadCompletedSales(dateFrom = null, dateTo = null) {
                 completedCountElement.textContent = data.completedOrders;
             }
             
-            console.log('✅ Ventas completadas cargadas:', data);
+            
             return data;
         } else {
             console.error('❌ Error cargando ventas completadas:', response.status);
@@ -5656,7 +5617,7 @@ async function loadCompletedSales(dateFrom = null, dateTo = null) {
 
 // Función para cargar datos de cobros pendientes
 async function loadPendingCollections() {
-    console.log('📊 Cargando cobros pendientes...');
+    
     
     try {
         const token = localStorage.getItem('authToken');
@@ -5690,7 +5651,7 @@ async function loadPendingCollections() {
                 pendingRatioElement.textContent = ratio;
             }
             
-            console.log('✅ Cobros pendientes cargados:', data);
+            
             return data;
         } else {
             console.error('❌ Error cargando cobros pendientes:', response.status);
@@ -5704,14 +5665,14 @@ async function loadPendingCollections() {
 
 // Función para configurar los event listeners de las nuevas tarjetas
 function setupDashboardCards() {
-    console.log('🔧 Configurando tarjetas del dashboard...');
+    
     
     try {
         // Configurar tarjeta de clientes inactivos
         const inactiveClientsCard = document.getElementById('inactive-clients-card');
         if (inactiveClientsCard) {
             inactiveClientsCard.addEventListener('click', async function() {
-                console.log('🔍 Abriendo modal de clientes inactivos...');
+                
                 const inactiveClients = await loadInactiveClients();
                 showInactiveClientsModal(inactiveClients);
             });
@@ -5721,7 +5682,7 @@ function setupDashboardCards() {
         const pendingCollectionsCard = document.getElementById('pending-collections-card');
         if (pendingCollectionsCard) {
             pendingCollectionsCard.addEventListener('click', async function() {
-                console.log('🔍 Abriendo modal de cobros pendientes...');
+                
                 showPendingCollectionsModal();
             });
         }
@@ -5750,7 +5711,7 @@ function setupDashboardCards() {
             dateToInput.value = today.toISOString().split('T')[0];
         }
         
-        console.log('✅ Tarjetas del dashboard configuradas');
+        
     } catch (error) {
         console.error('❌ Error configurando tarjetas del dashboard:', error);
     }
@@ -5758,7 +5719,7 @@ function setupDashboardCards() {
 
 // Función para mostrar el modal de clientes inactivos
 function showInactiveClientsModal(inactiveClients) {
-    console.log('🔍 Mostrando modal de clientes inactivos...');
+    
     
     try {
         const modal = document.getElementById('inactive-clients-modal');
@@ -5833,7 +5794,7 @@ function showInactiveClientsModal(inactiveClients) {
         modal.style.display = 'flex';
         modal.classList.add('active');
         
-        console.log('✅ Modal de clientes inactivos mostrado');
+        
     } catch (error) {
         console.error('❌ Error mostrando modal de clientes inactivos:', error);
     }
@@ -5841,7 +5802,7 @@ function showInactiveClientsModal(inactiveClients) {
 
 // Función para mostrar el modal de cobros pendientes
 async function showPendingCollectionsModal() {
-    console.log('🔍 Mostrando modal de cobros pendientes...');
+    
     
     try {
         const modal = document.getElementById('pending-collections-modal');
@@ -5938,7 +5899,7 @@ async function showPendingCollectionsModal() {
             modal.style.display = 'flex';
             modal.classList.add('active');
             
-            console.log('✅ Modal de cobros pendientes mostrado');
+            
         } else {
             console.error('❌ Error cargando detalles de cobros pendientes:', response.status);
             showNotification('Error al cargar detalles de cobros pendientes', 'error');
@@ -5948,6 +5909,7 @@ async function showPendingCollectionsModal() {
         showNotification('Error al mostrar detalles de cobros pendientes', 'error');
     }
 }
+
 
 
 
