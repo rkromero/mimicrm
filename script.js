@@ -202,6 +202,13 @@ async function checkAuthentication() {
             userNameElement.textContent = user.nombre;
         }
         
+        // Aplicar el tema guardado del usuario
+        if (user.tema === 'dark') {
+            document.body.classList.add('theme-dark');
+        } else {
+            document.body.classList.remove('theme-dark');
+        }
+        
         // Mostrar panel de administración si el usuario es administrador
         if (user.perfil === 'Administrador') {
             const adminNav = document.getElementById('admin-profiles-nav');
@@ -835,6 +842,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         debugLog('SETUP', 'Configurando menú de usuario...');
         setupUserMenu();
+        
+        debugLog('SETUP', 'Configurando modales...');
+        setupModals();
         
         // Mostrar dashboard por defecto
         debugLog('UI', 'Mostrando dashboard por defecto...');
@@ -5277,9 +5287,289 @@ function setupUserMenu() {
             e.stopPropagation();
         });
         
+        // Configurar el botón de preferencias de usuario
+        const userPreferencesBtn = document.getElementById('user-preferences');
+        if (userPreferencesBtn) {
+            userPreferencesBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Cerrar el menú del usuario
+                userMenu.classList.remove('show');
+                
+                // Abrir modal de preferencias
+                abrirModalPreferencias();
+                
+                console.log('🔧 Modal de preferencias de usuario abierto');
+            });
+        }
+        
         console.log('✅ Menú del usuario configurado correctamente');
         
     } catch (error) {
         console.error('❌ Error configurando menú del usuario:', error);
+    }
+}
+
+// Función para abrir el modal de preferencias de usuario
+function abrirModalPreferencias() {
+    console.log('🔧 Abriendo modal de preferencias de usuario...');
+    
+    try {
+        const modal = document.getElementById('user-config-modal');
+        const currentUser = getCurrentUserFromAuth();
+        
+        if (!modal) {
+            console.error('❌ Modal de preferencias no encontrado');
+            return;
+        }
+        
+        if (!currentUser) {
+            console.error('❌ No se pudo obtener información del usuario actual');
+            return;
+        }
+        
+        // Cargar datos del usuario en el formulario
+        const nombreInput = document.getElementById('user-config-nombre');
+        const emailInput = document.getElementById('user-config-email');
+        const perfilInput = document.getElementById('user-config-perfil');
+        const temaSelect = document.getElementById('user-theme-select');
+        const avatarPreview = document.getElementById('user-avatar-preview');
+        
+        if (nombreInput) nombreInput.value = currentUser.nombre || '';
+        if (emailInput) emailInput.value = currentUser.email || '';
+        if (perfilInput) perfilInput.value = currentUser.perfil || '';
+        if (temaSelect) temaSelect.value = currentUser.tema || 'light';
+        
+        // Configurar avatar
+        if (avatarPreview) {
+            if (currentUser.avatar) {
+                avatarPreview.src = currentUser.avatar;
+            } else {
+                // Generar avatar con iniciales
+                const iniciales = currentUser.nombre ? currentUser.nombre.split(' ').map(n => n[0]).join('').toUpperCase() : 'U';
+                avatarPreview.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(iniciales)}&background=6366f1&color=fff&size=80`;
+            }
+        }
+        
+        // Configurar el event listener del formulario si no existe
+        const form = document.getElementById('user-config-form');
+        if (form && !form.hasAttribute('data-configured')) {
+            form.addEventListener('submit', handleUserConfigSubmit);
+            form.setAttribute('data-configured', 'true');
+        }
+        
+        // Configurar el selector de tema
+        if (temaSelect && !temaSelect.hasAttribute('data-configured')) {
+            temaSelect.addEventListener('change', handleThemeChange);
+            temaSelect.setAttribute('data-configured', 'true');
+        }
+        
+        // Configurar el input de avatar
+        const avatarInput = document.getElementById('user-avatar-input');
+        const avatarLabel = document.querySelector('.avatar-label');
+        if (avatarInput && avatarLabel && !avatarInput.hasAttribute('data-configured')) {
+            avatarLabel.addEventListener('click', () => avatarInput.click());
+            avatarInput.addEventListener('change', handleAvatarChange);
+            avatarInput.setAttribute('data-configured', 'true');
+        }
+        
+        // Mostrar el modal
+        modal.style.display = 'flex';
+        modal.classList.add('active');
+        
+        console.log('✅ Modal de preferencias abierto correctamente');
+        
+    } catch (error) {
+        console.error('❌ Error abriendo modal de preferencias:', error);
+    }
+}
+
+// Función para manejar el cambio de tema
+function handleThemeChange(e) {
+    const tema = e.target.value;
+    console.log('🎨 Cambiando tema a:', tema);
+    
+    try {
+        // Aplicar el tema inmediatamente
+        if (tema === 'dark') {
+            document.body.classList.add('theme-dark');
+        } else {
+            document.body.classList.remove('theme-dark');
+        }
+        
+        // Guardar en localStorage temporalmente (se guardará permanentemente al enviar el formulario)
+        const currentUser = getCurrentUserFromAuth();
+        if (currentUser) {
+            currentUser.tema = tema;
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        }
+        
+        console.log('✅ Tema aplicado correctamente');
+        
+    } catch (error) {
+        console.error('❌ Error aplicando tema:', error);
+    }
+}
+
+// Función para manejar el cambio de avatar
+function handleAvatarChange(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    console.log('🖼️ Procesando cambio de avatar...');
+    
+    try {
+        // Verificar que sea una imagen
+        if (!file.type.startsWith('image/')) {
+            showNotification('Por favor selecciona un archivo de imagen válido', 'error');
+            return;
+        }
+        
+        // Verificar tamaño (máximo 2MB)
+        if (file.size > 2 * 1024 * 1024) {
+            showNotification('La imagen debe ser menor a 2MB', 'error');
+            return;
+        }
+        
+        // Leer la imagen y mostrar preview
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const avatarPreview = document.getElementById('user-avatar-preview');
+            if (avatarPreview) {
+                avatarPreview.src = event.target.result;
+                console.log('✅ Preview de avatar actualizado');
+            }
+        };
+        reader.readAsDataURL(file);
+        
+    } catch (error) {
+        console.error('❌ Error procesando avatar:', error);
+        showNotification('Error procesando la imagen', 'error');
+    }
+}
+
+// Función para manejar el envío del formulario de preferencias
+async function handleUserConfigSubmit(e) {
+    e.preventDefault();
+    console.log('💾 Guardando preferencias de usuario...');
+    
+    try {
+        const currentUser = getCurrentUserFromAuth();
+        if (!currentUser) {
+            showNotification('Error: No se pudo obtener información del usuario', 'error');
+            return;
+        }
+        
+        const formData = new FormData(e.target);
+        const nombre = document.getElementById('user-config-nombre').value;
+        const email = document.getElementById('user-config-email').value;
+        const tema = document.getElementById('user-theme-select').value;
+        const avatarPreview = document.getElementById('user-avatar-preview');
+        
+        // Validaciones básicas
+        if (!nombre.trim() || !email.trim()) {
+            showNotification('Nombre y email son requeridos', 'error');
+            return;
+        }
+        
+        // Preparar datos para enviar al servidor
+        const userData = {
+            nombre: nombre.trim(),
+            email: email.trim(),
+            tema: tema
+        };
+        
+        // Si hay un avatar nuevo, incluirlo
+        if (avatarPreview && avatarPreview.src.startsWith('data:')) {
+            userData.avatar = avatarPreview.src;
+        }
+        
+        // Enviar al servidor (simular por ahora, ya que no tenemos endpoint)
+        console.log('📤 Datos a enviar:', userData);
+        
+        // Actualizar localStorage
+        const updatedUser = { ...currentUser, ...userData };
+        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+        
+        // Actualizar elementos de la interfaz
+        const userNameElement = document.getElementById('current-user-name');
+        if (userNameElement) {
+            userNameElement.textContent = updatedUser.nombre;
+        }
+        
+        // Aplicar el tema
+        if (tema === 'dark') {
+            document.body.classList.add('theme-dark');
+        } else {
+            document.body.classList.remove('theme-dark');
+        }
+        
+        // Cerrar modal
+        const modal = document.getElementById('user-config-modal');
+        if (modal) {
+            modal.style.display = 'none';
+            modal.classList.remove('active');
+        }
+        
+        showNotification('Preferencias guardadas correctamente', 'success');
+        console.log('✅ Preferencias guardadas exitosamente');
+        
+    } catch (error) {
+        console.error('❌ Error guardando preferencias:', error);
+        showNotification('Error guardando preferencias', 'error');
+    }
+}
+
+// Función para configurar el comportamiento de todos los modales
+function setupModals() {
+    console.log('🔧 Configurando comportamiento de modales...');
+    
+    try {
+        // Configurar todos los botones de cerrar modal
+        const closeButtons = document.querySelectorAll('.close-modal');
+        closeButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Encontrar el modal padre
+                const modal = this.closest('.modal');
+                if (modal) {
+                    modal.style.display = 'none';
+                    modal.classList.remove('active');
+                    console.log('🔒 Modal cerrado:', modal.id);
+                }
+            });
+        });
+        
+        // Configurar cierre al hacer click fuera del modal
+        const modales = document.querySelectorAll('.modal');
+        modales.forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                // Solo cerrar si se hizo click en el fondo del modal, no en el contenido
+                if (e.target === this) {
+                    this.style.display = 'none';
+                    this.classList.remove('active');
+                    console.log('🔒 Modal cerrado por click externo:', this.id);
+                }
+            });
+        });
+        
+        // Configurar tecla Escape para cerrar modales
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modalActivo = document.querySelector('.modal.active');
+                if (modalActivo) {
+                    modalActivo.style.display = 'none';
+                    modalActivo.classList.remove('active');
+                    console.log('🔒 Modal cerrado con Escape:', modalActivo.id);
+                }
+            }
+        });
+        
+        console.log('✅ Comportamiento de modales configurado correctamente');
+        
+    } catch (error) {
+        console.error('❌ Error configurando modales:', error);
     }
 }
