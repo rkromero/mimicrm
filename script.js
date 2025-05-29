@@ -123,6 +123,39 @@ function formatDate(date) {
     return new Date(date).toLocaleDateString('es-AR');
 }
 
+// Funciones simplificadas para manejo de ciudades y localidades
+function actualizarCiudades(provincia, selectId = 'client-city-input') {
+    const ciudadSelect = document.getElementById(selectId);
+    if (!ciudadSelect) return;
+    
+    ciudadSelect.innerHTML = '<option value="">Seleccione una ciudad</option>';
+    
+    if (provincia && provinciasYLocalidades[provincia]) {
+        Object.keys(provinciasYLocalidades[provincia]).forEach(ciudad => {
+            const option = document.createElement('option');
+            option.value = ciudad;
+            option.textContent = ciudad;
+            ciudadSelect.appendChild(option);
+        });
+    }
+}
+
+function actualizarLocalidades(provincia, ciudad, selectId = 'client-locality-input') {
+    const localidadSelect = document.getElementById(selectId);
+    if (!localidadSelect) return;
+    
+    localidadSelect.innerHTML = '<option value="">Seleccione una localidad</option>';
+    
+    if (provincia && ciudad && provinciasYLocalidades[provincia] && provinciasYLocalidades[provincia][ciudad]) {
+        provinciasYLocalidades[provincia][ciudad].forEach(localidad => {
+            const option = document.createElement('option');
+            option.value = localidad;
+            option.textContent = localidad;
+            localidadSelect.appendChild(option);
+        });
+    }
+}
+
 // === VERIFICACIÓN DE AUTENTICACIÓN ===
 
 // Función para verificar si el usuario está autenticado
