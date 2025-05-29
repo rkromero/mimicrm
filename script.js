@@ -5821,32 +5821,37 @@ async function showPendingCollectionsModal() {
                 
                 const pendingAmount = client.totalOrders - client.totalPayments;
                 
-                row.innerHTML = `
-                    <td>${client.nombre}</td>
-                    <td>${formatCurrency(client.totalOrders)}</td>
-                    <td>${formatCurrency(client.totalPayments)}</td>
-                    <td style="color: ${pendingAmount > 0 ? '#dc2626' : '#059669'}; font-weight: bold;">
-                        ${formatCurrency(pendingAmount)}
-                    </td>
-                    <td>
-                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <div style="background: #e5e7eb; border-radius: 10px; height: 8px; flex: 1; overflow: hidden;">
-                                <div style="background: ${percentagePaid >= 80 ? '#059669' : percentagePaid >= 50 ? '#f59e0b' : '#dc2626'}; height: 100%; width: ${percentagePaid}%; transition: width 0.3s;"></div>
+                // 🚨 SOLO MOSTRAR CLIENTES CON SALDO PENDIENTE > 0
+                if (pendingAmount > 0) {
+                    const row = document.createElement('tr');
+                    
+                    row.innerHTML = `
+                        <td>${client.nombre}</td>
+                        <td>${formatCurrency(client.totalOrders)}</td>
+                        <td>${formatCurrency(client.totalPayments)}</td>
+                        <td style="color: #dc2626; font-weight: bold;">
+                            ${formatCurrency(pendingAmount)}
+                        </td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <div style="background: #e5e7eb; border-radius: 10px; height: 8px; flex: 1; overflow: hidden;">
+                                    <div style="background: ${percentagePaid >= 80 ? '#059669' : percentagePaid >= 50 ? '#f59e0b' : '#dc2626'}; height: 100%; width: ${percentagePaid}%; transition: width 0.3s;"></div>
+                                </div>
+                                <span style="font-size: 0.8rem; font-weight: 500;">${percentagePaid}%</span>
                             </div>
-                            <span style="font-size: 0.8rem; font-weight: 500;">${percentagePaid}%</span>
-                        </div>
-                    </td>
-                    <td>
-                        <button class="btn btn-primary" onclick="viewClientDetails(${client.id})" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">
-                            <i class="fas fa-eye"></i> Ver
-                        </button>
-                        <button class="btn btn-success" onclick="showModal('new-payment-modal'); populateClientSelects('new-payment-modal'); document.getElementById('payment-client-select').value = ${client.id};" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-left: 0.25rem;">
-                            <i class="fas fa-money-bill-wave"></i> Pago
-                        </button>
-                    </td>
-                `;
-                
-                tableBody.appendChild(row);
+                        </td>
+                        <td>
+                            <button class="btn btn-primary" onclick="viewClientDetails(${client.id})" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                                <i class="fas fa-eye"></i> Ver
+                            </button>
+                            <button class="btn btn-success" onclick="showModal('new-payment-modal'); populateClientSelects('new-payment-modal'); document.getElementById('payment-client-select').value = ${client.id};" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-left: 0.25rem;">
+                                <i class="fas fa-money-bill-wave"></i> Pago
+                            </button>
+                        </td>
+                    `;
+                    
+                    tableBody.appendChild(row);
+                }
             });
             
             // Configurar búsqueda
