@@ -1526,7 +1526,8 @@ function showModal(modalId) {
             console.warn(`⚠️ El elemento ${modalId} no tiene la clase 'modal'`);
         }
         
-        // Mostrar el modal usando la clase active (para que funcione con las transiciones CSS)
+        // Mostrar el modal
+        modal.style.display = 'block';
         modal.classList.add('active');
         
         // Asegurar que el modal se vea desde el inicio (scroll al top)
@@ -1582,7 +1583,7 @@ function showModal(modalId) {
             }
         }
         
-        
+        console.log(`✅ Modal ${modalId} abierto correctamente`);
         
     } catch (error) {
         console.error(`🚨 ERROR EN showModal(${modalId}):`, error);
@@ -5416,34 +5417,32 @@ async function handleUserConfigSubmit(e) {
 
 // Función para configurar el comportamiento de todos los modales
 function setupModals() {
-    
+    console.log('✅ Configurando modales...');
     
     try {
         // Configurar todos los botones de cerrar modal
-        const closeButtons = document.querySelectorAll('.close-modal');
+        const closeButtons = document.querySelectorAll('.close-modal, .cancel-btn');
         closeButtons.forEach(button => {
             button.addEventListener('click', function(e) {
                 e.preventDefault();
+                e.stopPropagation();
                 
                 // Encontrar el modal padre
                 const modal = this.closest('.modal');
                 if (modal) {
-                    modal.style.display = 'none';
-                    modal.classList.remove('active');
-                    document.body.style.overflow = ''; // Restaurar scroll del body
+                    closeModal(modal);
                 }
             });
         });
         
-        // Configurar cierre al hacer click fuera del modal
+        // Configurar cierre al hacer click fuera del modal (en el overlay)
         const modales = document.querySelectorAll('.modal');
         modales.forEach(modal => {
             modal.addEventListener('click', function(e) {
-                // Solo cerrar si se hizo click en el fondo del modal, no en el contenido
+                // Solo cerrar si se hizo click directamente en el modal (overlay), no en su contenido
                 if (e.target === this) {
-                    this.style.display = 'none';
-                    this.classList.remove('active');
-                    document.body.style.overflow = ''; // Restaurar scroll del body
+                    closeModal(this);
+                    console.log(`✅ Modal ${this.id} cerrado por clic fuera`);
                 }
             });
         });
@@ -5451,16 +5450,15 @@ function setupModals() {
         // Configurar tecla Escape para cerrar modales
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
-                const modalActivo = document.querySelector('.modal.active');
+                const modalActivo = document.querySelector('.modal.active, .modal[style*="display: block"], .modal[style*="display:block"]');
                 if (modalActivo) {
-                    modalActivo.style.display = 'none';
-                    modalActivo.classList.remove('active');
-                    document.body.style.overflow = ''; // Restaurar scroll del body
+                    closeModal(modalActivo);
+                    console.log(`✅ Modal ${modalActivo.id} cerrado con Escape`);
                 }
             }
         });
         
-        
+        console.log('✅ Modales configurados correctamente');
         
     } catch (error) {
         console.error('❌ Error configurando modales:', error);
@@ -5883,6 +5881,45 @@ async function showPendingCollectionsModal() {
         console.error('❌ Error mostrando modal de cobros pendientes:', error);
         showNotification('Error al mostrar detalles de cobros pendientes', 'error');
     }
+}
+
+// Función centralizada para cerrar modales
+function closeModal(modalId) {
+    const modal = typeof modalId === 'string' ? document.getElementById(modalId) : modalId;
+    if (!modal) {
+        console.warn(`⚠️ Modal no encontrado: ${modalId}`);
+        return;
+    }
+    
+    try {
+        // Cerrar el modal
+        modal.style.display = 'none';
+        modal.classList.remove('active');
+        document.body.style.overflow = ''; // Restaurar scroll del body
+        
+        // Limpiar formulario si existe
+        const form = modal.querySelector('form');
+        if (form) {
+            form.reset();
+        }
+        
+        // Limpiar elementos específicos del modal de pedidos
+        if (modal.id === 'new-order-modal') {
+            clearOrderItems();
+        } else if (modal.id === 'edit-order-modal') {
+            clearEditOrderItems();
+        }
+        
+        console.log(`✅ Modal ${modal.id} cerrado correctamente`);
+    } catch (error) {
+        console.error(`❌ Error cerrando modal ${modal.id}:`, error);
+    }
+}
+
+function clearOrderItems() {
+    orderItems = [];
+    renderOrderProducts();
+    updateOrderTotal();
 }
 
 
