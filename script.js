@@ -1479,31 +1479,36 @@ function cancelAddProduct() {
 
 function renderOrderProducts() {
     const productsList = document.getElementById('order-products-list');
-    const noProductsMessage = document.getElementById('no-products-message');
     const submitBtn = document.getElementById('submit-order-btn');
 
     console.log('🔍 RENDER PRODUCTOS - Iniciando render:', {
         productsList: !!productsList,
-        noProductsMessage: !!noProductsMessage,
         submitBtn: !!submitBtn,
         orderItemsLength: orderItems.length,
         orderItems: orderItems
     });
 
     // Validar que los elementos existan (el modal podría estar cerrado)
-    if (!productsList || !noProductsMessage || !submitBtn) {
+    if (!productsList || !submitBtn) {
         console.log('❌ RENDER - Elementos del modal no encontrados');
         return;
     }
 
     if (orderItems.length === 0) {
-        noProductsMessage.style.display = 'block';
+        // Si no hay productos, mostrar mensaje
+        productsList.innerHTML = `
+            <div id="no-products-message" style="text-align: center; padding: 2rem; color: #6b7280; background: #f9fafb; border-radius: 8px;">
+                <i class="fas fa-box-open" style="font-size: 2rem; margin-bottom: 0.5rem; display: block; color: #d1d5db;"></i>
+                <p style="margin: 0;">No hay productos agregados al pedido</p>
+                <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem;">Haga clic en "Agregar Producto" para comenzar</p>
+            </div>
+        `;
         submitBtn.disabled = true;
         console.log('📝 RENDER - Mostrando mensaje de no productos');
         return;
     }
 
-    noProductsMessage.style.display = 'none';
+    // Si hay productos, mostrar la tabla
     submitBtn.disabled = false;
 
     const productsTable = `
@@ -5285,6 +5290,7 @@ function setupUserMenu() {
                 
                 // Cerrar el menú del usuario
                 userMenu.classList.remove('show');
+                
                 
                 // Abrir modal de preferencias
                 abrirModalPreferencias();
