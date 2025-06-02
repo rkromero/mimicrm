@@ -660,54 +660,102 @@ app.put('/api/productos/:id', authenticateToken, async (req, res) => {
         const productoId = req.params.id;
         const { nombre, descripcion, precio, stock } = req.body;
 
-        // Log para debugging
-        console.log('🔍 Datos recibidos para actualizar producto:', {
-            productoId,
-            nombre,
-            descripcion,
-            precio,
-            stock,
-            body: req.body
+        // Log para debugging con más detalles
+        console.log('🔍 === INICIO ACTUALIZACIÓN PRODUCTO ===');
+        console.log('🔍 ID del producto:', productoId);
+        console.log('🔍 Datos recibidos:', {
+            nombre: nombre,
+            descripcion: descripcion,
+            precio: precio,
+            stock: stock,
+            nombreType: typeof nombre,
+            precioType: typeof precio,
+            stockType: typeof stock
         });
+        console.log('🔍 Body completo:', JSON.stringify(req.body, null, 2));
 
-        // Validaciones básicas
+        // Validaciones básicas con logging detallado
         if (!nombre || nombre.trim() === '') {
+            console.log('❌ Error de validación: nombre vacío');
             return res.status(400).json({ error: 'El nombre del producto es requerido' });
         }
 
         if (!precio || isNaN(precio) || precio <= 0) {
+            console.log('❌ Error de validación: precio inválido', { precio, isNaN: isNaN(precio), lessThanZero: precio <= 0 });
             return res.status(400).json({ error: 'El precio debe ser un número válido mayor a 0' });
         }
 
         if (stock !== undefined && (isNaN(stock) || stock < 0)) {
+            console.log('❌ Error de validación: stock inválido', { stock, isNaN: isNaN(stock), lessThanZero: stock < 0 });
             return res.status(400).json({ error: 'El stock debe ser un número válido mayor o igual a 0' });
         }
 
+        console.log('✅ Validaciones básicas pasadas');
+
         // Verificar que el producto existe
+        console.log('🔍 Verificando si el producto existe...');
         const [existingProduct] = await db.execute(
             'SELECT * FROM productos WHERE id = ? AND activo = true',
             [productoId]
         );
 
         if (existingProduct.length === 0) {
+            console.log('❌ Producto no encontrado con ID:', productoId);
             return res.status(404).json({ error: 'Producto no encontrado' });
         }
 
-        console.log('🔍 Producto existente encontrado:', existingProduct[0]);
+        console.log('✅ Producto existente encontrado:', {
+            id: existingProduct[0].id,
+            nombre: existingProduct[0].nombre,
+            precio: existingProduct[0].precio
+        });
+
+        // Preparar valores para la actualización
+        const nombreLimpio = nombre.trim();
+        const descripcionFinal = descripcion || null;
+        const precioFinal = parseFloat(precio);
+        const stockFinal = parseInt(stock) || 0;
+
+        console.log('🔍 Valores finales para actualización:', {
+            nombreLimpio,
+            descripcionFinal,
+            precioFinal,
+            stockFinal
+        });
 
         // Actualizar el producto
+        console.log('🔍 Ejecutando consulta UPDATE...');
         const updateResult = await db.execute(
             'UPDATE productos SET nombre = ?, descripcion = ?, precio = ?, stock = ? WHERE id = ?',
-            [nombre.trim(), descripcion || null, parseFloat(precio), parseInt(stock) || 0, productoId]
+            [nombreLimpio, descripcionFinal, precioFinal, stockFinal, productoId]
         );
 
-        console.log('🔍 Resultado de actualización:', updateResult);
+        console.log('✅ Resultado de actualización:', {
+            affectedRows: updateResult[0].affectedRows,
+            changedRows: updateResult[0].changedRows,
+            info: updateResult[0].info
+        });
 
+        console.log('🔍 === FIN ACTUALIZACIÓN PRODUCTO ===');
         res.json({ message: 'Producto actualizado exitosamente' });
     } catch (error) {
+        console.log('🚨 === ERROR EN ACTUALIZACIÓN PRODUCTO ===');
         console.error('❌ Error actualizando producto:', error);
+        console.error('❌ Error name:', error.name);
+        console.error('❌ Error message:', error.message);
+        console.error('❌ Error code:', error.code);
+        console.error('❌ Error errno:', error.errno);
+        console.error('❌ Error sqlState:', error.sqlState);
+        console.error('❌ Error sqlMessage:', error.sqlMessage);
         console.error('❌ Stack trace:', error.stack);
-        res.status(500).json({ error: 'Error interno del servidor', details: error.message });
+        console.log('🚨 === FIN ERROR ===');
+        
+        res.status(500).json({ 
+            error: 'Error interno del servidor', 
+            details: error.message,
+            code: error.code,
+            errno: error.errno
+        });
     }
 });
 
@@ -1271,7 +1319,7 @@ app.put('/api/usuarios/:id', authenticateToken, async (req, res) => {
             updateValues.push(hashedPassword);
         }
         if (activo !== undefined) {
-            updateFields.push('activo = ?');
+            updateFields.push('acto = ?');
             updateValues.push(activo);
         }
 
