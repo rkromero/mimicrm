@@ -2451,29 +2451,6 @@ function editProduct(productId) {
         try {
             const token = localStorage.getItem('authToken');
             
-            // PRIMER PASO: Enviar al endpoint de debug
-            console.log('🔍 FRONTEND - Enviando a endpoint de debug...');
-            const debugResponse = await fetch(`/api/productos/${product.id}/debug`, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(productData)
-            });
-            
-            if (debugResponse.ok) {
-                const debugData = await debugResponse.json();
-                console.log('🔍 FRONTEND - Respuesta del debug:', debugData);
-                
-                // Mostrar información de debug al usuario
-                alert(`DEBUG INFO:\n\nDatos recibidos:\n${JSON.stringify(debugData.data.body, null, 2)}\n\nValidaciones:\n${JSON.stringify(debugData.validations, null, 2)}`);
-            } else {
-                console.error('❌ FRONTEND - Error en debug endpoint:', debugResponse.status);
-            }
-            
-            // SEGUNDO PASO: Enviar al endpoint real
-            console.log('🔍 FRONTEND - Enviando a endpoint real...');
             const response = await fetch(`/api/productos/${product.id}`, {
                 method: 'PUT',
                 headers: {
