@@ -609,11 +609,79 @@ app.post('/api/productos', authenticateToken, async (req, res) => {
     }
 });
 
+// ENDPOINT TEMPORAL DE DEBUG para productos
+app.put('/api/productos/:id/debug', authenticateToken, async (req, res) => {
+    try {
+        const productoId = req.params.id;
+        const requestData = {
+            productoId,
+            headers: req.headers,
+            body: req.body,
+            rawBody: JSON.stringify(req.body),
+            bodyKeys: Object.keys(req.body),
+            bodyTypes: {}
+        };
+
+        // Analizar tipos de datos
+        Object.keys(req.body).forEach(key => {
+            const value = req.body[key];
+            requestData.bodyTypes[key] = {
+                value: value,
+                type: typeof value,
+                isNull: value === null,
+                isUndefined: value === undefined,
+                isEmpty: value === '',
+                length: typeof value === 'string' ? value.length : null
+            };
+        });
+
+        // Simular las validaciones que usa el endpoint real
+        const validations = {
+            nombreValid: req.body.nombre && req.body.nombre.trim() !== '',
+            precioValid: req.body.precio && !isNaN(req.body.precio) && req.body.precio > 0,
+            stockValid: req.body.stock === undefined || (!isNaN(req.body.stock) && req.body.stock >= 0)
+        };
+
+        res.json({
+            message: 'Debug de datos recibidos para actualizar producto',
+            data: requestData,
+            validations: validations,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('❌ Error en debug endpoint:', error);
+        res.status(500).json({ error: 'Error en debug endpoint', details: error.message });
+    }
+});
+
 // Actualizar producto
 app.put('/api/productos/:id', authenticateToken, async (req, res) => {
     try {
         const productoId = req.params.id;
         const { nombre, descripcion, precio, stock } = req.body;
+
+        // Log para debugging
+        console.log('🔍 Datos recibidos para actualizar producto:', {
+            productoId,
+            nombre,
+            descripcion,
+            precio,
+            stock,
+            body: req.body
+        });
+
+        // Validaciones básicas
+        if (!nombre || nombre.trim() === '') {
+            return res.status(400).json({ error: 'El nombre del producto es requerido' });
+        }
+
+        if (!precio || isNaN(precio) || precio <= 0) {
+            return res.status(400).json({ error: 'El precio debe ser un número válido mayor a 0' });
+        }
+
+        if (stock !== undefined && (isNaN(stock) || stock < 0)) {
+            return res.status(400).json({ error: 'El stock debe ser un número válido mayor o igual a 0' });
+        }
 
         // Verificar que el producto existe
         const [existingProduct] = await db.execute(
@@ -625,15 +693,55 @@ app.put('/api/productos/:id', authenticateToken, async (req, res) => {
             return res.status(404).json({ error: 'Producto no encontrado' });
         }
 
+        console.log('🔍 Producto existente encontrado:', existingProduct[0]);
+
         // Actualizar el producto
-        await db.execute(
+        const updateResult = await db.execute(
             'UPDATE productos SET nombre = ?, descripcion = ?, precio = ?, stock = ? WHERE id = ?',
-            [nombre, descripcion, precio, stock || 0, productoId]
+            [nombre.trim(), descripcion || null, parseFloat(precio), parseInt(stock) || 0, productoId]
         );
+
+        console.log('🔍 Resultado de actualización:', updateResult);
 
         res.json({ message: 'Producto actualizado exitosamente' });
     } catch (error) {
-        console.error('Error actualizando producto:', error);
+        console.error('❌ Error actualizando producto:', error);
+        console.error('❌ Stack trace:', error.stack);
+        res.status(500).json({ error: 'Error interno del servidor', details: error.message });
+    }
+});
+
+// Eliminar producto
+app.delete('/api/productos/:id', authenticateToken, async (req, res) => {
+    try {
+        const productoId = req.params.id;
+
+        // Verificar que el producto existe
+        const [existingProducto] = await db.execute(
+            'SELECT * FROM productos WHERE id = ?',
+            [productoId]
+        );
+
+        if (existingProducto.length === 0) {
+            return res.status(404).json({ error: 'Producto no encontrado' });
+        }
+
+        // Verificar que no esté siendo usado en pedidos
+        const [pedidosConProducto] = await db.execute(
+            'SELECT COUNT(*) as count FROM pedido_items WHERE producto_id = ?',
+            [productoId]
+        );
+
+        if (pedidosConProducto[0].count > 0) {
+            return res.status(400).json({ error: 'No se puede eliminar el producto porque está siendo usado en pedidos' });
+        }
+
+        // Eliminar el producto
+        await db.execute('DELETE FROM productos WHERE id = ?', [productoId]);
+
+        res.json({ message: 'Producto eliminado exitosamente' });
+    } catch (error) {
+        console.error('Error eliminando producto:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
@@ -1500,41 +1608,6 @@ app.get('/api/cobros/pendientes/detalle', authenticateToken, async (req, res) =>
         
     } catch (error) {
         console.error('❌ Error obteniendo detalles de cobros pendientes:', error);
-        res.status(500).json({ error: 'Error interno del servidor' });
-    }
-});
-
-// Eliminar producto
-app.delete('/api/productos/:id', authenticateToken, async (req, res) => {
-    try {
-        const productoId = req.params.id;
-
-        // Verificar que el producto existe
-        const [existingProducto] = await db.execute(
-            'SELECT * FROM productos WHERE id = ?',
-            [productoId]
-        );
-
-        if (existingProducto.length === 0) {
-            return res.status(404).json({ error: 'Producto no encontrado' });
-        }
-
-        // Verificar que no esté siendo usado en pedidos
-        const [pedidosConProducto] = await db.execute(
-            'SELECT COUNT(*) as count FROM pedido_items WHERE producto_id = ?',
-            [productoId]
-        );
-
-        if (pedidosConProducto[0].count > 0) {
-            return res.status(400).json({ error: 'No se puede eliminar el producto porque está siendo usado en pedidos' });
-        }
-
-        // Eliminar el producto
-        await db.execute('DELETE FROM productos WHERE id = ?', [productoId]);
-
-        res.json({ message: 'Producto eliminado exitosamente' });
-    } catch (error) {
-        console.error('Error eliminando producto:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
