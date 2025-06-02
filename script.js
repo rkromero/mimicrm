@@ -1330,41 +1330,57 @@ function setupForms() {
 // Funciones para manejar productos en pedidos
 function setupOrderProductHandlers() {
     const addProductBtn = document.getElementById('add-product-btn');
+    const clearProductsBtn = document.getElementById('clear-products-btn');
     const productSelector = document.getElementById('product-selector');
     const confirmAddBtn = document.getElementById('confirm-add-product');
     const cancelAddBtn = document.getElementById('cancel-add-product');
     const productSelect = document.getElementById('product-select');
-    const productPrice = document.getElementById('product-price');
 
-    if (addProductBtn) {
-        addProductBtn.onclick = function() {
+    if (addProductBtn && productSelector && confirmAddBtn && cancelAddBtn && productSelect) {
+        // Botón agregar producto
+        addProductBtn.addEventListener('click', () => {
+            console.log('🔍 Clic en Agregar Producto');
             productSelector.style.display = 'block';
             populateProductSelect();
-            this.style.display = 'none';
-        };
-    }
+        });
 
-    if (confirmAddBtn) {
-        confirmAddBtn.onclick = function() {
-            addProductToOrder();
-        };
-    }
+        // Botón limpiar productos
+        if (clearProductsBtn) {
+            clearProductsBtn.addEventListener('click', () => {
+                if (orderItems.length === 0) {
+                    showNotification('No hay productos para limpiar', 'info');
+                    return;
+                }
+                
+                if (confirm('¿Está seguro de que desea limpiar todos los productos del pedido?')) {
+                    clearOrderItems();
+                    showNotification('Productos limpiados correctamente', 'success');
+                }
+            });
+        }
 
-    if (cancelAddBtn) {
-        cancelAddBtn.onclick = function() {
-            cancelAddProduct();
-        };
-    }
+        // Botón confirmar agregar
+        confirmAddBtn.addEventListener('click', addProductToOrder);
 
-    if (productSelect) {
-        productSelect.onchange = function() {
-            const selectedProduct = products.find(p => p.id == this.value);
-            if (selectedProduct) {
-                productPrice.value = selectedProduct.precio;
+        // Botón cancelar agregar
+        cancelAddBtn.addEventListener('click', cancelAddProduct);
+
+        // Cambio en select de producto para actualizar precio
+        productSelect.addEventListener('change', function() {
+            const selectedProductId = this.value;
+            if (selectedProductId) {
+                const product = products.find(p => p.id == selectedProductId);
+                if (product) {
+                    document.getElementById('product-price').value = product.precio;
+                }
             } else {
-                productPrice.value = '';
+                document.getElementById('product-price').value = '';
             }
-        };
+        });
+
+        console.log('✅ Event listeners de productos configurados correctamente');
+    } else {
+        console.error('❌ Error: No se pudieron encontrar todos los elementos necesarios para configurar los manejadores de productos');
     }
 }
 
@@ -1567,9 +1583,17 @@ function showModal(modalId) {
                 
                 // Configuración específica para el modal de nuevo pedido
                 if (modalId === 'new-order-modal') {
-                    clearOrderItems(); // Limpiar productos del pedido anterior
+                    // NO limpiar productos automáticamente aquí - solo configurar handlers
                     setupOrderProductHandlers(); // Configurar manejadores de productos
                     
+                    // Solo limpiar si no hay productos o si es un nuevo pedido
+                    if (orderItems.length === 0) {
+                        console.log('🔍 Modal nuevo pedido - no hay productos, inicializando lista vacía');
+                    } else {
+                        console.log('🔍 Modal nuevo pedido - manteniendo productos existentes:', orderItems.length);
+                        renderOrderProducts(); // Re-renderizar los productos existentes
+                        updateOrderTotal(); // Actualizar el total
+                    }
                 }
             } catch (error) {
                 console.error('❌ Error al cargar lista de clientes:', error);
@@ -4317,6 +4341,7 @@ async function updatePedidosTableStructure() {
 
 function setupEditOrderProductHandlers() {
     const addProductBtn = document.getElementById('edit-add-product-btn');
+    const clearProductsBtn = document.getElementById('edit-clear-products-btn');
     const confirmAddBtn = document.getElementById('edit-confirm-add-product');
     const cancelAddBtn = document.getElementById('edit-cancel-add-product');
     const productSelect = document.getElementById('edit-product-select');
@@ -4326,6 +4351,21 @@ function setupEditOrderProductHandlers() {
             document.getElementById('edit-product-selector').style.display = 'block';
             populateEditProductSelect();
         };
+    }
+
+    // Botón limpiar productos
+    if (clearProductsBtn) {
+        clearProductsBtn.addEventListener('click', () => {
+            if (editOrderItems.length === 0) {
+                showNotification('No hay productos para limpiar', 'info');
+                return;
+            }
+            
+            if (confirm('¿Está seguro de que desea limpiar todos los productos del pedido?')) {
+                clearEditOrderItems();
+                showNotification('Productos limpiados correctamente', 'success');
+            }
+        });
     }
 
     if (confirmAddBtn) {
