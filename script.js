@@ -1010,45 +1010,33 @@ function showSection(section) {
                 // Fallback a la sección general
                 document.querySelector('.page-content').style.display = 'block';
             }
-            // Solo renderizar si ya tenemos datos
-            if (clients.length > 0) {
-                renderClientsTable();
-            }
+            // Cargar datos frescos del servidor
+            loadClients();
             break;
         case 'pedidos':
             document.getElementById('pedidos-section').style.display = 'block';
-            // Solo renderizar si ya tenemos datos
-            if (orders.length > 0) {
-                renderOrdersTable();
-            }
+            // Cargar datos frescos del servidor
+            loadOrders();
             break;
         case 'pagos':
             document.getElementById('pagos-section').style.display = 'block';
-            // Solo renderizar si ya tenemos datos
-            if (payments.length > 0) {
-                renderPaymentsTable();
-            }
+            // Cargar datos frescos del servidor
+            loadPayments();
             break;
         case 'productos':
             document.getElementById('productos-section').style.display = 'block';
-            // Solo renderizar si ya tenemos datos
-            if (products.length > 0) {
-                renderProductsTable();
-            }
+            // Cargar datos frescos del servidor
+            loadProducts();
             break;
         case 'contactos':
             document.getElementById('contactos-section').style.display = 'block';
-            // Solo renderizar si ya tenemos datos
-            if (contacts.length > 0) {
-                renderContactsTable();
-            }
+            // Cargar datos frescos del servidor
+            loadContacts();
             break;
         case 'fábrica':
             document.getElementById('fabrica-section').style.display = 'block';
-            // Solo renderizar si ya tenemos datos
-            if (orders.length > 0) {
-                renderFabricaTable();
-            }
+            // Cargar datos frescos del servidor
+            loadOrders();
             break;
         case 'administrar perfiles':
         case 'admin':
