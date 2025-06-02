@@ -1800,9 +1800,7 @@ async function handleNewOrderSubmit(e) {
         
         if (response.ok) {
             showNotification('Pedido creado exitosamente', 'success');
-            clearOrderItems(); // Limpiar productos antes de cerrar el modal
-            document.getElementById('new-order-modal').classList.remove('active');
-            e.target.reset();
+            closeModal('new-order-modal'); // Usar la función closeModal en lugar del método manual
             await loadOrders();
         } else {
             const error = await response.json();
