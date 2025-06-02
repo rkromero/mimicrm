@@ -1403,6 +1403,14 @@ function addProductToOrder() {
     const quantity = parseInt(document.getElementById('product-quantity').value);
     const price = parseFloat(document.getElementById('product-price').value);
 
+    console.log('🔍 AGREGAR PRODUCTO - Intentando agregar:', {
+        productId,
+        quantity,
+        price,
+        orderItemsActuales: orderItems.length,
+        orderItemsContenido: orderItems
+    });
+
     if (!productId || !quantity || !price || quantity <= 0 || price <= 0) {
         showNotification('Por favor complete todos los campos correctamente', 'error');
         return;
@@ -1410,8 +1418,15 @@ function addProductToOrder() {
 
     // Verificar si el producto ya está en el pedido
     const existingItemIndex = orderItems.findIndex(item => item.producto_id == productId);
+    console.log('🔍 VERIFICANDO DUPLICADO:', {
+        productId,
+        existingItemIndex,
+        existeProducto: existingItemIndex !== -1
+    });
+    
     if (existingItemIndex !== -1) {
         showNotification('Este producto ya está agregado al pedido', 'error');
+        console.log('❌ PRODUCTO DUPLICADO - no se agregará');
         return;
     }
 
@@ -1426,7 +1441,10 @@ function addProductToOrder() {
         subtotal: subtotal
     };
 
+    console.log('✅ AGREGANDO PRODUCTO:', orderItem);
     orderItems.push(orderItem);
+    console.log('🔍 ORDERITEMS DESPUÉS:', orderItems);
+    
     renderOrderProducts();
     updateOrderTotal();
     cancelAddProduct();
@@ -1452,15 +1470,24 @@ function renderOrderProducts() {
     const noProductsMessage = document.getElementById('no-products-message');
     const submitBtn = document.getElementById('submit-order-btn');
 
+    console.log('🔍 RENDER PRODUCTOS - Iniciando render:', {
+        productsList: !!productsList,
+        noProductsMessage: !!noProductsMessage,
+        submitBtn: !!submitBtn,
+        orderItemsLength: orderItems.length,
+        orderItems: orderItems
+    });
+
     // Validar que los elementos existan (el modal podría estar cerrado)
     if (!productsList || !noProductsMessage || !submitBtn) {
-        
+        console.log('❌ RENDER - Elementos del modal no encontrados');
         return;
     }
 
     if (orderItems.length === 0) {
         noProductsMessage.style.display = 'block';
         submitBtn.disabled = true;
+        console.log('📝 RENDER - Mostrando mensaje de no productos');
         return;
     }
 
@@ -1498,7 +1525,9 @@ function renderOrderProducts() {
         </div>
     `;
 
+    console.log('✅ RENDER - Generando tabla con', orderItems.length, 'productos');
     productsList.innerHTML = productsTable;
+    console.log('✅ RENDER - Tabla insertada en DOM');
 }
 
 function removeProductFromOrder(index) {
