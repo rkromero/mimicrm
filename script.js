@@ -1769,7 +1769,7 @@ async function handleNewClientSubmit(e) {
         
         if (response.ok) {
             showNotification('Cliente creado exitosamente', 'success');
-            document.getElementById('new-client-modal').classList.remove('active');
+            closeModal('new-client-modal');
             e.target.reset();
             await loadClients(); // Recargar la lista
         } else {
@@ -1870,7 +1870,7 @@ async function handleNewPaymentSubmit(e) {
         
         if (response.ok) {
             showNotification('Pago registrado exitosamente', 'success');
-            document.getElementById('new-payment-modal').classList.remove('active');
+            closeModal('new-payment-modal');
             e.target.reset();
             await loadPayments();
         } else {
@@ -1909,7 +1909,7 @@ async function handleNewContactSubmit(e) {
         
         if (response.ok) {
             showNotification('Contacto creado exitosamente', 'success');
-            document.getElementById('new-contact-modal').classList.remove('active');
+            closeModal('new-contact-modal');
             e.target.reset();
             await loadContacts();
         } else {
@@ -1954,7 +1954,7 @@ async function handleNewProductSubmit(e) {
         
         if (response.ok) {
             showNotification('Producto creado exitosamente', 'success');
-            document.getElementById('new-product-modal').classList.remove('active');
+            closeModal('new-product-modal');
             document.getElementById('new-product-form').reset();
             await loadProducts();
         } else {
@@ -2006,7 +2006,7 @@ async function handleNewUserSubmit(e) {
         if (response.ok) {
             const result = await response.json();
             showNotification('Usuario creado exitosamente', 'success');
-            document.getElementById('new-user-modal').classList.remove('active');
+            closeModal('new-user-modal');
             e.target.reset();
             await loadUsersForAdmin(); // Recargar la lista de usuarios
         } else {
@@ -2867,7 +2867,7 @@ async function handleEditClientSubmit(e) {
         
         if (response.ok) {
             showNotification('Cliente actualizado exitosamente', 'success');
-            document.getElementById('edit-client-modal').classList.remove('active');
+            closeModal('edit-client-modal');
             await loadClients(); // Recargar la lista
         } else {
             const errorData = await response.json();
