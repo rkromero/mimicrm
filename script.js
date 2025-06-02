@@ -1336,6 +1336,15 @@ function setupOrderProductHandlers() {
     const cancelAddBtn = document.getElementById('cancel-add-product');
     const productSelect = document.getElementById('product-select');
 
+    console.log('🔍 SETUP HANDLERS - Elementos encontrados:', {
+        addProductBtn: !!addProductBtn,
+        clearProductsBtn: !!clearProductsBtn,
+        productSelector: !!productSelector,
+        confirmAddBtn: !!confirmAddBtn,
+        cancelAddBtn: !!cancelAddBtn,
+        productSelect: !!productSelect
+    });
+
     if (addProductBtn && productSelector && confirmAddBtn && cancelAddBtn && productSelect) {
         // Botón agregar producto
         addProductBtn.addEventListener('click', () => {
@@ -1360,7 +1369,10 @@ function setupOrderProductHandlers() {
         }
 
         // Botón confirmar agregar
-        confirmAddBtn.addEventListener('click', addProductToOrder);
+        confirmAddBtn.addEventListener('click', () => {
+            console.log('🔍 CLIC EN CONFIRMAR AGREGAR PRODUCTO');
+            addProductToOrder();
+        });
 
         // Botón cancelar agregar
         cancelAddBtn.addEventListener('click', cancelAddProduct);
