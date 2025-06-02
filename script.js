@@ -2886,8 +2886,8 @@ async function handleEditOrderSubmit(e) {
     
     
     // Validar que los campos requeridos no estén vacíos
-    if (!orderData.cliente_id || !orderData.descripcion || !orderData.estado) {
-        showNotification('Todos los campos son requeridos', 'error');
+    if (!orderData.cliente_id || !orderData.estado) {
+        showNotification('Cliente y estado son requeridos', 'error');
         // Volver a deshabilitar el campo cliente
         clientSelect.disabled = true;
         return;
@@ -2909,8 +2909,7 @@ async function handleEditOrderSubmit(e) {
         
         if (response.ok) {
             showNotification('Pedido actualizado exitosamente', 'success');
-            clearEditOrderItems(); // Limpiar productos antes de cerrar el modal
-            document.getElementById('edit-order-modal').classList.remove('active');
+            closeModal('edit-order-modal'); // Usar la función closeModal en lugar del método manual
             await loadOrders(); // Recargar la lista
         } else {
             const errorData = await response.json();
