@@ -594,19 +594,25 @@ function renderPaymentsTable() {
 // Función para renderizar la tabla de productos
 function renderProductsTable() {
     const tbody = document.getElementById('products-table-body');
-    if (!tbody) return;
     
     if (products.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center">No hay productos registrados</td></tr>';
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="4" class="text-center" style="padding: 2rem; color: #6b7280;">
+                    <i class="fas fa-box" style="font-size: 2rem; margin-bottom: 0.5rem; display: block; color: #d1d5db;"></i>
+                    <p style="margin: 0;">No hay productos registrados</p>
+                    <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem;">Usa el botón "Nuevo Producto" para crear el primer producto.</p>
+                </td>
+            </tr>
+        `;
         return;
     }
     
     tbody.innerHTML = products.map(product => `
         <tr>
             <td>${product.nombre}</td>
-            <td>${product.descripcion || ''}</td>
+            <td>${product.descripcion || '-'}</td>
             <td>${formatCurrency(product.precio)}</td>
-            <td>${product.stock || 0}</td>
             <td>
                 <button onclick="viewProductDetails(${product.id})" class="btn-icon" title="Ver detalles">
                     <i class="fas fa-eye"></i>
@@ -614,7 +620,7 @@ function renderProductsTable() {
                 <button onclick="editProduct(${product.id})" class="btn-icon" title="Editar">
                     <i class="fas fa-edit"></i>
                 </button>
-                <button onclick="deleteProduct(${product.id})" class="btn-icon" title="Eliminar" style="color: #dc2626;">
+                <button onclick="deleteProduct(${product.id})" class="btn-icon" title="Eliminar">
                     <i class="fas fa-trash"></i>
                 </button>
             </td>
@@ -1867,12 +1873,20 @@ async function handleNewProductSubmit(e) {
     const productData = {
         nombre: document.getElementById('product-name-input').value,
         descripcion: document.getElementById('product-description-input').value,
-        precio: parseFloat(document.getElementById('product-price-input').value),
-        stock: parseInt(document.getElementById('product-stock-input').value)
+        precio: parseFloat(document.getElementById('product-price-input').value)
     };
+    
+    console.log('🔍 Creando producto:', productData);
+    
+    // Validar que los campos requeridos no estén vacíos
+    if (!productData.nombre || !productData.precio) {
+        showNotification('Por favor completa todos los campos requeridos', 'error');
+        return;
+    }
     
     try {
         const token = localStorage.getItem('authToken');
+        
         const response = await fetch('/api/productos', {
             method: 'POST',
             headers: {
@@ -1885,15 +1899,14 @@ async function handleNewProductSubmit(e) {
         if (response.ok) {
             showNotification('Producto creado exitosamente', 'success');
             document.getElementById('new-product-modal').classList.remove('active');
-            e.target.reset();
+            document.getElementById('new-product-form').reset();
             await loadProducts();
         } else {
             const error = await response.json();
             showNotification(error.message || 'Error al crear producto', 'error');
         }
     } catch (error) {
-        console.error('Error:', error);
-        showNotification('Error al crear producto', 'error');
+        showNotification(`Error de conexión: ${error.message}`, 'error');
     }
 }
 
@@ -2406,11 +2419,7 @@ function editProduct(productId) {
                 </div>
                 <div class="mb-4">
                     <label for="edit-product-price-${product.id}">Precio</label>
-                    <input type="number" id="edit-product-price-${product.id}" class="input" step="0.01" value="${product.precio}" required>
-                </div>
-                <div class="mb-4">
-                    <label for="edit-product-stock-${product.id}">Stock</label>
-                    <input type="number" id="edit-product-stock-${product.id}" class="input" min="0" value="${product.stock || 0}" required>
+                    <input type="number" id="edit-product-price-${product.id}" class="input" step="0.01" min="0.01" value="${product.precio}" required>
                 </div>
                 <div class="flex justify-between">
                     <button type="button" class="btn btn-secondary" onclick="this.closest('.modal').remove()">Cancelar</button>
@@ -2429,16 +2438,14 @@ function editProduct(productId) {
         const productData = {
             nombre: document.getElementById(`edit-product-name-${product.id}`).value,
             descripcion: document.getElementById(`edit-product-description-${product.id}`).value,
-            precio: parseFloat(document.getElementById(`edit-product-price-${product.id}`).value),
-            stock: parseInt(document.getElementById(`edit-product-stock-${product.id}`).value)
+            precio: parseFloat(document.getElementById(`edit-product-price-${product.id}`).value)
         };
         
         console.log('🔍 FRONTEND - Datos a enviar:', productData);
         console.log('🔍 FRONTEND - Tipos de datos:', {
             nombre: typeof productData.nombre,
             descripcion: typeof productData.descripcion,
-            precio: typeof productData.precio,
-            stock: typeof productData.stock
+            precio: typeof productData.precio
         });
         
         try {

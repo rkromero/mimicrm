@@ -595,17 +595,29 @@ app.get('/api/productos', authenticateToken, async (req, res) => {
 // Crear producto
 app.post('/api/productos', authenticateToken, async (req, res) => {
     try {
-        const { nombre, descripcion, precio, stock } = req.body;
+        const { nombre, descripcion, precio } = req.body;
+
+        console.log('🔍 Creando nuevo producto:', { nombre, descripcion, precio });
+
+        // Validaciones básicas
+        if (!nombre || nombre.trim() === '') {
+            return res.status(400).json({ error: 'El nombre del producto es requerido' });
+        }
+
+        if (!precio || isNaN(precio) || precio <= 0) {
+            return res.status(400).json({ error: 'El precio debe ser un número válido mayor a 0' });
+        }
 
         const [result] = await db.execute(
-            'INSERT INTO productos (nombre, descripcion, precio, stock) VALUES (?, ?, ?, ?)',
-            [nombre, descripcion, precio, stock || 0]
+            'INSERT INTO productos (nombre, descripcion, precio) VALUES (?, ?, ?)',
+            [nombre.trim(), descripcion || null, parseFloat(precio)]
         );
 
+        console.log('✅ Producto creado con ID:', result.insertId);
         res.status(201).json({ id: result.insertId, message: 'Producto creado exitosamente' });
     } catch (error) {
-        console.error('Error creando producto:', error);
-        res.status(500).json({ error: 'Error interno del servidor' });
+        console.error('❌ Error creando producto:', error);
+        res.status(500).json({ error: 'Error interno del servidor', details: error.message });
     }
 });
 
@@ -635,11 +647,10 @@ app.put('/api/productos/:id/debug', authenticateToken, async (req, res) => {
             };
         });
 
-        // Simular las validaciones que usa el endpoint real
+        // Simular las validaciones que usa el endpoint real (SIN stock)
         const validations = {
             nombreValid: req.body.nombre && req.body.nombre.trim() !== '',
-            precioValid: req.body.precio && !isNaN(req.body.precio) && req.body.precio > 0,
-            stockValid: req.body.stock === undefined || (!isNaN(req.body.stock) && req.body.stock >= 0)
+            precioValid: req.body.precio && !isNaN(req.body.precio) && req.body.precio > 0
         };
 
         res.json({
@@ -658,7 +669,7 @@ app.put('/api/productos/:id/debug', authenticateToken, async (req, res) => {
 app.put('/api/productos/:id', authenticateToken, async (req, res) => {
     try {
         const productoId = req.params.id;
-        const { nombre, descripcion, precio, stock } = req.body;
+        const { nombre, descripcion, precio } = req.body;
 
         // Log para debugging con más detalles
         console.log('🔍 === INICIO ACTUALIZACIÓN PRODUCTO ===');
@@ -667,10 +678,8 @@ app.put('/api/productos/:id', authenticateToken, async (req, res) => {
             nombre: nombre,
             descripcion: descripcion,
             precio: precio,
-            stock: stock,
             nombreType: typeof nombre,
-            precioType: typeof precio,
-            stockType: typeof stock
+            precioType: typeof precio
         });
         console.log('🔍 Body completo:', JSON.stringify(req.body, null, 2));
 
@@ -685,17 +694,12 @@ app.put('/api/productos/:id', authenticateToken, async (req, res) => {
             return res.status(400).json({ error: 'El precio debe ser un número válido mayor a 0' });
         }
 
-        if (stock !== undefined && (isNaN(stock) || stock < 0)) {
-            console.log('❌ Error de validación: stock inválido', { stock, isNaN: isNaN(stock), lessThanZero: stock < 0 });
-            return res.status(400).json({ error: 'El stock debe ser un número válido mayor o igual a 0' });
-        }
-
         console.log('✅ Validaciones básicas pasadas');
 
         // Verificar que el producto existe
         console.log('🔍 Verificando si el producto existe...');
         const [existingProduct] = await db.execute(
-            'SELECT * FROM productos WHERE id = ? AND activo = true',
+            'SELECT * FROM productos WHERE id = ?',
             [productoId]
         );
 
@@ -714,20 +718,18 @@ app.put('/api/productos/:id', authenticateToken, async (req, res) => {
         const nombreLimpio = nombre.trim();
         const descripcionFinal = descripcion || null;
         const precioFinal = parseFloat(precio);
-        const stockFinal = parseInt(stock) || 0;
 
         console.log('🔍 Valores finales para actualización:', {
             nombreLimpio,
             descripcionFinal,
-            precioFinal,
-            stockFinal
+            precioFinal
         });
 
-        // Actualizar el producto
+        // Actualizar el producto (SIN stock)
         console.log('🔍 Ejecutando consulta UPDATE...');
         const updateResult = await db.execute(
-            'UPDATE productos SET nombre = ?, descripcion = ?, precio = ?, stock = ? WHERE id = ?',
-            [nombreLimpio, descripcionFinal, precioFinal, stockFinal, productoId]
+            'UPDATE productos SET nombre = ?, descripcion = ?, precio = ? WHERE id = ?',
+            [nombreLimpio, descripcionFinal, precioFinal, productoId]
         );
 
         console.log('✅ Resultado de actualización:', {
@@ -1657,6 +1659,125 @@ app.get('/api/cobros/pendientes/detalle', authenticateToken, async (req, res) =>
     } catch (error) {
         console.error('❌ Error obteniendo detalles de cobros pendientes:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Función temporal para actualizar estructura de tabla pedidos
+async function updatePedidosTableStructure() {
+    try {
+        console.log('🔄 Iniciando actualización de estructura de tabla pedidos...');
+        
+        // Agregar columna numero_pedido si no existe
+        try {
+            await db.execute('ALTER TABLE pedidos ADD COLUMN numero_pedido VARCHAR(255) UNIQUE AFTER id');
+            console.log('✅ Columna numero_pedido agregada');
+        } catch (error) {
+            if (error.code === 'ER_DUP_FIELDNAME') {
+                console.log('✅ Columna numero_pedido ya existe');
+            } else {
+                throw error;
+            }
+        }
+
+        console.log('✅ Estructura de tabla pedidos actualizada');
+        return { success: true };
+    } catch (error) {
+        console.error('❌ Error actualizando estructura de pedidos:', error);
+        throw error;
+    }
+}
+
+// Función para actualizar estructura de tabla productos
+async function updateProductosTableStructure() {
+    try {
+        console.log('🔄 Iniciando actualización de estructura de tabla productos...');
+        
+        // Verificar columnas existentes
+        const [columns] = await db.execute(`
+            SELECT COLUMN_NAME 
+            FROM INFORMATION_SCHEMA.COLUMNS 
+            WHERE TABLE_SCHEMA = DATABASE() 
+            AND TABLE_NAME = 'productos'
+        `);
+        
+        const existingColumns = columns.map(col => col.COLUMN_NAME.toLowerCase());
+        console.log('🔍 Columnas existentes en productos:', existingColumns);
+        
+        // Agregar columna stock si no existe
+        if (!existingColumns.includes('stock')) {
+            await db.execute('ALTER TABLE productos ADD COLUMN stock INT DEFAULT 0 AFTER precio');
+            console.log('✅ Columna stock agregada');
+        } else {
+            console.log('✅ Columna stock ya existe');
+        }
+        
+        // Agregar columna activo si no existe
+        if (!existingColumns.includes('activo')) {
+            await db.execute('ALTER TABLE productos ADD COLUMN activo BOOLEAN DEFAULT TRUE');
+            console.log('✅ Columna activo agregada');
+        } else {
+            console.log('✅ Columna activo ya existe');
+        }
+        
+        // Agregar columna created_at si no existe
+        if (!existingColumns.includes('created_at')) {
+            await db.execute('ALTER TABLE productos ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
+            console.log('✅ Columna created_at agregada');
+        } else {
+            console.log('✅ Columna created_at ya existe');
+        }
+        
+        // Agregar columna updated_at si no existe
+        if (!existingColumns.includes('updated_at')) {
+            await db.execute('ALTER TABLE productos ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP');
+            console.log('✅ Columna updated_at agregada');
+        } else {
+            console.log('✅ Columna updated_at ya existe');
+        }
+
+        console.log('✅ Estructura de tabla productos actualizada completamente');
+        return { success: true, columns: existingColumns };
+    } catch (error) {
+        console.error('❌ Error actualizando estructura de productos:', error);
+        throw error;
+    }
+}
+
+// Endpoint para actualizar estructura de tabla pedidos
+app.post('/api/admin/update-pedidos-table', authenticateToken, async (req, res) => {
+    try {
+        // Verificar que el usuario sea administrador
+        if (req.user.perfil !== 'Administrador') {
+            return res.status(403).json({ error: 'Solo los administradores pueden actualizar la estructura de tablas' });
+        }
+
+        const result = await updatePedidosTableStructure();
+        res.json({ message: 'Estructura de tabla pedidos actualizada exitosamente', result });
+    } catch (error) {
+        console.error('Error actualizando estructura de pedidos:', error);
+        res.status(500).json({ error: 'Error actualizando estructura de tabla', details: error.message });
+    }
+});
+
+// Endpoint para actualizar estructura de tabla productos
+app.post('/api/admin/update-productos-table', authenticateToken, async (req, res) => {
+    try {
+        console.log('🔍 Usuario solicitando actualización:', req.user);
+        
+        // Verificar que el usuario sea administrador
+        if (req.user.perfil !== 'Administrador') {
+            return res.status(403).json({ error: 'Solo los administradores pueden actualizar la estructura de tablas' });
+        }
+
+        const result = await updateProductosTableStructure();
+        res.json({ 
+            message: 'Estructura de tabla productos actualizada exitosamente', 
+            result,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('❌ Error actualizando estructura de productos:', error);
+        res.status(500).json({ error: 'Error actualizando estructura de tabla', details: error.message });
     }
 });
 
