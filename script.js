@@ -205,6 +205,13 @@ async function checkAuthentication() {
             }, 100);
         }
         
+        // Configurar visibilidad del menú para perfil Gerente de ventas
+        if (user.perfil === 'Gerente de ventas') {
+            setTimeout(() => {
+                configurarMenuGerenteVentas();
+            }, 100);
+        }
+        
         return true;
         
     } catch (error) {
@@ -5572,6 +5579,47 @@ function configurarMenuVendedor() {
         
     } catch (error) {
         console.error('❌ Error configurando menú para vendedor:', error);
+    }
+}
+
+// Función para configurar el menú específicamente para Gerentes de ventas
+function configurarMenuGerenteVentas() {
+    console.log('🔧 Configurando menú para Gerente de ventas...');
+    
+    try {
+        // Array de textos de navegación a ocultar para Gerente de ventas
+        const textosAOcultar = [
+            'Fábrica',
+            'Administrar Perfiles'
+        ];
+        
+        // Obtener todos los elementos de navegación
+        const navItems = document.querySelectorAll('.nav-item');
+        
+        // Ocultar elementos basándose en el texto del span
+        navItems.forEach(navItem => {
+            const span = navItem.querySelector('span');
+            if (span && textosAOcultar.includes(span.textContent.trim())) {
+                navItem.style.display = 'none';
+                console.log(`✅ Ocultado: ${span.textContent.trim()}`);
+            }
+        });
+        
+        // Asegurar que otros elementos importantes estén visibles
+        const elementosVisibles = ['dashboard', 'clientes', 'pedidos', 'pagos', 'productos', 'contactos'];
+        elementosVisibles.forEach(elementId => {
+            const element = document.getElementById(`${elementId}-nav`) || 
+                           document.querySelector(`[href="#${elementId}"]`) ||
+                           document.querySelector(`.nav-item:has(span:contains("${elementId}"))`);
+            if (element) {
+                element.style.display = 'block';
+            }
+        });
+        
+        console.log('✅ Menú configurado para Gerente de ventas');
+        
+    } catch (error) {
+        console.error('❌ Error configurando menú para Gerente de ventas:', error);
     }
 }
 
