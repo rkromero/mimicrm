@@ -1009,6 +1009,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         setupDashboardCards();
         
+        // Configurar menú móvil
+        setupMobileMenu();
+        
         // Inicializar mejoras móviles
         setTimeout(() => {
             initializeMobileEnhancements();
@@ -6106,6 +6109,18 @@ async function showPendingCollectionsModal() {
             return;
         }
         
+        // Limpiar cards móviles anteriores si existen
+        const existingCardsContainer = modal.querySelector('.mobile-cards-container');
+        if (existingCardsContainer) {
+            existingCardsContainer.remove();
+        }
+        
+        // Asegurar que la tabla esté visible
+        const table = modal.querySelector('.table-responsive');
+        if (table) {
+            table.style.display = 'block';
+        }
+        
         // Cargar datos detallados de cobros pendientes
         const token = localStorage.getItem('authToken');
         if (!token) {
@@ -6128,68 +6143,168 @@ async function showPendingCollectionsModal() {
             document.getElementById('summary-total-payments').textContent = formatCurrency(data.summary.totalPayments);
             document.getElementById('summary-pending-amount').textContent = formatCurrency(data.summary.pendingAmount);
             
-            // Limpiar tabla
+            // Limpiar contenido
             tableBody.innerHTML = '';
             
-            // Llenar tabla con datos de clientes
-            data.clients.forEach(client => {
-                const row = document.createElement('tr');
+            // Verificar si estamos en móvil
+            const isMobile = window.innerWidth <= 768;
+            
+            if (isMobile) {
+                // Crear container para las cards
+                const cardsContainer = document.createElement('div');
+                cardsContainer.className = 'mobile-cards-container';
+                cardsContainer.style.cssText = `
+                    display: grid;
+                    gap: 1rem;
+                    padding: 0.5rem;
+                `;
                 
-                const percentagePaid = client.totalOrders > 0 ? 
-                    ((client.totalPayments / client.totalOrders) * 100).toFixed(1) : 
-                    0;
+                // Ocultar tabla y mostrar cards
+                const table = document.querySelector('#pending-collections-modal .table-responsive');
+                table.style.display = 'none';
                 
-                const pendingAmount = client.totalOrders - client.totalPayments;
-                
-                // 🚨 SOLO MOSTRAR CLIENTES CON SALDO PENDIENTE > 0
-                if (pendingAmount > 0) {
-                    const row = document.createElement('tr');
+                // Crear cards para cada cliente
+                data.clients.forEach(client => {
+                    const pendingAmount = client.totalOrders - client.totalPayments;
                     
-                    row.innerHTML = `
-                        <td>${client.nombre}</td>
-                        <td>${formatCurrency(client.totalOrders)}</td>
-                        <td>${formatCurrency(client.totalPayments)}</td>
-                        <td style="color: #dc2626; font-weight: bold;">
-                            ${formatCurrency(pendingAmount)}
-                        </td>
-                        <td>
-                            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                <div style="background: #e5e7eb; border-radius: 10px; height: 8px; flex: 1; overflow: hidden;">
-                                    <div style="background: ${percentagePaid >= 80 ? '#059669' : percentagePaid >= 50 ? '#f59e0b' : '#dc2626'}; height: 100%; width: ${percentagePaid}%; transition: width 0.3s;"></div>
+                    // Solo mostrar clientes con saldo pendiente > 0
+                    if (pendingAmount > 0) {
+                        const card = document.createElement('div');
+                        card.className = 'client-card';
+                        card.style.cssText = `
+                            background: white;
+                            border: 1px solid #e5e7eb;
+                            border-radius: 12px;
+                            padding: 1rem;
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                            cursor: pointer;
+                            transition: all 0.2s ease;
+                            border-left: 4px solid #dc2626;
+                        `;
+                        
+                        card.innerHTML = `
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <h3 style="margin: 0 0 0.5rem 0; font-size: 1.1rem; color: #1f2937;">${client.nombre}</h3>
+                                    <p style="margin: 0; font-size: 1.2rem; font-weight: bold; color: #dc2626;">
+                                        Debe: ${formatCurrency(pendingAmount)}
+                                    </p>
                                 </div>
-                                <span style="font-size: 0.8rem; font-weight: 500;">${percentagePaid}%</span>
+                                <div style="color: #6b7280;">
+                                    <i class="fas fa-chevron-right"></i>
+                                </div>
                             </div>
-                        </td>
-                        <td>
-                            <button class="btn btn-primary" onclick="viewClientDetails(${client.id})" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">
-                                <i class="fas fa-eye"></i> Ver
-                            </button>
-                            <button class="btn btn-success" onclick="showModal('new-payment-modal'); populateClientSelects('new-payment-modal'); document.getElementById('payment-client-select').value = ${client.id};" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-left: 0.25rem;">
-                                <i class="fas fa-money-bill-wave"></i> Pago
-                            </button>
-                        </td>
-                    `;
+                        `;
+                        
+                        // Hacer la card clickeable para abrir ficha del cliente
+                        card.addEventListener('click', () => {
+                            closeModal('pending-collections-modal');
+                            setTimeout(() => {
+                                viewClientDetails(client.id);
+                            }, 100);
+                        });
+                        
+                        // Efectos hover/touch
+                        card.addEventListener('mouseenter', () => {
+                            card.style.transform = 'translateY(-2px)';
+                            card.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+                        });
+                        
+                        card.addEventListener('mouseleave', () => {
+                            card.style.transform = 'translateY(0)';
+                            card.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                        });
+                        
+                        cardsContainer.appendChild(card);
+                    }
+                });
+                
+                // Agregar las cards al modal
+                const modalBody = document.querySelector('#pending-collections-modal .modal-body');
+                modalBody.appendChild(cardsContainer);
+                
+            } else {
+                // Vista de escritorio - tabla normal
+                const table = document.querySelector('#pending-collections-modal .table-responsive');
+                table.style.display = 'block';
+                
+                // Llenar tabla con datos de clientes
+                data.clients.forEach(client => {
+                    const percentagePaid = client.totalOrders > 0 ? 
+                        ((client.totalPayments / client.totalOrders) * 100).toFixed(1) : 
+                        0;
                     
-                    tableBody.appendChild(row);
-                }
-            });
+                    const pendingAmount = client.totalOrders - client.totalPayments;
+                    
+                    // Solo mostrar clientes con saldo pendiente > 0
+                    if (pendingAmount > 0) {
+                        const row = document.createElement('tr');
+                        
+                        row.innerHTML = `
+                            <td>${client.nombre}</td>
+                            <td>${formatCurrency(client.totalOrders)}</td>
+                            <td>${formatCurrency(client.totalPayments)}</td>
+                            <td style="color: #dc2626; font-weight: bold;">
+                                ${formatCurrency(pendingAmount)}
+                            </td>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <div style="background: #e5e7eb; border-radius: 10px; height: 8px; flex: 1; overflow: hidden;">
+                                        <div style="background: ${percentagePaid >= 80 ? '#059669' : percentagePaid >= 50 ? '#f59e0b' : '#dc2626'}; height: 100%; width: ${percentagePaid}%; transition: width 0.3s;"></div>
+                                    </div>
+                                    <span style="font-size: 0.8rem; font-weight: 500;">${percentagePaid}%</span>
+                                </div>
+                            </td>
+                            <td>
+                                <button class="btn btn-primary" onclick="viewClientDetails(${client.id})" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                                    <i class="fas fa-eye"></i> Ver
+                                </button>
+                                <button class="btn btn-success" onclick="showModal('new-payment-modal'); populateClientSelects('new-payment-modal'); document.getElementById('payment-client-select').value = ${client.id};" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-left: 0.25rem;">
+                                    <i class="fas fa-money-bill-wave"></i> Pago
+                                </button>
+                            </td>
+                        `;
+                        
+                        tableBody.appendChild(row);
+                    }
+                });
+            }
             
             // Configurar búsqueda
             const searchInput = document.getElementById('pending-collections-search');
             if (searchInput) {
-                searchInput.addEventListener('input', function() {
+                // Limpiar listeners anteriores
+                const newSearchInput = searchInput.cloneNode(true);
+                searchInput.parentNode.replaceChild(newSearchInput, searchInput);
+                
+                newSearchInput.addEventListener('input', function() {
                     const searchTerm = this.value.toLowerCase();
-                    const rows = tableBody.querySelectorAll('tr');
                     
-                    rows.forEach(row => {
-                        const clientName = row.cells[0].textContent.toLowerCase();
-                        
-                        if (clientName.includes(searchTerm)) {
-                            row.style.display = '';
-                        } else {
-                            row.style.display = 'none';
-                        }
-                    });
+                    if (isMobile) {
+                        // Búsqueda en cards móviles
+                        const cards = document.querySelectorAll('.client-card');
+                        cards.forEach(card => {
+                            const clientName = card.querySelector('h3').textContent.toLowerCase();
+                            
+                            if (clientName.includes(searchTerm)) {
+                                card.style.display = '';
+                            } else {
+                                card.style.display = 'none';
+                            }
+                        });
+                    } else {
+                        // Búsqueda en tabla de escritorio
+                        const rows = tableBody.querySelectorAll('tr');
+                        rows.forEach(row => {
+                            const clientName = row.cells[0].textContent.toLowerCase();
+                            
+                            if (clientName.includes(searchTerm)) {
+                                row.style.display = '';
+                            } else {
+                                row.style.display = 'none';
+                            }
+                        });
+                    }
                 });
             }
             
@@ -6240,6 +6355,17 @@ function closeModal(modalId) {
             clearOrderItems();
         } else if (modal.id === 'edit-order-modal') {
             clearEditOrderItems();
+        } else if (modal.id === 'pending-collections-modal') {
+            // Limpiar cards móviles si existen
+            const cardsContainer = modal.querySelector('.mobile-cards-container');
+            if (cardsContainer) {
+                cardsContainer.remove();
+            }
+            // Restaurar tabla si estaba oculta
+            const table = modal.querySelector('.table-responsive');
+            if (table) {
+                table.style.display = 'block';
+            }
         }
         
         console.log(`✅ Modal ${modal.id} cerrado correctamente`);
@@ -6260,12 +6386,23 @@ function clearOrderItems() {
 
 // Función para configurar el menú móvil
 function setupMobileMenu() {
+    console.log('🔧 Configurando menú móvil...');
+    
     const menuToggle = document.querySelector('.menu-toggle');
     const sidebar = document.querySelector('.sidebar');
     const overlay = document.querySelector('.sidebar-overlay');
     
+    console.log('📱 Elementos encontrados:', {
+        menuToggle: !!menuToggle,
+        sidebar: !!sidebar,
+        overlay: !!overlay
+    });
+    
     if (!menuToggle || !sidebar || !overlay) {
         console.warn('⚠️ Elementos del menú móvil no encontrados');
+        console.log('menuToggle:', menuToggle);
+        console.log('sidebar:', sidebar);
+        console.log('overlay:', overlay);
         return;
     }
     
@@ -6291,12 +6428,15 @@ function setupMobileMenu() {
     
     // Event listener para el botón hamburguesa
     menuToggle.addEventListener('click', function(e) {
+        console.log('🍔 Click en menú hamburguesa');
         e.preventDefault();
         e.stopPropagation();
         
         if (sidebar.classList.contains('active')) {
+            console.log('📱 Cerrando menú móvil');
             closeMobileMenu();
         } else {
+            console.log('📱 Abriendo menú móvil');
             openMobileMenu();
         }
     });
