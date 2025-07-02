@@ -523,27 +523,57 @@ tr:hover {
     }
 }
 
-/* Menú móvil */
+/* Menú móvil corregido */
 .menu-toggle {
     display: none;
     position: fixed;
     top: 1rem;
     left: 1rem;
-    z-index: 60;
+    z-index: 1001;
     background: var(--primary-color);
     color: white;
     border: none;
-    padding: 0.5rem;
-    border-radius: var(--border-radius);
+    padding: 0.75rem;
+    border-radius: 8px;
     cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    width: 48px;
+    height: 48px;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+}
+
+.menu-toggle:hover {
+    background: #4f46e5;
+    transform: scale(1.05);
+}
+
+.menu-toggle i {
+    pointer-events: none;
 }
 
 @media (max-width: 768px) {
     .menu-toggle {
-        display: block;
+        display: flex !important;
     }
 
     .hide-on-mobile {
+        display: none;
+    }
+    
+    .hide-on-desktop {
+        display: block;
+    }
+}
+
+@media (min-width: 769px) {
+    .menu-toggle {
+        display: none !important;
+    }
+    
+    .hide-on-desktop {
         display: none;
     }
 }
@@ -590,6 +620,15 @@ tr:hover {
 
     .hide-on-mobile {
         display: block;
+    }
+    
+    /* En desktop mostrar tablas y ocultar cards */
+    .table-responsive {
+        display: block !important;
+    }
+    
+    .mobile-cards-container {
+        display: none !important;
     }
 }
 
@@ -2277,38 +2316,82 @@ body.theme-dark .date-filter-section input[type="date"] {
         font-size: 0.875rem;
     }
     
-    /* Tablas completamente responsive */
-    .table-responsive {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-    
-    .clients-table {
-        min-width: 100%;
-        font-size: 0.875rem;
-    }
-    
-    .clients-table th,
-    .clients-table td {
-        padding: 0.75rem 0.5rem;
-        white-space: nowrap;
-        min-width: 120px;
-    }
-    
-    .clients-table th:first-child,
-    .clients-table td:first-child {
-        position: sticky;
-        left: 0;
-        background: var(--background-white);
-        z-index: 10;
-        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-    }
-    
-    .clients-table th:first-child {
-        background: var(--secondary-color);
-    }
+         /* Ocultar tablas en móvil y mostrar cards */
+     .table-responsive {
+         display: none;
+     }
+     
+     /* Contenedor de cards para móvil */
+     .mobile-cards-container {
+         display: block;
+         gap: 1rem;
+     }
+     
+     .mobile-card {
+         background: var(--background-white);
+         border-radius: 8px;
+         padding: 1rem;
+         margin-bottom: 1rem;
+         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+         border: 1px solid var(--border-color);
+     }
+     
+     .mobile-card-header {
+         display: flex;
+         justify-content: space-between;
+         align-items: center;
+         margin-bottom: 0.75rem;
+         padding-bottom: 0.75rem;
+         border-bottom: 1px solid var(--border-color);
+     }
+     
+     .mobile-card-title {
+         font-weight: 600;
+         font-size: 1.1rem;
+         color: var(--text-primary);
+     }
+     
+     .mobile-card-content {
+         display: grid;
+         gap: 0.5rem;
+     }
+     
+     .mobile-card-row {
+         display: flex;
+         justify-content: space-between;
+         align-items: center;
+         padding: 0.25rem 0;
+     }
+     
+     .mobile-card-label {
+         font-weight: 500;
+         color: var(--text-secondary);
+         font-size: 0.875rem;
+     }
+     
+     .mobile-card-value {
+         font-weight: 500;
+         color: var(--text-primary);
+         text-align: right;
+         flex: 1;
+         margin-left: 1rem;
+     }
+     
+     .mobile-card-actions {
+         display: flex;
+         gap: 0.5rem;
+         margin-top: 1rem;
+         padding-top: 0.75rem;
+         border-top: 1px solid var(--border-color);
+         flex-wrap: wrap;
+     }
+     
+     .mobile-card-actions .btn {
+         flex: 1;
+         min-width: 80px;
+         font-size: 0.875rem;
+         padding: 0.5rem 0.75rem;
+     }
     
     /* Botones de acción más grandes para touch */
     .btn-icon {

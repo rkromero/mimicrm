@@ -439,6 +439,9 @@ function renderClientsTable() {
         return;
     }
     
+    // Detectar si es móvil
+    const isMobile = window.innerWidth <= 768;
+    
     // Función auxiliar para obtener el estilo del saldo
     function getSaldoStyle(saldo) {
         const saldoNum = parseFloat(saldo) || 0;
@@ -478,55 +481,168 @@ function renderClientsTable() {
         }
     }
     
-    const table = document.createElement('table');
-    table.className = 'clients-table';
-    
-    table.innerHTML = `
-        <thead>
-            <tr>
-                <th>Nombre</th>
-                <th>Documento</th>
-                <th>Localidad</th>
-                <th>Teléfono</th>
-                <th>Saldo Pendiente</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody id="clients-table-body">
-            ${clients.map(client => {
-                const saldoPendiente = (client.total_pedidos || 0) - (client.total_pagos || 0);
-                const saldoStyle = getSaldoStyle(saldoPendiente);
-                
-                return `
-                    <tr>
-                        <td>${(client.nombre || client.name || '') + ' ' + (client.apellido || '')}</td>
-                        <td>${client.documento || client.cuit}</td>
-                        <td>${client.localidad || '-'}</td>
-                        <td>${client.telefono || client.phone}</td>
-                        <td>
-                            <span style="${saldoStyle}">
-                                ${formatCurrency(saldoPendiente)}
-                            </span>
-                        </td>
-                        <td>
-                            <button onclick="viewClientDetails(${client.id})" class="btn-icon" title="Ver detalles">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button onclick="editClient(${client.id})" class="btn-icon" title="Editar">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button onclick="deleteClient(${client.id})" class="btn-icon" title="Eliminar" style="color: #dc2626;">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            }).join('')}
-        </tbody>
-    `;
-    
-    container.innerHTML = '';
-    container.appendChild(table);
+    if (isMobile) {
+        // Crear vista de cards para móvil
+        const cardsContainer = document.createElement('div');
+        cardsContainer.className = 'mobile-cards-container';
+        
+        // Crear tabla oculta para desktop
+        const tableContainer = document.createElement('div');
+        tableContainer.className = 'table-responsive';
+        tableContainer.style.display = 'none';
+        
+        const table = document.createElement('table');
+        table.className = 'clients-table';
+        table.innerHTML = `
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Documento</th>
+                    <th>Localidad</th>
+                    <th>Teléfono</th>
+                    <th>Saldo Pendiente</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="clients-table-body">
+                ${clients.map(client => {
+                    const saldoPendiente = (client.total_pedidos || 0) - (client.total_pagos || 0);
+                    const saldoStyle = getSaldoStyle(saldoPendiente);
+                    
+                    return `
+                        <tr>
+                            <td>${(client.nombre || client.name || '') + ' ' + (client.apellido || '')}</td>
+                            <td>${client.documento || client.cuit}</td>
+                            <td>${client.localidad || '-'}</td>
+                            <td>${client.telefono || client.phone}</td>
+                            <td>
+                                <span style="${saldoStyle}">
+                                    ${formatCurrency(saldoPendiente)}
+                                </span>
+                            </td>
+                            <td>
+                                <button onclick="viewClientDetails(${client.id})" class="btn-icon" title="Ver detalles">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button onclick="editClient(${client.id})" class="btn-icon" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button onclick="deleteClient(${client.id})" class="btn-icon" title="Eliminar" style="color: #dc2626;">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('')}
+            </tbody>
+        `;
+        
+        // Crear cards para móvil
+        clients.forEach(client => {
+            const saldoPendiente = (client.total_pedidos || 0) - (client.total_pagos || 0);
+            const saldoStyle = getSaldoStyle(saldoPendiente);
+            
+            const card = document.createElement('div');
+            card.className = 'mobile-card';
+            card.innerHTML = `
+                <div class="mobile-card-header">
+                    <div class="mobile-card-title">${(client.nombre || client.name || '') + ' ' + (client.apellido || '')}</div>
+                </div>
+                <div class="mobile-card-content">
+                    <div class="mobile-card-row">
+                        <span class="mobile-card-label">Documento:</span>
+                        <span class="mobile-card-value">${client.documento || client.cuit}</span>
+                    </div>
+                    <div class="mobile-card-row">
+                        <span class="mobile-card-label">Localidad:</span>
+                        <span class="mobile-card-value">${client.localidad || '-'}</span>
+                    </div>
+                    <div class="mobile-card-row">
+                        <span class="mobile-card-label">Teléfono:</span>
+                        <span class="mobile-card-value">${client.telefono || client.phone}</span>
+                    </div>
+                    <div class="mobile-card-row">
+                        <span class="mobile-card-label">Saldo Pendiente:</span>
+                        <span class="mobile-card-value" style="${saldoStyle}">
+                            ${formatCurrency(saldoPendiente)}
+                        </span>
+                    </div>
+                </div>
+                <div class="mobile-card-actions">
+                    <button onclick="viewClientDetails(${client.id})" class="btn btn-primary">
+                        <i class="fas fa-eye"></i> Ver
+                    </button>
+                    <button onclick="editClient(${client.id})" class="btn btn-secondary">
+                        <i class="fas fa-edit"></i> Editar
+                    </button>
+                    <button onclick="deleteClient(${client.id})" class="btn btn-secondary" style="color: #dc2626;">
+                        <i class="fas fa-trash"></i> Eliminar
+                    </button>
+                </div>
+            `;
+            cardsContainer.appendChild(card);
+        });
+        
+        tableContainer.appendChild(table);
+        container.innerHTML = '';
+        container.appendChild(cardsContainer);
+        container.appendChild(tableContainer);
+    } else {
+        // Crear vista de tabla para desktop
+        const tableContainer = document.createElement('div');
+        tableContainer.className = 'table-responsive';
+        
+        const table = document.createElement('table');
+        table.className = 'clients-table';
+        
+        table.innerHTML = `
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Documento</th>
+                    <th>Localidad</th>
+                    <th>Teléfono</th>
+                    <th>Saldo Pendiente</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="clients-table-body">
+                ${clients.map(client => {
+                    const saldoPendiente = (client.total_pedidos || 0) - (client.total_pagos || 0);
+                    const saldoStyle = getSaldoStyle(saldoPendiente);
+                    
+                    return `
+                        <tr>
+                            <td>${(client.nombre || client.name || '') + ' ' + (client.apellido || '')}</td>
+                            <td>${client.documento || client.cuit}</td>
+                            <td>${client.localidad || '-'}</td>
+                            <td>${client.telefono || client.phone}</td>
+                            <td>
+                                <span style="${saldoStyle}">
+                                    ${formatCurrency(saldoPendiente)}
+                                </span>
+                            </td>
+                            <td>
+                                <button onclick="viewClientDetails(${client.id})" class="btn-icon" title="Ver detalles">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button onclick="editClient(${client.id})" class="btn-icon" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button onclick="deleteClient(${client.id})" class="btn-icon" title="Eliminar" style="color: #dc2626;">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('')}
+            </tbody>
+        `;
+        
+        tableContainer.appendChild(table);
+        container.innerHTML = '';
+        container.appendChild(tableContainer);
+    }
     
     // Configurar búsqueda de clientes
     setupClientsSearch();
@@ -537,32 +653,51 @@ function setupClientsSearch() {
     const searchInput = document.getElementById('clients-search');
     if (!searchInput) return;
     
-    searchInput.addEventListener('input', function() {
+    // Limpiar listeners previos
+    const newSearchInput = searchInput.cloneNode(true);
+    searchInput.parentNode.replaceChild(newSearchInput, searchInput);
+    
+    newSearchInput.addEventListener('input', function() {
         const searchTerm = this.value.toLowerCase().trim();
-        const tableBody = document.getElementById('clients-table-body');
+        const isMobile = window.innerWidth <= 768;
         
-        if (!tableBody) return;
-        
-        const rows = tableBody.querySelectorAll('tr');
-        
-        rows.forEach(row => {
-            const clientName = row.cells[0].textContent.toLowerCase();
-            const clientDocument = row.cells[1].textContent.toLowerCase();
-            const clientLocalidad = row.cells[2].textContent.toLowerCase();
-            const clientPhone = row.cells[3].textContent.toLowerCase();
+        if (isMobile) {
+            // Búsqueda en cards móviles
+            const cards = document.querySelectorAll('.mobile-card');
+            cards.forEach(card => {
+                const cardText = card.textContent.toLowerCase();
+                
+                if (cardText.includes(searchTerm) || searchTerm === '') {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        } else {
+            // Búsqueda en tabla desktop
+            const tableBody = document.getElementById('clients-table-body');
+            if (!tableBody) return;
             
-            // Buscar en nombre, documento, localidad y teléfono
-            const matches = clientName.includes(searchTerm) || 
-                          clientDocument.includes(searchTerm) || 
-                          clientLocalidad.includes(searchTerm) || 
-                          clientPhone.includes(searchTerm);
-            
-            if (matches || searchTerm === '') {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
-        });
+            const rows = tableBody.querySelectorAll('tr');
+            rows.forEach(row => {
+                const clientName = row.cells[0].textContent.toLowerCase();
+                const clientDocument = row.cells[1].textContent.toLowerCase();
+                const clientLocalidad = row.cells[2].textContent.toLowerCase();
+                const clientPhone = row.cells[3].textContent.toLowerCase();
+                
+                // Buscar en nombre, documento, localidad y teléfono
+                const matches = clientName.includes(searchTerm) || 
+                              clientDocument.includes(searchTerm) || 
+                              clientLocalidad.includes(searchTerm) || 
+                              clientPhone.includes(searchTerm);
+                
+                if (matches || searchTerm === '') {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
     });
 }
 
@@ -6190,6 +6325,12 @@ function setupMobileMenu() {
             overlay.classList.remove('active');
             document.body.style.overflow = '';
             menuToggle.style.transform = 'rotate(0deg)';
+        }
+        
+        // Re-renderizar clientes si la sección está activa
+        const clientsSection = document.getElementById('clientes-section');
+        if (clientsSection && clientsSection.style.display !== 'none') {
+            renderClientsTable();
         }
     });
     
