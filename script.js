@@ -874,6 +874,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         setupDashboardCards();
         
+        // Inicializar mejoras móviles
+        setTimeout(() => {
+            initializeMobileEnhancements();
+        }, 100);
+        
         // Cargar datos iniciales del dashboard
         
         try {
@@ -6112,6 +6117,288 @@ function clearOrderItems() {
     orderItems = [];
     renderOrderProducts();
     updateOrderTotal();
+}
+
+// ============================================
+// FUNCIONALIDAD MÓVIL RESPONSIVE MEJORADA
+// ============================================
+
+// Función para configurar el menú móvil
+function setupMobileMenu() {
+    const menuToggle = document.querySelector('.menu-toggle');
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.querySelector('.sidebar-overlay');
+    
+    if (!menuToggle || !sidebar || !overlay) {
+        console.warn('⚠️ Elementos del menú móvil no encontrados');
+        return;
+    }
+    
+    // Función para abrir el menú
+    function openMobileMenu() {
+        sidebar.classList.add('active');
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden'; // Prevenir scroll del body
+        
+        // Animar el botón hamburguesa
+        menuToggle.style.transform = 'rotate(90deg)';
+    }
+    
+    // Función para cerrar el menú
+    function closeMobileMenu() {
+        sidebar.classList.remove('active');
+        overlay.classList.remove('active');
+        document.body.style.overflow = ''; // Restaurar scroll del body
+        
+        // Restaurar el botón hamburguesa
+        menuToggle.style.transform = 'rotate(0deg)';
+    }
+    
+    // Event listener para el botón hamburguesa
+    menuToggle.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        if (sidebar.classList.contains('active')) {
+            closeMobileMenu();
+        } else {
+            openMobileMenu();
+        }
+    });
+    
+    // Event listener para el overlay
+    overlay.addEventListener('click', function(e) {
+        e.preventDefault();
+        closeMobileMenu();
+    });
+    
+    // Cerrar menú al hacer click en un item de navegación (móvil)
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+        item.addEventListener('click', function() {
+            if (window.innerWidth <= 768) {
+                setTimeout(() => closeMobileMenu(), 150); // Pequeño delay para UX
+            }
+        });
+    });
+    
+    // Manejar cambios de tamaño de ventana
+    window.addEventListener('resize', function() {
+        if (window.innerWidth > 768) {
+            // En desktop, asegurar que el menú esté visible y el overlay oculto
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+            document.body.style.overflow = '';
+            menuToggle.style.transform = 'rotate(0deg)';
+        }
+    });
+    
+    // Manejar gestos de swipe para cerrar el menú
+    let startX = 0;
+    let startY = 0;
+    
+    sidebar.addEventListener('touchstart', function(e) {
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+    });
+    
+    sidebar.addEventListener('touchmove', function(e) {
+        if (!startX || !startY) return;
+        
+        const currentX = e.touches[0].clientX;
+        const currentY = e.touches[0].clientY;
+        
+        const diffX = startX - currentX;
+        const diffY = startY - currentY;
+        
+        // Si el swipe es hacia la izquierda y es más horizontal que vertical
+        if (Math.abs(diffX) > Math.abs(diffY) && diffX > 50) {
+            closeMobileMenu();
+        }
+        
+        startX = 0;
+        startY = 0;
+    });
+    
+    console.log('✅ Menú móvil configurado correctamente');
+}
+
+// Función para hacer las tablas completamente responsive
+function setupResponsiveTables() {
+    const tables = document.querySelectorAll('.clients-table');
+    
+    tables.forEach(table => {
+        // Agregar scroll horizontal suave
+        const tableContainer = table.closest('.table-responsive');
+        if (tableContainer) {
+            tableContainer.style.overflowX = 'auto';
+            tableContainer.style.webkitOverflowScrolling = 'touch';
+        }
+        
+        // Hacer la primera columna sticky en móvil
+        if (window.innerWidth <= 768) {
+            const firstColumnCells = table.querySelectorAll('th:first-child, td:first-child');
+            firstColumnCells.forEach(cell => {
+                cell.style.position = 'sticky';
+                cell.style.left = '0';
+                cell.style.backgroundColor = cell.tagName === 'TH' ? 'var(--secondary-color)' : 'var(--background-white)';
+                cell.style.zIndex = '10';
+                cell.style.boxShadow = '2px 0 5px rgba(0, 0, 0, 0.1)';
+            });
+        }
+    });
+}
+
+// Función para mejorar la experiencia táctil
+function setupTouchEnhancements() {
+    // Mejorar botones para dispositivos táctiles
+    const buttons = document.querySelectorAll('.btn, .btn-icon, .nav-item, .quick-action-btn');
+    
+    buttons.forEach(button => {
+        // Agregar feedback táctil
+        button.addEventListener('touchstart', function() {
+            this.style.transform = 'scale(0.98)';
+            this.style.transition = 'transform 0.1s ease';
+        });
+        
+        button.addEventListener('touchend', function() {
+            this.style.transform = 'scale(1)';
+        });
+        
+        button.addEventListener('touchcancel', function() {
+            this.style.transform = 'scale(1)';
+        });
+    });
+    
+    // Prevenir zoom en inputs en iOS
+    const inputs = document.querySelectorAll('input, select, textarea');
+    inputs.forEach(input => {
+        if (input.style.fontSize !== '16px') {
+            input.style.fontSize = '16px';
+        }
+    });
+}
+
+// Función para optimizar el rendimiento en móviles
+function setupMobilePerformance() {
+    // Usar passive listeners para mejor rendimiento
+    document.addEventListener('touchstart', function() {}, { passive: true });
+    document.addEventListener('touchmove', function() {}, { passive: true });
+    
+    // Optimizar animaciones para móviles
+    if (window.innerWidth <= 768) {
+        // Reducir animaciones en dispositivos de bajo rendimiento
+        const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+        if (mediaQuery.matches) {
+            document.documentElement.style.setProperty('--animation-duration', '0s');
+        }
+    }
+}
+
+// Función para manejar la orientación del dispositivo
+function setupOrientationHandling() {
+    function handleOrientationChange() {
+        // Pequeño delay para que el navegador termine de cambiar la orientación
+        setTimeout(() => {
+            // Recalcular el viewport height para móviles
+            const vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
+            
+            // Reconfigurar tablas si es necesario
+            setupResponsiveTables();
+            
+            // Si el menú está abierto en landscape, cerrarlo
+            if (window.innerWidth > window.innerHeight && window.innerWidth <= 768) {
+                const sidebar = document.querySelector('.sidebar');
+                const overlay = document.querySelector('.sidebar-overlay');
+                if (sidebar && sidebar.classList.contains('active')) {
+                    sidebar.classList.remove('active');
+                    overlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            }
+        }, 100);
+    }
+    
+    window.addEventListener('orientationchange', handleOrientationChange);
+    window.addEventListener('resize', handleOrientationChange);
+    
+    // Ejecutar una vez al cargar
+    handleOrientationChange();
+}
+
+// Función para mejorar la accesibilidad en móviles
+function setupMobileAccessibility() {
+    // Agregar labels aria para screen readers
+    const menuToggle = document.querySelector('.menu-toggle');
+    if (menuToggle) {
+        menuToggle.setAttribute('aria-label', 'Abrir menú de navegación');
+        menuToggle.setAttribute('aria-expanded', 'false');
+    }
+    
+    // Mejorar navegación por teclado en móviles
+    document.addEventListener('keydown', function(e) {
+        // Cerrar menú con Escape
+        if (e.key === 'Escape') {
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.querySelector('.sidebar-overlay');
+            if (sidebar && sidebar.classList.contains('active')) {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+                document.body.style.overflow = '';
+                if (menuToggle) {
+                    menuToggle.setAttribute('aria-expanded', 'false');
+                    menuToggle.focus();
+                }
+            }
+        }
+    });
+}
+
+// Función principal para inicializar todas las mejoras móviles
+function initializeMobileEnhancements() {
+    try {
+        setupMobileMenu();
+        setupResponsiveTables();
+        setupTouchEnhancements();
+        setupMobilePerformance();
+        setupOrientationHandling();
+        setupMobileAccessibility();
+        
+        console.log('✅ Todas las mejoras móviles inicializadas correctamente');
+    } catch (error) {
+        console.error('❌ Error inicializando mejoras móviles:', error);
+    }
+}
+
+// Agregar las mejoras móviles al DOMContentLoaded existente
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar mejoras móviles después de un pequeño delay
+    setTimeout(() => {
+        initializeMobileEnhancements();
+    }, 100);
+});
+
+// Detectar si es un dispositivo móvil
+function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+           window.innerWidth <= 768;
+}
+
+// Aplicar optimizaciones específicas para móviles
+if (isMobileDevice()) {
+    // Prevenir zoom al hacer doble tap
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function(event) {
+        const now = (new Date()).getTime();
+        if (now - lastTouchEnd <= 300) {
+            event.preventDefault();
+        }
+        lastTouchEnd = now;
+    }, false);
+    
+    // Mejorar el scroll en iOS
+    document.body.style.webkitOverflowScrolling = 'touch';
 }
 
 

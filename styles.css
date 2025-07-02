@@ -2174,4 +2174,481 @@ body.theme-dark .date-filter-section input[type="date"] {
     outline: none;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     background-color: #ffffff;
+}
+
+/* ============================================
+   MEJORAS RESPONSIVE PARA MÓVILES - COMPLETAS
+   ============================================ */
+
+/* Mejoras generales para móviles */
+@media (max-width: 768px) {
+    /* Contenedor principal */
+    .app-container {
+        flex-direction: column;
+    }
+    
+    /* Sidebar mejorado para móvil */
+    .sidebar {
+        width: 280px;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease-in-out;
+        z-index: 1000;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .sidebar.active {
+        transform: translateX(0);
+    }
+    
+    /* Overlay mejorado */
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+        z-index: 999;
+        transition: opacity 0.3s ease;
+    }
+    
+    .sidebar-overlay.active {
+        display: block;
+        opacity: 1;
+    }
+    
+    /* Menú hamburguesa mejorado */
+    .menu-toggle {
+        display: flex !important;
+        position: fixed;
+        top: 1rem;
+        left: 1rem;
+        z-index: 1001;
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        padding: 0.75rem;
+        border-radius: 8px;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        font-size: 1.2rem;
+    }
+    
+    .menu-toggle:hover {
+        background: #4f46e5;
+        transform: scale(1.05);
+    }
+    
+    /* Contenido principal */
+    .main-content {
+        margin-left: 0;
+        padding: 5rem 1rem 1rem 1rem; /* Espacio superior para el menú hamburguesa */
+        width: 100%;
+    }
+    
+    /* Header responsive */
+    .header {
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .header h1 {
+        font-size: 1.5rem;
+        text-align: center;
+    }
+    
+    .header .flex {
+        width: 100%;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .header .btn {
+        flex: 1;
+        min-width: 120px;
+        padding: 0.875rem 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    /* Tablas completamente responsive */
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .clients-table {
+        min-width: 100%;
+        font-size: 0.875rem;
+    }
+    
+    .clients-table th,
+    .clients-table td {
+        padding: 0.75rem 0.5rem;
+        white-space: nowrap;
+        min-width: 120px;
+    }
+    
+    .clients-table th:first-child,
+    .clients-table td:first-child {
+        position: sticky;
+        left: 0;
+        background: var(--background-white);
+        z-index: 10;
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    }
+    
+    .clients-table th:first-child {
+        background: var(--secondary-color);
+    }
+    
+    /* Botones de acción más grandes para touch */
+    .btn-icon {
+        padding: 0.5rem;
+        margin: 0.125rem;
+        min-width: 36px;
+        min-height: 36px;
+        border-radius: 6px;
+        font-size: 1rem;
+    }
+    
+    /* Dashboard cards responsive */
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        padding: 0;
+    }
+    
+    .dashboard-card {
+        margin-bottom: 1rem;
+    }
+    
+    .card-header h3 {
+        font-size: 1.125rem;
+    }
+    
+    .stat-value {
+        font-size: 1.5rem !important;
+    }
+    
+    /* Quick actions responsive */
+    .quick-actions {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .quick-action-btn {
+        padding: 1rem;
+        font-size: 1rem;
+        min-height: 60px;
+    }
+    
+    /* Formularios y inputs mejorados para móvil */
+    .input {
+        font-size: 16px; /* Evita zoom en iOS */
+        padding: 0.875rem;
+        min-height: 48px;
+    }
+    
+    .btn {
+        min-height: 48px;
+        padding: 0.875rem 1rem;
+        font-size: 1rem;
+    }
+    
+    /* Secciones con mejor espaciado */
+    .table-container .flex {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+    }
+    
+    .table-container .flex .input {
+        order: 1;
+        margin-bottom: 0.5rem;
+    }
+    
+    .table-container .flex .btn {
+        order: 2;
+        width: 100%;
+    }
+    
+    /* Navegación del sidebar más touch-friendly */
+    .nav-item {
+        padding: 1rem;
+        font-size: 1rem;
+        min-height: 56px;
+    }
+    
+    .nav-item i {
+        font-size: 1.25rem;
+        min-width: 24px;
+    }
+    
+    /* Usuario del sidebar */
+    .sidebar-user {
+        padding: 1rem;
+    }
+    
+    .user-info {
+        padding: 1rem;
+        min-height: 60px;
+    }
+    
+    .user-menu a {
+        padding: 1rem;
+        font-size: 1rem;
+        min-height: 56px;
+    }
+}
+
+/* Breakpoint para móviles pequeños */
+@media (max-width: 480px) {
+    /* Menú hamburguesa más pequeño */
+    .menu-toggle {
+        width: 44px;
+        height: 44px;
+        font-size: 1.1rem;
+        top: 0.75rem;
+        left: 0.75rem;
+    }
+    
+    /* Contenido principal con menos padding */
+    .main-content {
+        padding: 4.5rem 0.75rem 0.75rem 0.75rem;
+    }
+    
+    /* Header más compacto */
+    .header {
+        padding: 0.75rem;
+    }
+    
+    .header h1 {
+        font-size: 1.25rem;
+    }
+    
+    .header .btn {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.8rem;
+        min-width: 100px;
+    }
+    
+    /* Tablas más compactas */
+    .clients-table {
+        font-size: 0.8rem;
+    }
+    
+    .clients-table th,
+    .clients-table td {
+        padding: 0.5rem 0.375rem;
+        min-width: 100px;
+    }
+    
+    /* Dashboard cards más compactas */
+    .card-header h3 {
+        font-size: 1rem;
+    }
+    
+    .stat-value {
+        font-size: 1.25rem !important;
+    }
+    
+    .stat-label {
+        font-size: 0.875rem;
+    }
+    
+    /* Botones de acción más pequeños pero aún touch-friendly */
+    .btn-icon {
+        min-width: 32px;
+        min-height: 32px;
+        padding: 0.375rem;
+        font-size: 0.875rem;
+    }
+    
+    /* Sidebar más angosto */
+    .sidebar {
+        width: 260px;
+    }
+    
+    /* Modal completamente responsive */
+    .modal {
+        padding: 0.5rem;
+    }
+    
+    .modal-content {
+        width: calc(100% - 1rem);
+        margin: 0.5rem;
+        max-height: calc(100vh - 1rem);
+    }
+    
+    .modal-header {
+        padding: 1.5rem 1rem 1rem 1rem !important;
+    }
+    
+    .modal-title {
+        font-size: 1.125rem;
+    }
+    
+    .modal-form {
+        padding: 1rem !important;
+        gap: 1rem;
+    }
+    
+    .modal-actions {
+        padding: 1rem !important;
+        flex-direction: column-reverse;
+        gap: 0.75rem;
+    }
+    
+    .modal-actions button {
+        width: 100%;
+        padding: 0.875rem;
+        font-size: 1rem;
+    }
+}
+
+/* Breakpoint para tablets */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .sidebar {
+        width: 220px;
+    }
+    
+    .main-content {
+        margin-left: 220px;
+        padding: 1.5rem;
+    }
+    
+    .dashboard-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.25rem;
+    }
+    
+    .header .btn {
+        padding: 0.75rem 0.875rem;
+        font-size: 0.875rem;
+    }
+}
+
+/* Mejoras para pantallas muy pequeñas (menos de 360px) */
+@media (max-width: 360px) {
+    .menu-toggle {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+        top: 0.5rem;
+        left: 0.5rem;
+    }
+    
+    .main-content {
+        padding: 4rem 0.5rem 0.5rem 0.5rem;
+    }
+    
+    .header {
+        padding: 0.5rem;
+    }
+    
+    .header .btn {
+        padding: 0.625rem 0.375rem;
+        font-size: 0.75rem;
+        min-width: 80px;
+    }
+    
+    .sidebar {
+        width: 240px;
+    }
+    
+    .clients-table th,
+    .clients-table td {
+        padding: 0.375rem 0.25rem;
+        min-width: 80px;
+        font-size: 0.75rem;
+    }
+    
+    .btn-icon {
+        min-width: 28px;
+        min-height: 28px;
+        padding: 0.25rem;
+        font-size: 0.75rem;
+    }
+}
+
+/* Orientación landscape en móviles */
+@media (max-width: 768px) and (orientation: landscape) {
+    .main-content {
+        padding: 4rem 1rem 1rem 1rem;
+    }
+    
+    .header {
+        flex-direction: row;
+        padding: 0.75rem 1rem;
+    }
+    
+    .header .flex {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+    
+    .dashboard-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+}
+
+/* Mejoras para accesibilidad táctil */
+@media (hover: none) and (pointer: coarse) {
+    /* Dispositivos táctiles */
+    .btn, .nav-item, .btn-icon, .quick-action-btn {
+        min-height: 44px; /* Tamaño mínimo recomendado por Apple/Google */
+    }
+    
+    .nav-item {
+        min-height: 48px;
+    }
+    
+    .input, .form-group input, .form-group select, .form-group textarea {
+        min-height: 44px;
+        font-size: 16px; /* Evita zoom automático en iOS */
+    }
+    
+    /* Hover states se convierten en active states */
+    .btn:active, .nav-item:active, .btn-icon:active {
+        transform: scale(0.98);
+        transition: transform 0.1s ease;
+    }
+}
+
+/* Fix para iOS Safari viewport */
+@supports (-webkit-touch-callout: none) {
+    .main-content {
+        min-height: -webkit-fill-available;
+    }
+    
+    .modal {
+        height: -webkit-fill-available;
+    }
+}
+
+/* Mejoras para modo oscuro en móviles */
+@media (max-width: 768px) {
+    body.theme-dark .menu-toggle {
+        background: #4f46e5;
+        color: white;
+    }
+    
+    body.theme-dark .sidebar {
+        background: #1f2937;
+        border-right: 1px solid #374151;
+    }
+    
+    body.theme-dark .sidebar-overlay {
+        background-color: rgba(0, 0, 0, 0.8);
+    }
 } 
