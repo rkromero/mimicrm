@@ -1468,6 +1468,7 @@ app.post('/api/admin/clear-database', async (req, res) => {
     }
 });
 
+
 // === NUEVOS ENDPOINTS PARA DASHBOARD ===
 
 // Endpoint para obtener clientes inactivos (sin pedidos en los últimos 30 días)

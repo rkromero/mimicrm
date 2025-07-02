@@ -488,14 +488,14 @@ function renderClientsTable() {
                 <th>Documento</th>
                 <th>Email</th>
                 <th>Teléfono</th>
-                <th>Saldo</th>
+                <th>Saldo Pendiente</th>
                 <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
             ${clients.map(client => {
-                const saldo = client.saldo || client.balance || client.saldo_calculado || 0;
-                const saldoStyle = getSaldoStyle(saldo);
+                const saldoPendiente = (client.total_pedidos || 0) - (client.total_pagos || 0);
+                const saldoStyle = getSaldoStyle(saldoPendiente);
                 
                 return `
                     <tr>
@@ -505,7 +505,7 @@ function renderClientsTable() {
                         <td>${client.telefono || client.phone}</td>
                         <td>
                             <span style="${saldoStyle}">
-                                ${formatCurrency(saldo)}
+                                ${formatCurrency(saldoPendiente)}
                             </span>
                         </td>
                         <td>
@@ -3951,7 +3951,6 @@ function viewClientDetails(clientId) {
     }, 0);
     
     const saldoPendiente = totalPedidos - totalPagos;
-    const saldoActual = parseFloat(client.saldo) || 0;
     
     // Debug: mostrar cálculos
     
@@ -4009,7 +4008,7 @@ function viewClientDetails(clientId) {
                 <!-- Resumen financiero -->
                 <div style="background: #f0f9ff; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid #0ea5e9;">
                     <h3 style="margin: 0 0 1rem 0; color: #1f2937;">Resumen Financiero</h3>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem; text-align: center;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; text-align: center;">
                         <div>
                             <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">Total Pedidos</div>
                             <div style="font-size: 1.25rem; font-weight: bold; color: #0ea5e9;">
@@ -4026,12 +4025,6 @@ function viewClientDetails(clientId) {
                             <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">Saldo Pendiente</div>
                             <div style="font-size: 1.25rem; font-weight: bold; color: ${saldoPendiente >= 0 ? '#ef4444' : '#10b981'};">
                                 ${formatCurrency(saldoPendiente)}
-                            </div>
-                        </div>
-                        <div>
-                            <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">Saldo Actual</div>
-                            <div style="font-size: 1.25rem; font-weight: bold; color: ${saldoActual >= 0 ? '#10b981' : '#ef4444'};">
-                                ${formatCurrency(saldoActual)}
                             </div>
                         </div>
                     </div>
