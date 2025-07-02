@@ -4349,7 +4349,7 @@ function openWhatsAppChat(clientPhone, clientName) {
     }
     
     // Mensaje predeterminado
-    const mensaje = `Hola ${clientName || 'estimado cliente'}, te contactamos desde MIMI CRM. ¿En qué podemos ayudarte?`;
+    const mensaje = `Hola ${clientName || 'estimado cliente'},`;
     
     // URL de WhatsApp
     const whatsappURL = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(mensaje)}`;
