@@ -2174,6 +2174,40 @@ body.theme-dark .date-filter-section input[type="date"] {
     border-color: #444;
 }
 
+/* Botón de WhatsApp */
+.btn-whatsapp {
+    background: #25D366 !important;
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.btn-whatsapp:hover {
+    background: #128C7E !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(37, 211, 102, 0.3);
+}
+
+.btn-whatsapp:active {
+    transform: translateY(0);
+}
+
+.btn-whatsapp svg {
+    transition: transform 0.2s ease;
+}
+
+.btn-whatsapp:hover svg {
+    transform: scale(1.1);
+}
+
+/* Responsive para botones de acción en móvil */
+@media (max-width: 768px) {
+    .btn-whatsapp {
+        flex: 1;
+        min-width: 120px;
+        justify-content: center;
+    }
+}
+
 /* Campos dobles (nombre y apellido en la misma fila) */
 .form-group-double {
     display: grid;
