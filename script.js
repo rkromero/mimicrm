@@ -1589,9 +1589,21 @@ function showModal(modalId) {
             console.warn(`⚠️ El elemento ${modalId} no tiene la clase 'modal'`);
         }
         
+        // Detectar si hay otro modal abierto para ajustar z-index
+        const existingActiveModals = document.querySelectorAll('.modal.active');
+        const baseZIndex = 10000;
+        const modalZIndex = baseZIndex + (existingActiveModals.length * 100);
+        
         // Mostrar el modal
         modal.style.display = 'block';
+        modal.style.zIndex = modalZIndex;
         modal.classList.add('active');
+        
+        // También ajustar z-index del contenido del modal
+        const modalContent = modal.querySelector('.modal-content');
+        if (modalContent) {
+            modalContent.style.zIndex = modalZIndex + 1;
+        }
         
         // Asegurar que el modal se vea desde el inicio (scroll al top)
         setTimeout(() => {
@@ -6029,8 +6041,15 @@ function closeModal(modalId) {
     try {
         // Cerrar el modal
         modal.style.display = 'none';
+        modal.style.zIndex = ''; // Restaurar z-index
         modal.classList.remove('active');
         document.body.style.overflow = ''; // Restaurar scroll del body
+        
+        // Restaurar z-index del contenido del modal
+        const modalContent = modal.querySelector('.modal-content');
+        if (modalContent) {
+            modalContent.style.zIndex = '';
+        }
         
         // Limpiar formulario si existe
         const form = modal.querySelector('form');
