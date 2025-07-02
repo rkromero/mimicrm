@@ -404,13 +404,21 @@ app.get('/api/clientes', authenticateToken, async (req, res) => {
             SELECT 
                 c.*,
                 u.nombre as creado_por_nombre,
-                COALESCE(SUM(p.monto), 0) as total_pedidos,
-                COALESCE(SUM(pa.monto), 0) as total_pagos,
-                (COALESCE(SUM(p.monto), 0) - COALESCE(SUM(pa.monto), 0)) as saldo_real
+                COALESCE(pedidos_totals.total_pedidos, 0) as total_pedidos,
+                COALESCE(pagos_totals.total_pagos, 0) as total_pagos,
+                (COALESCE(pedidos_totals.total_pedidos, 0) - COALESCE(pagos_totals.total_pagos, 0)) as saldo_real
             FROM clientes c
             LEFT JOIN usuarios u ON c.creado_por = u.id
-            LEFT JOIN pedidos p ON c.id = p.cliente_id
-            LEFT JOIN pagos pa ON c.id = pa.cliente_id
+            LEFT JOIN (
+                SELECT cliente_id, SUM(monto) as total_pedidos 
+                FROM pedidos 
+                GROUP BY cliente_id
+            ) pedidos_totals ON c.id = pedidos_totals.cliente_id
+            LEFT JOIN (
+                SELECT cliente_id, SUM(monto) as total_pagos 
+                FROM pagos 
+                GROUP BY cliente_id
+            ) pagos_totals ON c.id = pagos_totals.cliente_id
             WHERE c.activo = true
         `;
         
@@ -424,7 +432,7 @@ app.get('/api/clientes', authenticateToken, async (req, res) => {
             query += ' AND c.creado_por IN (SELECT id FROM usuarios WHERE perfil = "Vendedor")';
         }
 
-        query += ' GROUP BY c.id, u.nombre ORDER BY c.nombre';
+        query += ' ORDER BY c.nombre';
 
         console.log('📊 Ejecutando consulta de clientes con cálculo de saldo...');
         const [clientes] = await db.execute(query, params);
