@@ -486,13 +486,13 @@ function renderClientsTable() {
             <tr>
                 <th>Nombre</th>
                 <th>Documento</th>
-                <th>Email</th>
+                <th>Localidad</th>
                 <th>Teléfono</th>
                 <th>Saldo Pendiente</th>
                 <th>Acciones</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="clients-table-body">
             ${clients.map(client => {
                 const saldoPendiente = (client.total_pedidos || 0) - (client.total_pagos || 0);
                 const saldoStyle = getSaldoStyle(saldoPendiente);
@@ -501,7 +501,7 @@ function renderClientsTable() {
                     <tr>
                         <td>${(client.nombre || client.name || '') + ' ' + (client.apellido || '')}</td>
                         <td>${client.documento || client.cuit}</td>
-                        <td>${client.email}</td>
+                        <td>${client.localidad || '-'}</td>
                         <td>${client.telefono || client.phone}</td>
                         <td>
                             <span style="${saldoStyle}">
@@ -527,6 +527,43 @@ function renderClientsTable() {
     
     container.innerHTML = '';
     container.appendChild(table);
+    
+    // Configurar búsqueda de clientes
+    setupClientsSearch();
+}
+
+// Función para configurar la búsqueda de clientes
+function setupClientsSearch() {
+    const searchInput = document.getElementById('clients-search');
+    if (!searchInput) return;
+    
+    searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase().trim();
+        const tableBody = document.getElementById('clients-table-body');
+        
+        if (!tableBody) return;
+        
+        const rows = tableBody.querySelectorAll('tr');
+        
+        rows.forEach(row => {
+            const clientName = row.cells[0].textContent.toLowerCase();
+            const clientDocument = row.cells[1].textContent.toLowerCase();
+            const clientLocalidad = row.cells[2].textContent.toLowerCase();
+            const clientPhone = row.cells[3].textContent.toLowerCase();
+            
+            // Buscar en nombre, documento, localidad y teléfono
+            const matches = clientName.includes(searchTerm) || 
+                          clientDocument.includes(searchTerm) || 
+                          clientLocalidad.includes(searchTerm) || 
+                          clientPhone.includes(searchTerm);
+            
+            if (matches || searchTerm === '') {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
 }
 
 // Función para renderizar la tabla de pedidos
@@ -2986,6 +3023,7 @@ function setupHeaderButtons() {
         // Lista de botones a configurar
         const buttonsConfig = [
             { id: 'new-client-btn', modal: 'new-client-modal', name: 'Nuevo Cliente (Header)' },
+            { id: 'new-client-btn-section', modal: 'new-client-modal', name: 'Nuevo Cliente (Sección)' },
             { id: 'new-order-btn', modal: 'new-order-modal', name: 'Nuevo Pedido (Header)' },
             { id: 'new-payment-btn', modal: 'new-payment-modal', name: 'Nuevo Pago (Header)' },
             { id: 'new-order-btn-section', modal: 'new-order-modal', name: 'Nuevo Pedido (Sección)' },

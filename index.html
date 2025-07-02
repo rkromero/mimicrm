@@ -356,8 +356,16 @@
 
             <!-- Sección de Clientes -->
             <div id="clientes-section" class="page-content" style="display:none;">
-                <div class="table-container mb-4">
-                    <h2>Clientes</h2>
+                <div class="table-container">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2>Clientes</h2>
+                        <div class="flex gap-2">
+                            <input type="text" class="input" placeholder="Buscar cliente..." id="clients-search">
+                            <button id="new-client-btn-section" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Nuevo Cliente
+                            </button>
+                        </div>
+                    </div>
                     <div id="clients-list"></div>
                 </div>
             </div>
