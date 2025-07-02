@@ -1473,9 +1473,9 @@ app.post('/api/admin/clear-database', async (req, res) => {
 // Endpoint para obtener clientes inactivos (sin pedidos en los últimos 30 días)
 app.get('/api/clientes/inactivos', authenticateToken, async (req, res) => {
     try {
-        console.log('📊 Obteniendo clientes inactivos...');
+        console.log('📊 Obteniendo clientes inactivos para usuario:', req.user.perfil);
         
-        const [inactiveClients] = await db.execute(`
+        let query = `
             SELECT 
                 c.id,
                 c.nombre,
@@ -1486,20 +1486,46 @@ app.get('/api/clientes/inactivos', authenticateToken, async (req, res) => {
             FROM clientes c
             LEFT JOIN pedidos p ON c.id = p.cliente_id
             WHERE c.activo = true
+        `;
+        
+        const params = [];
+        
+        // Filtrar por perfil de usuario
+        if (req.user.perfil === 'Vendedor') {
+            query += ' AND c.creado_por = ?';
+            params.push(req.user.id);
+        } else if (req.user.perfil === 'Gerente de ventas') {
+            query += ' AND c.creado_por IN (SELECT id FROM usuarios WHERE perfil = "Vendedor")';
+        }
+        
+        query += `
             GROUP BY c.id, c.nombre, c.email, c.telefono, c.direccion
             HAVING lastOrderDate IS NULL 
                 OR lastOrderDate < DATE_SUB(CURDATE(), INTERVAL 30 DAY)
             ORDER BY lastOrderDate ASC
-        `);
+        `;
         
-        // Obtener la fecha de la última actividad general
-        const [lastActivity] = await db.execute(`
-            SELECT MAX(fecha) as lastActivity 
-            FROM pedidos 
-            WHERE fecha >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
-        `);
+        const [inactiveClients] = await db.execute(query, params);
         
-        console.log(`✅ ${inactiveClients.length} clientes inactivos encontrados`);
+        // Obtener la fecha de la última actividad filtrada por usuario
+        let activityQuery = `
+            SELECT MAX(p.fecha) as lastActivity 
+            FROM pedidos p
+            WHERE p.fecha >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+        `;
+        
+        const activityParams = [];
+        
+        if (req.user.perfil === 'Vendedor') {
+            activityQuery += ' AND p.creado_por = ?';
+            activityParams.push(req.user.id);
+        } else if (req.user.perfil === 'Gerente de ventas') {
+            activityQuery += ' AND p.creado_por IN (SELECT id FROM usuarios WHERE perfil = "Vendedor")';
+        }
+        
+        const [lastActivity] = await db.execute(activityQuery, activityParams);
+        
+        console.log(`✅ ${inactiveClients.length} clientes inactivos encontrados para ${req.user.perfil}`);
         
         res.json({
             inactiveClients: inactiveClients,
@@ -1516,12 +1542,20 @@ app.get('/api/clientes/inactivos', authenticateToken, async (req, res) => {
 // Endpoint para obtener ventas completadas con filtro de fechas
 app.get('/api/ventas/completadas', authenticateToken, async (req, res) => {
     try {
-        console.log('📊 Obteniendo ventas completadas...');
+        console.log('📊 Obteniendo ventas completadas para usuario:', req.user.perfil);
         
         const { dateFrom, dateTo } = req.query;
         
         let whereClause = "WHERE p.estado = 'completado'";
         let params = [];
+        
+        // Filtrar por perfil de usuario
+        if (req.user.perfil === 'Vendedor') {
+            whereClause += " AND p.creado_por = ?";
+            params.push(req.user.id);
+        } else if (req.user.perfil === 'Gerente de ventas') {
+            whereClause += " AND p.creado_por IN (SELECT id FROM usuarios WHERE perfil = 'Vendedor')";
+        }
         
         if (dateFrom && dateTo) {
             whereClause += " AND p.fecha BETWEEN ? AND ?";
@@ -1542,7 +1576,7 @@ app.get('/api/ventas/completadas', authenticateToken, async (req, res) => {
             ${whereClause}
         `, params);
         
-        console.log(`✅ Ventas completadas obtenidas:`, completedSales[0]);
+        console.log(`✅ Ventas completadas obtenidas para ${req.user.perfil}:`, completedSales[0]);
         
         res.json({
             completedOrders: completedSales[0].completedOrders,
@@ -1558,25 +1592,36 @@ app.get('/api/ventas/completadas', authenticateToken, async (req, res) => {
 // Endpoint para obtener resumen de cobros pendientes
 app.get('/api/cobros/pendientes', authenticateToken, async (req, res) => {
     try {
-        console.log('📊 Obteniendo cobros pendientes...');
+        console.log('📊 Obteniendo cobros pendientes para usuario:', req.user.perfil);
         
-        // Obtener totales de pedidos (incluyendo todos los estados)
-        const [orderTotals] = await db.execute(`
-            SELECT COALESCE(SUM(monto), 0) as totalOrders
-            FROM pedidos
-        `);
+        let orderQuery = `SELECT COALESCE(SUM(monto), 0) as totalOrders FROM pedidos`;
+        let paymentQuery = `SELECT COALESCE(SUM(monto), 0) as totalPayments FROM pagos`;
         
-        // Obtener totales de pagos
-        const [paymentTotals] = await db.execute(`
-            SELECT COALESCE(SUM(monto), 0) as totalPayments
-            FROM pagos
-        `);
+        const orderParams = [];
+        const paymentParams = [];
+        
+        // Filtrar por perfil de usuario
+        if (req.user.perfil === 'Vendedor') {
+            orderQuery += ` WHERE creado_por = ?`;
+            paymentQuery += ` WHERE creado_por = ?`;
+            orderParams.push(req.user.id);
+            paymentParams.push(req.user.id);
+        } else if (req.user.perfil === 'Gerente de ventas') {
+            orderQuery += ` WHERE creado_por IN (SELECT id FROM usuarios WHERE perfil = 'Vendedor')`;
+            paymentQuery += ` WHERE creado_por IN (SELECT id FROM usuarios WHERE perfil = 'Vendedor')`;
+        }
+        
+        // Obtener totales de pedidos filtrados
+        const [orderTotals] = await db.execute(orderQuery, orderParams);
+        
+        // Obtener totales de pagos filtrados
+        const [paymentTotals] = await db.execute(paymentQuery, paymentParams);
         
         const totalOrders = parseFloat(orderTotals[0].totalOrders) || 0;
         const totalPayments = parseFloat(paymentTotals[0].totalPayments) || 0;
         const pendingAmount = totalOrders - totalPayments;
         
-        console.log(`✅ Cobros pendientes calculados: $${pendingAmount}`);
+        console.log(`✅ Cobros pendientes calculados para ${req.user.perfil}: $${pendingAmount}`);
         
         res.json({
             totalOrders: totalOrders,
@@ -1593,25 +1638,35 @@ app.get('/api/cobros/pendientes', authenticateToken, async (req, res) => {
 // Endpoint para obtener detalles de cobros pendientes por cliente
 app.get('/api/cobros/pendientes/detalle', authenticateToken, async (req, res) => {
     try {
-        console.log('📊 Obteniendo detalles de cobros pendientes por cliente...');
+        console.log('📊 Obteniendo detalles de cobros pendientes por cliente para usuario:', req.user.perfil);
         
-        // Obtener resumen general (incluyendo todos los pedidos)
-        const [orderTotals] = await db.execute(`
-            SELECT COALESCE(SUM(monto), 0) as totalOrders
-            FROM pedidos
-        `);
+        let orderQuery = `SELECT COALESCE(SUM(monto), 0) as totalOrders FROM pedidos`;
+        let paymentQuery = `SELECT COALESCE(SUM(monto), 0) as totalPayments FROM pagos`;
         
-        const [paymentTotals] = await db.execute(`
-            SELECT COALESCE(SUM(monto), 0) as totalPayments
-            FROM pagos
-        `);
+        const orderParams = [];
+        const paymentParams = [];
+        
+        // Filtrar por perfil de usuario
+        if (req.user.perfil === 'Vendedor') {
+            orderQuery += ` WHERE creado_por = ?`;
+            paymentQuery += ` WHERE creado_por = ?`;
+            orderParams.push(req.user.id);
+            paymentParams.push(req.user.id);
+        } else if (req.user.perfil === 'Gerente de ventas') {
+            orderQuery += ` WHERE creado_por IN (SELECT id FROM usuarios WHERE perfil = 'Vendedor')`;
+            paymentQuery += ` WHERE creado_por IN (SELECT id FROM usuarios WHERE perfil = 'Vendedor')`;
+        }
+        
+        // Obtener resumen general filtrado
+        const [orderTotals] = await db.execute(orderQuery, orderParams);
+        const [paymentTotals] = await db.execute(paymentQuery, paymentParams);
         
         const totalOrders = parseFloat(orderTotals[0].totalOrders) || 0;
         const totalPayments = parseFloat(paymentTotals[0].totalPayments) || 0;
         const pendingAmount = totalOrders - totalPayments;
         
-        // Obtener detalles por cliente (incluyendo todos los pedidos)
-        const [clientDetails] = await db.execute(`
+        // Construir consulta de detalles por cliente con filtros
+        let clientQuery = `
             SELECT 
                 c.id,
                 c.nombre,
@@ -1622,20 +1677,47 @@ app.get('/api/cobros/pendientes/detalle', authenticateToken, async (req, res) =>
                 SELECT 
                     cliente_id,
                     SUM(monto) as totalOrders
-                FROM pedidos 
+                FROM pedidos`;
+        
+        if (req.user.perfil === 'Vendedor') {
+            clientQuery += ` WHERE creado_por = ${req.user.id}`;
+        } else if (req.user.perfil === 'Gerente de ventas') {
+            clientQuery += ` WHERE creado_por IN (SELECT id FROM usuarios WHERE perfil = 'Vendedor')`;
+        }
+        
+        clientQuery += `
                 GROUP BY cliente_id
             ) pedidos_totals ON c.id = pedidos_totals.cliente_id
             LEFT JOIN (
                 SELECT 
                     cliente_id,
                     SUM(monto) as totalPayments
-                FROM pagos 
+                FROM pagos`;
+        
+        if (req.user.perfil === 'Vendedor') {
+            clientQuery += ` WHERE creado_por = ${req.user.id}`;
+        } else if (req.user.perfil === 'Gerente de ventas') {
+            clientQuery += ` WHERE creado_por IN (SELECT id FROM usuarios WHERE perfil = 'Vendedor')`;
+        }
+        
+        clientQuery += `
                 GROUP BY cliente_id
             ) pagos_totals ON c.id = pagos_totals.cliente_id
-            WHERE c.activo = true
+            WHERE c.activo = true`;
+        
+        // Filtrar clientes por usuario si es vendedor
+        if (req.user.perfil === 'Vendedor') {
+            clientQuery += ` AND c.creado_por = ${req.user.id}`;
+        } else if (req.user.perfil === 'Gerente de ventas') {
+            clientQuery += ` AND c.creado_por IN (SELECT id FROM usuarios WHERE perfil = 'Vendedor')`;
+        }
+        
+        clientQuery += `
             HAVING totalOrders > 0 OR totalPayments > 0
             ORDER BY (totalOrders - totalPayments) DESC
-        `);
+        `;
+        
+        const [clientDetails] = await db.execute(clientQuery);
         
         // Procesar datos de clientes
         const clients = clientDetails.map(client => ({
@@ -1645,7 +1727,7 @@ app.get('/api/cobros/pendientes/detalle', authenticateToken, async (req, res) =>
             totalPayments: parseFloat(client.totalPayments) || 0
         }));
         
-        console.log(`✅ Detalles de cobros obtenidos para ${clients.length} clientes`);
+        console.log(`✅ Detalles de cobros obtenidos para ${clients.length} clientes del ${req.user.perfil}`);
         
         res.json({
             summary: {
