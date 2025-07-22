@@ -54,6 +54,34 @@ async function connectDB() {
     }
 }
 
+// Función para generar número de pedido consecutivo
+async function generateConsecutiveOrderNumber() {
+    try {
+        // Obtener el último número de pedido
+        const [result] = await db.execute(
+            'SELECT numero_pedido FROM pedidos ORDER BY CAST(SUBSTRING(numero_pedido, 5) AS UNSIGNED) DESC LIMIT 1'
+        );
+        
+        let nextNumber = 1;
+        
+        if (result.length > 0) {
+            const lastNumber = result[0].numero_pedido;
+            // Extraer el número del formato PED-XXXX
+            const match = lastNumber.match(/PED-(\d+)/);
+            if (match) {
+                nextNumber = parseInt(match[1]) + 1;
+            }
+        }
+        
+        // Formatear con ceros a la izquierda (ej: PED-0001, PED-0002, etc.)
+        return `PED-${nextNumber.toString().padStart(4, '0')}`;
+    } catch (error) {
+        console.error('Error generando número de pedido:', error);
+        // Fallback al método anterior si hay error
+        return `PED-${Date.now()}`;
+    }
+}
+
 // Función para crear las tablas
 async function createTables() {
     try {
@@ -840,8 +868,8 @@ app.post('/api/pedidos', authenticateToken, async (req, res) => {
     try {
         const { cliente_id, descripcion, monto, estado = 'pendiente de pago', items = [] } = req.body;
 
-        // Generar número de pedido único
-        const numeroPedido = `PED-${Date.now()}`;
+        // Generar número de pedido consecutivo
+        const numeroPedido = await generateConsecutiveOrderNumber();
 
         // Insertar el pedido
         const [result] = await db.execute(
