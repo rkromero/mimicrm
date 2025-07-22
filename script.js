@@ -4610,6 +4610,9 @@ function viewOrderDetails(orderId) {
                     ` : ''}
                     ${itemsTable}
                     <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+                        <button class="btn btn-success" onclick="printDeliveryReceipt(${order.id})" style="background: #10b981; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;" title="Imprimir Remito de Entrega">
+                            <i class="fas fa-print"></i> Imprimir Remito
+                        </button>
                         <button class="btn btn-primary" onclick="editOrder(${order.id}); this.closest('.modal').remove();" style="background: #4f46e5; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;">
                             <i class="fas fa-edit"></i> Editar Pedido
                         </button>
@@ -4623,6 +4626,349 @@ function viewOrderDetails(orderId) {
     });
     
     document.body.appendChild(detailsModal);
+}
+
+// Función para imprimir remito de entrega
+async function printDeliveryReceipt(orderId) {
+    try {
+        // Encontrar el pedido
+        const order = orders.find(o => o.id == orderId);
+        if (!order) {
+            showNotification('Pedido no encontrado', 'error');
+            return;
+        }
+        
+        // Encontrar el cliente completo
+        const client = clients.find(c => c.id == order.cliente_id);
+        if (!client) {
+            showNotification('Cliente no encontrado', 'error');
+            return;
+        }
+        
+        // Cargar los items del pedido
+        const items = await loadOrderItems(orderId);
+        
+        // Generar el HTML del remito
+        const receiptHTML = generateDeliveryReceiptHTML(order, client, items);
+        
+        // Abrir ventana de impresión
+        const printWindow = window.open('', '_blank', 'width=800,height=600');
+        printWindow.document.write(receiptHTML);
+        printWindow.document.close();
+        
+        // Esperar a que cargue y después imprimir
+        printWindow.onload = function() {
+            printWindow.focus();
+            printWindow.print();
+            // Cerrar la ventana después de imprimir (opcional)
+            printWindow.onafterprint = function() {
+                printWindow.close();
+            };
+        };
+        
+    } catch (error) {
+        console.error('Error generando remito:', error);
+        showNotification('Error al generar el remito de entrega', 'error');
+    }
+}
+
+// Función para generar el HTML del remito de entrega
+function generateDeliveryReceiptHTML(order, client, items) {
+    const currentDate = new Date().toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+    
+    const itemsRows = items.map(item => `
+        <tr>
+            <td style="padding: 8px; border-bottom: 1px solid #ddd;">${item.producto_nombre || 'Producto'}</td>
+            <td style="padding: 8px; text-align: center; border-bottom: 1px solid #ddd;">${item.cantidad}</td>
+            <td style="padding: 8px; border-bottom: 1px solid #ddd;">${item.producto_descripcion || '-'}</td>
+        </tr>
+    `).join('');
+    
+    return `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remito de Entrega - ${order.numero_pedido}</title>
+    <style>
+        @media print {
+            @page {
+                margin: 0.5in;
+                size: A4;
+            }
+            body {
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+            }
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        
+        .receipt-header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #2563eb;
+            padding-bottom: 20px;
+        }
+        
+        .company-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2563eb;
+            margin-bottom: 5px;
+        }
+        
+        .receipt-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 10px 0;
+            color: #374151;
+        }
+        
+        .receipt-number {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 5px;
+        }
+        
+        .receipt-date {
+            font-size: 12px;
+            color: #6b7280;
+        }
+        
+        .receipt-body {
+            margin-bottom: 30px;
+        }
+        
+        .client-section {
+            margin-bottom: 25px;
+            background-color: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #2563eb;
+        }
+        
+        .section-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #2563eb;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+        
+        .client-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .info-item {
+            margin-bottom: 8px;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            color: #374151;
+        }
+        
+        .info-value {
+            color: #6b7280;
+            margin-left: 5px;
+        }
+        
+        .products-section {
+            margin-bottom: 30px;
+        }
+        
+        .products-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .products-table th {
+            background-color: #2563eb;
+            color: white;
+            padding: 12px 8px;
+            text-align: left;
+            font-weight: bold;
+            font-size: 13px;
+        }
+        
+        .products-table td {
+            padding: 8px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .products-table tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        
+        .signature-section {
+            margin-top: 40px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 50px;
+        }
+        
+        .signature-box {
+            text-align: center;
+            border-top: 2px solid #374151;
+            padding-top: 10px;
+            margin-top: 50px;
+        }
+        
+        .signature-label {
+            font-weight: bold;
+            color: #374151;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 10px;
+            color: #9ca3af;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 15px;
+        }
+        
+        .order-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .important-note {
+            background-color: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 6px;
+            padding: 10px;
+            margin: 20px 0;
+            font-size: 11px;
+            color: #92400e;
+        }
+    </style>
+</head>
+<body>
+    <div class="receipt-header">
+        <div class="company-name">MIMI</div>
+        <div class="receipt-title">REMITO DE ENTREGA</div>
+        <div class="receipt-number">Nº ${order.numero_pedido}</div>
+        <div class="receipt-date">${currentDate}</div>
+    </div>
+    
+    <div class="receipt-body">
+        <div class="client-section">
+            <div class="section-title">📋 Datos del Cliente</div>
+            <div class="client-info">
+                <div class="info-item">
+                    <span class="info-label">Nombre:</span>
+                    <span class="info-value">${client.nombre || ''} ${client.apellido || ''}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Teléfono:</span>
+                    <span class="info-value">${client.telefono || 'No especificado'}</span>
+                </div>
+                <div class="info-item" style="grid-column: 1 / -1;">
+                    <span class="info-label">Dirección de Entrega:</span>
+                    <span class="info-value">${client.direccion || 'No especificada'}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Localidad:</span>
+                    <span class="info-value">${client.localidad || 'No especificada'}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Ciudad:</span>
+                    <span class="info-value">${client.ciudad || 'No especificada'}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Provincia:</span>
+                    <span class="info-value">${client.provincia || 'No especificada'}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Código Postal:</span>
+                    <span class="info-value">${client.codigo_postal || 'No especificado'}</span>
+                </div>
+            </div>
+            
+            <div style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <span class="info-label">Estado del Pedido:</span>
+                    <span class="order-status">${translateOrderStatus(order.estado)}</span>
+                </div>
+                <div>
+                    <span class="info-label">Fecha del Pedido:</span>
+                    <span class="info-value">${formatDate(order.fecha)}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="products-section">
+            <div class="section-title">📦 Productos a Entregar</div>
+            <table class="products-table">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th style="width: 100px; text-align: center;">Cantidad</th>
+                        <th>Observaciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${itemsRows}
+                </tbody>
+            </table>
+        </div>
+        
+        ${order.descripcion ? `
+            <div class="important-note">
+                <strong>📝 Notas del Pedido:</strong><br>
+                ${order.descripcion}
+            </div>
+        ` : ''}
+        
+        <div class="important-note">
+            <strong>⚠️ Importante:</strong> Este remito debe ser firmado por el cliente al momento de la entrega. 
+            Verificar que los productos entregados coincidan con lo detallado en este documento.
+        </div>
+    </div>
+    
+    <div class="signature-section">
+        <div>
+            <div class="signature-box">
+                <div class="signature-label">Firma del Cliente</div>
+            </div>
+        </div>
+        <div>
+            <div class="signature-box">
+                <div class="signature-label">Firma del Repartidor</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p><strong>MIMI CRM</strong> - Sistema de Gestión</p>
+        <p>Remito generado el ${new Date().toLocaleDateString('es-ES')} a las ${new Date().toLocaleTimeString('es-ES')}</p>
+    </div>
+</body>
+</html>
+    `;
 }
 
 function viewPaymentDetails(paymentId) {
