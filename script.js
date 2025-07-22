@@ -4682,9 +4682,9 @@ function generateDeliveryReceiptHTML(order, client, items) {
     
     const itemsRows = items.map(item => `
         <tr>
-            <td style="padding: 8px; border-bottom: 1px solid #ddd;">${item.producto_nombre || 'Producto'}</td>
-            <td style="padding: 8px; text-align: center; border-bottom: 1px solid #ddd;">${item.cantidad}</td>
-            <td style="padding: 8px; border-bottom: 1px solid #ddd;">${item.producto_descripcion || '-'}</td>
+            <td style="padding: 8px; border-bottom: 1px solid #ccc;">${item.producto_nombre || 'Producto'}</td>
+            <td style="padding: 8px; text-align: center; border-bottom: 1px solid #ccc;">${item.cantidad}</td>
+            <td style="padding: 8px; border-bottom: 1px solid #ccc;">${item.producto_descripcion || '-'}</td>
         </tr>
     `).join('');
     
@@ -4716,16 +4716,26 @@ function generateDeliveryReceiptHTML(order, client, items) {
         }
         
         .receipt-header {
-            text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
             margin-bottom: 30px;
-            border-bottom: 3px solid #2563eb;
+            border-bottom: 2px solid #000;
             padding-bottom: 20px;
+        }
+        
+        .receipt-left {
+            text-align: left;
+        }
+        
+        .receipt-right {
+            text-align: right;
         }
         
         .company-name {
             font-size: 24px;
             font-weight: bold;
-            color: #2563eb;
+            color: #000;
             margin-bottom: 5px;
         }
         
@@ -4733,18 +4743,18 @@ function generateDeliveryReceiptHTML(order, client, items) {
             font-size: 18px;
             font-weight: bold;
             margin: 10px 0;
-            color: #374151;
+            color: #000;
         }
         
         .receipt-number {
             font-size: 14px;
-            color: #6b7280;
+            color: #000;
             margin-bottom: 5px;
         }
         
         .receipt-date {
             font-size: 12px;
-            color: #6b7280;
+            color: #000;
         }
         
         .receipt-body {
@@ -4753,16 +4763,16 @@ function generateDeliveryReceiptHTML(order, client, items) {
         
         .client-section {
             margin-bottom: 25px;
-            background-color: #f8fafc;
+            background-color: #f9f9f9;
             padding: 15px;
             border-radius: 8px;
-            border-left: 4px solid #2563eb;
+            border-left: 4px solid #000;
         }
         
         .section-title {
             font-size: 14px;
             font-weight: bold;
-            color: #2563eb;
+            color: #000;
             margin-bottom: 10px;
             text-transform: uppercase;
         }
@@ -4779,11 +4789,11 @@ function generateDeliveryReceiptHTML(order, client, items) {
         
         .info-label {
             font-weight: bold;
-            color: #374151;
+            color: #000;
         }
         
         .info-value {
-            color: #6b7280;
+            color: #333;
             margin-left: 5px;
         }
         
@@ -4794,13 +4804,13 @@ function generateDeliveryReceiptHTML(order, client, items) {
         .products-table {
             width: 100%;
             border-collapse: collapse;
-            border: 2px solid #e5e7eb;
+            border: 2px solid #000;
             border-radius: 8px;
             overflow: hidden;
         }
         
         .products-table th {
-            background-color: #2563eb;
+            background-color: #000;
             color: white;
             padding: 12px 8px;
             text-align: left;
@@ -4810,11 +4820,11 @@ function generateDeliveryReceiptHTML(order, client, items) {
         
         .products-table td {
             padding: 8px;
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 1px solid #ccc;
         }
         
         .products-table tr:nth-child(even) {
-            background-color: #f8fafc;
+            background-color: #f5f5f5;
         }
         
         .signature-section {
@@ -4826,22 +4836,22 @@ function generateDeliveryReceiptHTML(order, client, items) {
         
         .signature-box {
             text-align: center;
-            border-top: 2px solid #374151;
+            border-top: 2px solid #000;
             padding-top: 10px;
             margin-top: 50px;
         }
         
         .signature-label {
             font-weight: bold;
-            color: #374151;
+            color: #000;
         }
         
         .footer {
             margin-top: 30px;
             text-align: center;
             font-size: 10px;
-            color: #9ca3af;
-            border-top: 1px solid #e5e7eb;
+            color: #666;
+            border-top: 1px solid #ccc;
             padding-top: 15px;
         }
         
@@ -4851,27 +4861,31 @@ function generateDeliveryReceiptHTML(order, client, items) {
             border-radius: 20px;
             font-size: 11px;
             font-weight: bold;
-            background-color: #dbeafe;
-            color: #1e40af;
+            background-color: #f0f0f0;
+            color: #000;
         }
         
         .important-note {
-            background-color: #fef3c7;
-            border: 1px solid #f59e0b;
+            background-color: #f9f9f9;
+            border: 1px solid #666;
             border-radius: 6px;
             padding: 10px;
             margin: 20px 0;
             font-size: 11px;
-            color: #92400e;
+            color: #333;
         }
     </style>
 </head>
 <body>
     <div class="receipt-header">
-        <div class="company-name">MIMI</div>
-        <div class="receipt-title">REMITO DE ENTREGA</div>
-        <div class="receipt-number">Nº ${order.numero_pedido}</div>
-        <div class="receipt-date">${currentDate}</div>
+        <div class="receipt-left">
+            <div class="company-name">MIMI</div>
+            <div class="receipt-title">REMITO DE ENTREGA</div>
+            <div class="receipt-number">Nº ${order.numero_pedido}</div>
+        </div>
+        <div class="receipt-right">
+            <div class="receipt-date">${currentDate}</div>
+        </div>
     </div>
     
     <div class="receipt-body">
@@ -4908,12 +4922,8 @@ function generateDeliveryReceiptHTML(order, client, items) {
                 </div>
             </div>
             
-            <div style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <span class="info-label">Estado del Pedido:</span>
-                    <span class="order-status">${translateOrderStatus(order.estado)}</span>
-                </div>
-                <div>
+            <div style="margin-top: 15px;">
+                <div class="info-item">
                     <span class="info-label">Fecha del Pedido:</span>
                     <span class="info-value">${formatDate(order.fecha)}</span>
                 </div>
