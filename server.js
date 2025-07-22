@@ -810,7 +810,7 @@ app.delete('/api/productos/:id', authenticateToken, async (req, res) => {
 app.get('/api/pedidos', authenticateToken, async (req, res) => {
     try {
         let query = `
-            SELECT p.*, c.nombre as cliente_nombre, u.nombre as creado_por_nombre
+            SELECT p.*, c.nombre as cliente_nombre, c.apellido as cliente_apellido, u.nombre as creado_por_nombre
             FROM pedidos p
             LEFT JOIN clientes c ON p.cliente_id = c.id
             LEFT JOIN usuarios u ON p.creado_por = u.id

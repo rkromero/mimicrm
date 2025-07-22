@@ -366,6 +366,12 @@ async function loadOrders() {
             orders = await response.json();
             renderOrdersTable(); // Renderizar la tabla después de cargar los datos
             
+            // Configurar búsqueda de pedidos si la sección está visible
+            const pedidosSection = document.getElementById('pedidos-section');
+            if (pedidosSection && pedidosSection.style.display !== 'none') {
+                setupOrdersSearch();
+            }
+            
             // Si la sección de fábrica está activa, también actualizarla
             const fabricaSection = document.getElementById('fabrica-section');
             if (fabricaSection && fabricaSection.style.display !== 'none') {
@@ -702,19 +708,23 @@ function setupClientsSearch() {
 }
 
 // Función para renderizar la tabla de pedidos
-function renderOrdersTable() {
+function renderOrdersTable(filteredOrders = null) {
     const tbody = document.getElementById('orders-table-body');
     if (!tbody) return;
     
-    if (orders.length === 0) {
+    // Usar filteredOrders si se proporciona, sino usar orders
+    const ordersToRender = filteredOrders || orders;
+    
+    if (ordersToRender.length === 0) {
         tbody.innerHTML = '<tr><td colspan="8" class="text-center">No hay pedidos registrados</td></tr>';
         return;
     }
     
-    tbody.innerHTML = orders.map(order => `
+    tbody.innerHTML = ordersToRender.map(order => `
         <tr>
             <td>${order.numero_pedido}</td>
             <td>${order.cliente_nombre || 'N/A'}</td>
+            <td>${order.cliente_apellido || 'N/A'}</td>
             <td>${order.descripcion || 'Sin descripción'}</td>
             <td>${formatCurrency(order.monto)}</td>
             <td>
@@ -736,6 +746,131 @@ function renderOrdersTable() {
             </td>
         </tr>
     `).join('');
+    
+    // Configurar ordenamiento de columnas después de renderizar
+    setupOrdersTableSorting();
+}
+
+// Variables para el estado del ordenamiento
+let currentOrderSort = { column: '', direction: '' };
+
+// Función para configurar la búsqueda de pedidos
+function setupOrdersSearch() {
+    const searchInput = document.getElementById('orders-search');
+    if (!searchInput) return;
+    
+    // Limpiar listeners previos
+    const newSearchInput = searchInput.cloneNode(true);
+    searchInput.parentNode.replaceChild(newSearchInput, searchInput);
+    
+    newSearchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase().trim();
+        
+        if (!searchTerm) {
+            // Si no hay término de búsqueda, mostrar todos los pedidos
+            renderOrdersTable();
+            return;
+        }
+        
+        // Filtrar pedidos por nombre y apellido del cliente
+        const filteredOrders = orders.filter(order => {
+            const clientName = (order.cliente_nombre || '').toLowerCase();
+            const clientLastName = (order.cliente_apellido || '').toLowerCase();
+            const fullName = `${clientName} ${clientLastName}`.trim();
+            
+            return clientName.includes(searchTerm) || 
+                   clientLastName.includes(searchTerm) ||
+                   fullName.includes(searchTerm);
+        });
+        
+        // Renderizar la tabla con los pedidos filtrados
+        renderOrdersTable(filteredOrders);
+    });
+}
+
+// Función para configurar el ordenamiento de la tabla de pedidos
+function setupOrdersTableSorting() {
+    const sortableHeaders = document.querySelectorAll('#pedidos-section .sortable');
+    
+    sortableHeaders.forEach(header => {
+        // Remover listeners previos
+        const newHeader = header.cloneNode(true);
+        header.parentNode.replaceChild(newHeader, header);
+        
+        newHeader.addEventListener('click', function() {
+            const column = this.getAttribute('data-sort');
+            
+            // Determinar dirección del ordenamiento
+            let direction = 'asc';
+            if (currentOrderSort.column === column && currentOrderSort.direction === 'asc') {
+                direction = 'desc';
+            }
+            
+            // Actualizar estado de ordenamiento
+            currentOrderSort = { column, direction };
+            
+            // Actualizar estilos de encabezados
+            sortableHeaders.forEach(h => {
+                h.classList.remove('sort-asc', 'sort-desc');
+            });
+            this.classList.add(direction === 'asc' ? 'sort-asc' : 'sort-desc');
+            
+            // Ordenar los pedidos
+            const sortedOrders = sortOrders(orders.slice(), column, direction);
+            
+            // Renderizar tabla ordenada
+            renderOrdersTable(sortedOrders);
+        });
+    });
+}
+
+// Función para ordenar los pedidos según la columna y dirección
+function sortOrders(ordersArray, column, direction) {
+    return ordersArray.sort((a, b) => {
+        let valueA, valueB;
+        
+        switch(column) {
+            case 'numero_pedido':
+                valueA = a.numero_pedido || '';
+                valueB = b.numero_pedido || '';
+                break;
+            case 'cliente_nombre':
+                valueA = (a.cliente_nombre || '').toLowerCase();
+                valueB = (b.cliente_nombre || '').toLowerCase();
+                break;
+            case 'cliente_apellido':
+                valueA = (a.cliente_apellido || '').toLowerCase();
+                valueB = (b.cliente_apellido || '').toLowerCase();
+                break;
+            case 'descripcion':
+                valueA = (a.descripcion || '').toLowerCase();
+                valueB = (b.descripcion || '').toLowerCase();
+                break;
+            case 'monto':
+                valueA = parseFloat(a.monto) || 0;
+                valueB = parseFloat(b.monto) || 0;
+                break;
+            case 'estado':
+                valueA = (a.estado || '').toLowerCase();
+                valueB = (b.estado || '').toLowerCase();
+                break;
+            case 'fecha':
+                valueA = new Date(a.fecha || 0);
+                valueB = new Date(b.fecha || 0);
+                break;
+            default:
+                return 0;
+        }
+        
+        let comparison = 0;
+        if (valueA < valueB) {
+            comparison = -1;
+        } else if (valueA > valueB) {
+            comparison = 1;
+        }
+        
+        return direction === 'desc' ? -comparison : comparison;
+    });
 }
 
 // Función para renderizar la tabla de pagos
@@ -1204,6 +1339,10 @@ function showSection(section) {
             document.getElementById('pedidos-section').style.display = 'block';
             // Cargar datos frescos del servidor
             loadOrders();
+            // Configurar búsqueda después de cargar los datos
+            setTimeout(() => {
+                setupOrdersSearch();
+            }, 200);
             break;
         case 'pagos':
             document.getElementById('pagos-section').style.display = 'block';
