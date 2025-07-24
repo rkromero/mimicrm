@@ -4610,6 +4610,9 @@ function viewOrderDetails(orderId) {
                     ` : ''}
                     ${itemsTable}
                     <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+                        <button class="btn btn-info" onclick="printShippingLabel(${order.id})" style="background: #06b6d4; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;" title="Imprimir Etiqueta de Envío">
+                            <i class="fas fa-tag"></i> Imprimir Etiqueta
+                        </button>
                         <button class="btn btn-success" onclick="printDeliveryReceipt(${order.id})" style="background: #10b981; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;" title="Imprimir Remito de Entrega">
                             <i class="fas fa-print"></i> Imprimir Remito
                         </button>
@@ -4975,6 +4978,197 @@ function generateDeliveryReceiptHTML(order, client, items) {
     <div class="footer">
         <p><strong>MIMI CRM</strong> - Sistema de Gestión</p>
         <p>Remito generado el ${new Date().toLocaleDateString('es-ES')} a las ${new Date().toLocaleTimeString('es-ES')}</p>
+    </div>
+</body>
+</html>
+    `;
+}
+
+// Función para imprimir etiqueta de envío
+async function printShippingLabel(orderId) {
+    try {
+        // Encontrar el pedido
+        const order = orders.find(o => o.id == orderId);
+        if (!order) {
+            showNotification('Pedido no encontrado', 'error');
+            return;
+        }
+        
+        // Encontrar el cliente completo
+        const client = clients.find(c => c.id == order.cliente_id);
+        if (!client) {
+            showNotification('Cliente no encontrado', 'error');
+            return;
+        }
+        
+        // Generar el HTML de la etiqueta
+        const labelHTML = generateShippingLabelHTML(client);
+        
+        // Abrir ventana de impresión
+        const printWindow = window.open('', '_blank', 'width=400,height=600');
+        printWindow.document.write(labelHTML);
+        printWindow.document.close();
+        
+        // Esperar a que cargue y después imprimir
+        printWindow.onload = function() {
+            printWindow.focus();
+            printWindow.print();
+            // Cerrar la ventana después de imprimir (opcional)
+            printWindow.onafterprint = function() {
+                printWindow.close();
+            };
+        };
+        
+    } catch (error) {
+        console.error('Error generando etiqueta:', error);
+        showNotification('Error al generar la etiqueta de envío', 'error');
+    }
+}
+
+// Función para generar el HTML de la etiqueta de envío
+function generateShippingLabelHTML(client) {
+    return `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Etiqueta de Envío - ${client.nombre} ${client.apellido}</title>
+    <style>
+        @media print {
+            @page {
+                margin: 0.2in;
+                size: 4in 6in;
+            }
+            body {
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+            }
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 10px;
+            font-size: 14px;
+            line-height: 1.3;
+            background: white;
+        }
+        
+        .shipping-label {
+            border: 2px solid #000;
+            padding: 15px;
+            background: white;
+            min-height: 5.5in;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        .label-header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #000;
+            padding-bottom: 10px;
+        }
+        
+        .company-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .label-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #000;
+        }
+        
+        .recipient-info {
+            flex-grow: 1;
+            margin-bottom: 20px;
+        }
+        
+        .recipient-name {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+        
+        .address-section {
+            margin-bottom: 15px;
+        }
+        
+        .address-line {
+            font-size: 16px;
+            margin-bottom: 5px;
+            line-height: 1.4;
+        }
+        
+        .phone-section {
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid #ccc;
+        }
+        
+        .phone-label {
+            font-weight: bold;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .phone-number {
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .label-footer {
+            text-align: center;
+            font-size: 10px;
+            color: #666;
+            border-top: 1px solid #ccc;
+            padding-top: 10px;
+        }
+        
+        .postal-code {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="shipping-label">
+        <div class="label-header">
+            <div class="company-name">MIMI</div>
+            <div class="label-title">ETIQUETA DE ENVÍO</div>
+        </div>
+        
+        <div class="recipient-info">
+            <div class="recipient-name">
+                ${client.nombre} ${client.apellido}
+            </div>
+            
+            <div class="address-section">
+                <div class="address-line">${client.direccion}</div>
+                <div class="address-line">${client.localidad}, ${client.ciudad}</div>
+                <div class="address-line">${client.provincia}</div>
+                <div class="postal-code">${client.codigo_postal}</div>
+            </div>
+            
+            <div class="phone-section">
+                <div class="phone-label">TELÉFONO:</div>
+                <div class="phone-number">${client.telefono}</div>
+            </div>
+        </div>
+        
+        <div class="label-footer">
+            <div>Generado el ${new Date().toLocaleDateString('es-ES')}</div>
+            <div>MIMI CRM - Sistema de Gestión</div>
+        </div>
     </div>
 </body>
 </html>
