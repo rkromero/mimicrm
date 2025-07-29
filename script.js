@@ -4883,6 +4883,8 @@ function generateDeliveryReceiptHTML(order, client, items) {
     <div class="receipt-header">
         <div class="receipt-left">
             <div class="company-name">MIMI</div>
+            <div style="font-size: 12px; color: #333; margin-bottom: 5px;">CUIT: 30-71751033-6</div>
+            <div style="font-size: 12px; color: #333; margin-bottom: 10px;">Dirección: José Ignacio de la Rosa 6276, Capital Federal</div>
             <div class="receipt-title">REMITO DE ENTREGA</div>
             <div class="receipt-number">Nº ${order.numero_pedido}</div>
         </div>
