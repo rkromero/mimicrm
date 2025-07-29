@@ -5234,8 +5234,8 @@ function generateInvoiceHTML(order, client, items) {
     
     // Calcular subtotales y totales
     const subtotal = items.reduce((sum, item) => sum + (item.subtotal || 0), 0);
-    const iva = subtotal * 0.21; // 21% IVA
-    const total = subtotal + iva;
+    const iva = 0; // IVA en 0
+    const total = subtotal; // Total igual al subtotal
     
     const itemsRows = items.map(item => `
         <tr>
@@ -5525,7 +5525,7 @@ function generateInvoiceHTML(order, client, items) {
         <div class="fiscal-info">
             <strong>ℹ️ Información Fiscal:</strong><br>
             • Este documento es una factura tipo "A" según normativa AFIP<br>
-            • El IVA discriminado corresponde al 21% vigente<br>
+            • No corresponde IVA discriminado<br>
             • Conserve este comprobante para su contabilidad
         </div>
     </div>
