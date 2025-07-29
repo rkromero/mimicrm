@@ -4610,6 +4610,9 @@ function viewOrderDetails(orderId) {
                     ` : ''}
                     ${itemsTable}
                     <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+                        <button class="btn btn-warning" onclick="printInvoice(${order.id})" style="background: #f59e0b; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;" title="Imprimir Factura">
+                            <i class="fas fa-file-invoice"></i> Imprimir Factura
+                        </button>
                         <button class="btn btn-info" onclick="printShippingLabel(${order.id})" style="background: #06b6d4; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;" title="Imprimir Etiqueta de Envío">
                             <i class="fas fa-tag"></i> Imprimir Etiqueta
                         </button>
@@ -5171,6 +5174,366 @@ function generateShippingLabelHTML(client) {
             <div>Generado el ${new Date().toLocaleDateString('es-ES')}</div>
             <div>MIMI CRM - Sistema de Gestión</div>
         </div>
+    </div>
+</body>
+</html>
+    `;
+}
+
+// Función para imprimir factura
+async function printInvoice(orderId) {
+    try {
+        // Encontrar el pedido
+        const order = orders.find(o => o.id == orderId);
+        if (!order) {
+            showNotification('Pedido no encontrado', 'error');
+            return;
+        }
+        
+        // Encontrar el cliente completo
+        const client = clients.find(c => c.id == order.cliente_id);
+        if (!client) {
+            showNotification('Cliente no encontrado', 'error');
+            return;
+        }
+        
+        // Cargar los items del pedido
+        const items = await loadOrderItems(orderId);
+        
+        // Generar el HTML de la factura
+        const invoiceHTML = generateInvoiceHTML(order, client, items);
+        
+        // Abrir ventana de impresión
+        const printWindow = window.open('', '_blank', 'width=800,height=600');
+        printWindow.document.write(invoiceHTML);
+        printWindow.document.close();
+        
+        // Esperar a que cargue y después imprimir
+        printWindow.onload = function() {
+            printWindow.focus();
+            printWindow.print();
+            // Cerrar la ventana después de imprimir (opcional)
+            printWindow.onafterprint = function() {
+                printWindow.close();
+            };
+        };
+        
+    } catch (error) {
+        console.error('Error generando factura:', error);
+        showNotification('Error al generar la factura', 'error');
+    }
+}
+
+// Función para generar el HTML de la factura argentina
+function generateInvoiceHTML(order, client, items) {
+    const currentDate = new Date().toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+    
+    // Calcular subtotales y totales
+    const subtotal = items.reduce((sum, item) => sum + (item.subtotal || 0), 0);
+    const iva = subtotal * 0.21; // 21% IVA
+    const total = subtotal + iva;
+    
+    const itemsRows = items.map(item => `
+        <tr>
+            <td style="padding: 8px; border-bottom: 1px solid #ccc; text-align: left;">${item.producto_nombre || 'Producto'}</td>
+            <td style="padding: 8px; border-bottom: 1px solid #ccc; text-align: center;">${item.cantidad}</td>
+            <td style="padding: 8px; border-bottom: 1px solid #ccc; text-align: right;">${formatCurrency(item.precio)}</td>
+            <td style="padding: 8px; border-bottom: 1px solid #ccc; text-align: right;">${formatCurrency(item.subtotal)}</td>
+        </tr>
+    `).join('');
+    
+    return `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Factura - ${order.numero_pedido}</title>
+    <style>
+        @media print {
+            @page {
+                margin: 0.5in;
+                size: A4;
+            }
+            body {
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+            }
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            font-size: 12px;
+            line-height: 1.4;
+            background: white;
+        }
+        
+        .invoice-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 20px;
+        }
+        
+        .invoice-left {
+            text-align: left;
+        }
+        
+        .invoice-right {
+            text-align: right;
+        }
+        
+        .company-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #000;
+            margin-bottom: 5px;
+        }
+        
+        .company-details {
+            font-size: 12px;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .invoice-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 10px 0;
+            color: #000;
+        }
+        
+        .invoice-number {
+            font-size: 14px;
+            color: #000;
+            margin-bottom: 5px;
+        }
+        
+        .invoice-date {
+            font-size: 12px;
+            color: #000;
+        }
+        
+        .invoice-body {
+            margin-bottom: 30px;
+        }
+        
+        .client-section {
+            margin-bottom: 25px;
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #000;
+        }
+        
+        .section-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #000;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+        
+        .client-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .info-item {
+            margin-bottom: 8px;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            color: #000;
+        }
+        
+        .info-value {
+            color: #333;
+            margin-left: 5px;
+        }
+        
+        .products-section {
+            margin-bottom: 25px;
+        }
+        
+        .products-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        
+        .products-table th {
+            background-color: #f0f0f0;
+            padding: 10px 8px;
+            text-align: left;
+            font-weight: bold;
+            border-bottom: 2px solid #000;
+        }
+        
+        .products-table td {
+            padding: 8px;
+            border-bottom: 1px solid #ccc;
+        }
+        
+        .totals-section {
+            margin-top: 20px;
+            border-top: 2px solid #000;
+            padding-top: 15px;
+        }
+        
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        
+        .total-row.final {
+            font-size: 18px;
+            font-weight: bold;
+            color: #000;
+            border-top: 1px solid #000;
+            padding-top: 10px;
+            margin-top: 10px;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 10px;
+            color: #666;
+            border-top: 1px solid #ccc;
+            padding-top: 15px;
+        }
+        
+        .important-note {
+            background-color: #f9f9f9;
+            border: 1px solid #666;
+            border-radius: 6px;
+            padding: 10px;
+            margin: 20px 0;
+            font-size: 11px;
+            color: #333;
+        }
+        
+        .fiscal-info {
+            background-color: #e8f4fd;
+            border: 1px solid #0066cc;
+            border-radius: 6px;
+            padding: 10px;
+            margin: 20px 0;
+            font-size: 11px;
+            color: #0066cc;
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-header">
+        <div class="invoice-left">
+            <div class="company-name">MIMI</div>
+            <div class="company-details">CUIT: 30-71751033-6</div>
+            <div class="company-details">Dirección: José Ignacio de la Rosa 6276, Capital Federal</div>
+            <div class="company-details">Condición IVA: Responsable Inscripto</div>
+            <div class="invoice-title">FACTURA</div>
+            <div class="invoice-number">Nº ${order.numero_pedido}</div>
+        </div>
+        <div class="invoice-right">
+            <div class="invoice-date">Fecha: ${currentDate}</div>
+            <div style="margin-top: 10px; font-size: 11px; color: #666;">
+                <div>Punto de Venta: 0001</div>
+                <div>Comprobante: FACTURA A</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="invoice-body">
+        <div class="client-section">
+            <div class="section-title">📋 Datos del Cliente</div>
+            <div class="client-info">
+                <div class="info-item">
+                    <span class="info-label">Razón Social:</span>
+                    <span class="info-value">${client.nombre || ''} ${client.apellido || ''}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">CUIT/DNI:</span>
+                    <span class="info-value">${client.documento || 'No especificado'}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Teléfono:</span>
+                    <span class="info-value">${client.telefono || 'No especificado'}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Email:</span>
+                    <span class="info-value">${client.email || 'No especificado'}</span>
+                </div>
+                <div class="info-item" style="grid-column: 1 / -1;">
+                    <span class="info-label">Dirección:</span>
+                    <span class="info-value">${client.direccion || 'No especificada'}, ${client.localidad || ''}, ${client.ciudad || ''}, ${client.provincia || ''}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="products-section">
+            <div class="section-title">📦 Detalle de Productos</div>
+            <table class="products-table">
+                <thead>
+                    <tr>
+                        <th style="width: 40%;">Descripción</th>
+                        <th style="width: 15%; text-align: center;">Cantidad</th>
+                        <th style="width: 20%; text-align: right;">Precio Unit.</th>
+                        <th style="width: 25%; text-align: right;">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${itemsRows}
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="totals-section">
+            <div class="total-row">
+                <span>Subtotal:</span>
+                <span>${formatCurrency(subtotal)}</span>
+            </div>
+            <div class="total-row">
+                <span>IVA 21%:</span>
+                <span>${formatCurrency(iva)}</span>
+            </div>
+            <div class="total-row final">
+                <span>TOTAL:</span>
+                <span>${formatCurrency(total)}</span>
+            </div>
+        </div>
+        
+        ${order.descripcion ? `
+            <div class="important-note">
+                <strong>📝 Observaciones:</strong><br>
+                ${order.descripcion}
+            </div>
+        ` : ''}
+        
+        <div class="fiscal-info">
+            <strong>ℹ️ Información Fiscal:</strong><br>
+            • Este documento es una factura tipo "A" según normativa AFIP<br>
+            • El IVA discriminado corresponde al 21% vigente<br>
+            • Conserve este comprobante para su contabilidad
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p><strong>MIMI</strong> - CUIT: 30-71751033-6 - Responsable Inscripto</p>
+        <p>José Ignacio de la Rosa 6276, Capital Federal</p>
+        <p>Factura generada el ${new Date().toLocaleDateString('es-ES')} a las ${new Date().toLocaleTimeString('es-ES')}</p>
     </div>
 </body>
 </html>
