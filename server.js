@@ -19,17 +19,34 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
 
-// Configuración de la base de datos
+// Configuración de la base de datos - OPTIMIZADA PARA RENDIMIENTO
 const dbConfig = {
     host: process.env.DB_HOST || 'localhost',
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
     database: process.env.DB_NAME || 'mimi_crm',
     port: process.env.DB_PORT || 3306,
-    connectionLimit: 10,
-    acquireTimeout: 60000,
-    timeout: 60000,
-    reconnect: true
+    // OPTIMIZACIONES DE POOL DE CONEXIONES
+    connectionLimit: 25,        // Aumentado de 10 a 25 para mejor concurrencia
+    acquireTimeout: 10000,      // Reducido de 60s a 10s - timeout más agresivo
+    timeout: 30000,             // Reducido de 60s a 30s - consultas más rápidas o fallan
+    idleTimeout: 300000,        // 5 minutos - desconectar conexiones inactivas
+    reconnect: true,
+    // OPTIMIZACIONES ADICIONALES
+    enableKeepAlive: true,      // Mantener conexiones vivas
+    keepAliveInitialDelay: 0,   // Sin delay inicial para keep-alive
+    // CONFIGURACIONES DE MySQL PARA RENDIMIENTO
+    typeCast: function (field, next) {
+        // Optimizar conversión de tipos
+        if (field.type === 'TINY' && field.length === 1) {
+            return (field.string() === '1'); // true/false para BOOLEAN
+        }
+        return next();
+    },
+    // CONFIGURACIONES DE CHARSET PARA EVITAR PROBLEMAS
+    charset: 'utf8mb4',
+    // CONFIGURACIONES DE TIMEZONE
+    timezone: 'local'
 };
 
 // Crear pool de conexiones a la base de datos
@@ -37,20 +54,64 @@ let db;
 
 async function connectDB() {
     try {
+        console.log('🔄 Iniciando conexión a MySQL con configuración optimizada...');
+        console.log(`📊 Pool configurado: ${dbConfig.connectionLimit} conexiones máx, timeout: ${dbConfig.timeout}ms`);
+        
         db = mysql.createPool(dbConfig);
         
-        // Probar la conexión
+        // Configurar eventos del pool para monitoreo
+        db.on('connection', function (connection) {
+            console.log(`🔗 Nueva conexión establecida como id ${connection.threadId}`);
+        });
+
+        db.on('error', function(err) {
+            console.error('❌ Error en el pool de conexiones:', err);
+            if(err.code === 'PROTOCOL_CONNECTION_LOST') {
+                console.log('🔄 Reconectando automáticamente...');
+            } else {
+                throw err;
+            }
+        });
+        
+        // Probar la conexión inicial
+        console.log('🧪 Probando conexión inicial...');
+        const startTime = Date.now();
         const connection = await db.getConnection();
+        const connectionTime = Date.now() - startTime;
+        
+        console.log(`⚡ Conexión exitosa en ${connectionTime}ms (Thread ID: ${connection.threadId})`);
         connection.release();
         
-        console.log('✅ Conectado a la base de datos MySQL');
+        console.log('✅ Conectado a la base de datos MySQL con pool optimizado');
         
         // Crear las tablas si no existen
         await createTables();
         
+        // Configurar logging periódico de estadísticas del pool (cada 5 minutos)
+        setInterval(() => {
+            logPoolStats();
+        }, 5 * 60 * 1000);
+        
     } catch (error) {
         console.error('❌ Error conectando a la base de datos:', error);
+        console.error('💡 Verifica que MySQL esté ejecutándose y las credenciales sean correctas');
         process.exit(1);
+    }
+}
+
+// Función para loggear estadísticas del pool de conexiones
+function logPoolStats() {
+    if (db && db._allConnections) {
+        const totalConnections = db._allConnections.length;
+        const freeConnections = db._freeConnections.length;
+        const usedConnections = totalConnections - freeConnections;
+        
+        console.log(`📊 Pool MySQL Stats - Total: ${totalConnections}, En uso: ${usedConnections}, Libres: ${freeConnections}`);
+        
+        // Advertir si el pool está cerca del límite
+        if (usedConnections > dbConfig.connectionLimit * 0.8) {
+            console.warn(`⚠️ Pool de conexiones al ${Math.round((usedConnections/dbConfig.connectionLimit)*100)}% de capacidad`);
+        }
     }
 }
 
@@ -1439,6 +1500,52 @@ app.get('/api/test', (req, res) => {
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'development'
     });
+});
+
+// ENDPOINT PARA MONITOREAR ESTADO DEL POOL DE CONEXIONES
+app.get('/api/pool-status', authenticateToken, (req, res) => {
+    try {
+        if (!db || !db._allConnections) {
+            return res.json({
+                status: 'error',
+                message: 'Pool de conexiones no disponible'
+            });
+        }
+
+        const totalConnections = db._allConnections.length;
+        const freeConnections = db._freeConnections.length;
+        const usedConnections = totalConnections - freeConnections;
+        const utilizationPercent = Math.round((usedConnections / dbConfig.connectionLimit) * 100);
+
+        const status = {
+            status: 'ok',
+            timestamp: new Date().toISOString(),
+            pool: {
+                totalConnections,
+                freeConnections,
+                usedConnections,
+                maxConnections: dbConfig.connectionLimit,
+                utilizationPercent,
+                configuration: {
+                    connectionLimit: dbConfig.connectionLimit,
+                    acquireTimeout: dbConfig.acquireTimeout,
+                    timeout: dbConfig.timeout,
+                    idleTimeout: dbConfig.idleTimeout
+                }
+            },
+            health: utilizationPercent < 80 ? 'healthy' : 
+                   utilizationPercent < 95 ? 'warning' : 'critical'
+        };
+
+        res.json(status);
+    } catch (error) {
+        console.error('❌ Error obteniendo estado del pool:', error);
+        res.status(500).json({
+            status: 'error',
+            message: 'Error interno obteniendo estado del pool',
+            error: error.message
+        });
+    }
 });
 
 // ENDPOINT ESPECIAL PARA LIMPIAR BASE DE DATOS (SOLO DESARROLLO)
