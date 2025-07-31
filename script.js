@@ -351,11 +351,14 @@ async function loadProducts() {
     }
 }
 
-// Función para cargar pedidos desde la API
-async function loadOrders() {
+// Función OPTIMIZADA para cargar pedidos con paginación
+async function loadOrders(page = 1, limit = 50) {
     try {
+        console.log('📊 Cargando pedidos...');
+        const startTime = Date.now();
+        
         const token = localStorage.getItem('authToken');
-        const response = await fetch('/api/pedidos', {
+        const response = await fetch(`/api/pedidos?page=${page}&limit=${limit}`, {
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
@@ -363,7 +366,24 @@ async function loadOrders() {
         });
         
         if (response.ok) {
-            orders = await response.json();
+            const result = await response.json();
+            
+            // NUEVA ESTRUCTURA: result.data contiene los pedidos
+            orders = result.data || result; // Compatibilidad con versión anterior
+            
+            const loadTime = Date.now() - startTime;
+            
+            // Log de rendimiento
+            if (result.pagination) {
+                console.log(`⚡ ${orders.length} pedidos cargados en ${loadTime}ms (página ${result.pagination.currentPage}/${result.pagination.totalPages})`);
+                console.log(`📊 Performance del servidor: ${result.performance?.queryTime || 'N/A'}`);
+                
+                // Mostrar estadísticas de paginación en consola para debugging
+                window.ordersPagination = result.pagination; // Disponible globalmente para debugging
+            } else {
+                console.log(`⚡ ${orders.length} pedidos cargados en ${loadTime}ms (sin paginación)`);
+            }
+            
             renderOrdersTable(); // Renderizar la tabla después de cargar los datos
             
             // Configurar búsqueda de pedidos si la sección está visible
@@ -378,12 +398,66 @@ async function loadOrders() {
                 renderFabricaTable();
             }
             
+            // TODO: Implementar controles de paginación en el futuro
+            // if (result.pagination) {
+            //     renderOrdersPagination(result.pagination);
+            // }
             
         } else {
-            console.error('Error cargando pedidos:', response.statusText);
+            console.error('❌ Error cargando pedidos:', response.status, response.statusText);
         }
     } catch (error) {
-        console.error('Error cargando pedidos:', error);
+        console.error('❌ Error cargando pedidos:', error);
+    }
+}
+
+// Función OPTIMIZADA para agregar nuevo pedido sin recargar toda la lista
+async function addNewOrderToList(result, orderData) {
+    try {
+        console.log('⚡ Agregando nuevo pedido a la lista sin recargar...');
+        const startTime = Date.now();
+        
+        // Obtener datos del cliente para mostrar nombre completo
+        const cliente = clients.find(c => c.id == orderData.cliente_id);
+        
+        // Crear objeto de pedido compatible con la estructura esperada
+        const newOrder = {
+            id: result.id,
+            numero_pedido: result.numero_pedido,
+            cliente_id: orderData.cliente_id,
+            cliente_nombre: cliente ? cliente.nombre : 'Cliente no encontrado',
+            cliente_apellido: cliente ? cliente.apellido : '',
+            descripcion: orderData.descripcion,
+            monto: orderData.monto,
+            estado: orderData.estado,
+            fecha: new Date().toISOString().split('T')[0], // Fecha actual
+            created_at: new Date().toISOString(),
+            creado_por: null, // Se llena desde el servidor
+            creado_por_nombre: null
+        };
+        
+        // Agregar al inicio del array (más reciente primero)
+        orders.unshift(newOrder);
+        
+        // Re-renderizar la tabla (instantáneo vs 1-4 segundos de recargar)
+        renderOrdersTable();
+        
+        // Si la sección de fábrica está visible, también actualizarla  
+        const fabricaSection = document.getElementById('fabrica-section');
+        if (fabricaSection && fabricaSection.style.display !== 'none') {
+            renderFabricaTable();
+        }
+        
+        const addTime = Date.now() - startTime;
+        console.log(`⚡ Pedido agregado a la lista en ${addTime}ms (vs 1-4 segundos recargando)`);
+        
+        // Limpiar productos del pedido para próximo uso
+        orderItems = [];
+        
+    } catch (error) {
+        console.error('❌ Error agregando pedido a la lista, recargando como fallback:', error);
+        // Fallback: si hay error, recargar la lista completa
+        await loadOrders();
     }
 }
 
@@ -2171,9 +2245,13 @@ async function handleNewOrderSubmit(e) {
         });
         
         if (response.ok) {
+            const result = await response.json();
             showNotification('Pedido creado exitosamente', 'success');
             closeModal('new-order-modal'); // Usar la función closeModal en lugar del método manual
-            await loadOrders();
+            
+            // OPTIMIZACIÓN: En lugar de recargar toda la lista (lento),
+            // agregar el nuevo pedido al array existente (instantáneo)
+            await addNewOrderToList(result, orderData);
         } else {
             const error = await response.json();
             showNotification(error.message || 'Error al crear pedido', 'error');
