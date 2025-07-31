@@ -255,6 +255,21 @@ async function runMigrations() {
         } else {
             console.log('✅ Columna apellido ya existe');
         }
+
+        // Verificar si existe el índice en numero_pedido
+        const [indexes] = await db.execute(`
+            SHOW INDEX FROM pedidos WHERE Key_name = 'idx_numero_pedido'
+        `);
+        
+        if (indexes.length === 0) {
+            console.log('🔄 Agregando índice optimizado para numero_pedido...');
+            await db.execute(`
+                CREATE INDEX idx_numero_pedido ON pedidos(numero_pedido)
+            `);
+            console.log('✅ Índice numero_pedido agregado exitosamente');
+        } else {
+            console.log('✅ Índice numero_pedido ya existe');
+        }
     } catch (error) {
         console.error('❌ Error ejecutando migraciones:', error);
     }
