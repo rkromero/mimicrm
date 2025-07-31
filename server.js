@@ -57,20 +57,16 @@ async function connectDB() {
 // Función para generar número de pedido consecutivo
 async function generateConsecutiveOrderNumber() {
     try {
-        // Obtener el último número de pedido
+        // Optimización: Usar MAX() en lugar de ORDER BY con CAST/SUBSTRING
+        // Esto es mucho más eficiente porque usa el índice directamente
         const [result] = await db.execute(
-            'SELECT numero_pedido FROM pedidos ORDER BY CAST(SUBSTRING(numero_pedido, 5) AS UNSIGNED) DESC LIMIT 1'
+            'SELECT MAX(CAST(SUBSTRING(numero_pedido, 5) AS UNSIGNED)) as max_number FROM pedidos WHERE numero_pedido LIKE "PED-%"'
         );
         
         let nextNumber = 1;
         
-        if (result.length > 0) {
-            const lastNumber = result[0].numero_pedido;
-            // Extraer el número del formato PED-XXXX
-            const match = lastNumber.match(/PED-(\d+)/);
-            if (match) {
-                nextNumber = parseInt(match[1]) + 1;
-            }
+        if (result.length > 0 && result[0].max_number !== null) {
+            nextNumber = result[0].max_number + 1;
         }
         
         // Formatear con ceros a la izquierda (ej: PED-0001, PED-0002, etc.)
