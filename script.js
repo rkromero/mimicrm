@@ -960,26 +960,97 @@ function renderPaymentsTable() {
         return;
     }
     
-    tbody.innerHTML = payments.map(payment => `
-        <tr>
-            <td>${payment.cliente_nombre || 'Cliente no encontrado'}</td>
-            <td>${formatCurrency(payment.monto)}</td>
-            <td>${payment.metodo}</td>
-            <td>${payment.referencia || ''}</td>
-            <td>${formatDate(payment.fecha)}</td>
-            <td>
-                <button onclick="viewPaymentDetails(${payment.id})" class="btn-icon" title="Ver detalles">
-                    <i class="fas fa-eye"></i>
-                </button>
-                <button onclick="editPayment(${payment.id})" class="btn-icon" title="Editar">
-                    <i class="fas fa-edit"></i>
-                </button>
-                <button onclick="deletePayment(${payment.id})" class="btn-icon" title="Eliminar" style="color: #dc2626;">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </td>
-        </tr>
-    `).join('');
+    // Detectar si es móvil
+    const isMobile = window.innerWidth <= 768;
+    
+    if (isMobile) {
+        // Obtener el contenedor padre (table-responsive)
+        const tableContainer = tbody.closest('.table-responsive');
+        if (!tableContainer) return;
+        
+        // Crear vista de cards para móvil
+        const cardsContainer = document.createElement('div');
+        cardsContainer.className = 'mobile-cards-container';
+        
+        // Crear cards para móvil
+        payments.forEach(payment => {
+            const card = document.createElement('div');
+            card.className = 'mobile-card';
+            card.innerHTML = `
+                <div class="mobile-card-header">
+                    <div class="mobile-card-title">${payment.cliente_nombre || 'Cliente no encontrado'}</div>
+                </div>
+                <div class="mobile-card-content">
+                    <div class="mobile-card-row">
+                        <span class="mobile-card-label">Monto:</span>
+                        <span class="mobile-card-value">${formatCurrency(payment.monto)}</span>
+                    </div>
+                    <div class="mobile-card-row">
+                        <span class="mobile-card-label">Método:</span>
+                        <span class="mobile-card-value">${payment.metodo}</span>
+                    </div>
+                    <div class="mobile-card-row">
+                        <span class="mobile-card-label">Referencia:</span>
+                        <span class="mobile-card-value">${payment.referencia || 'Sin referencia'}</span>
+                    </div>
+                    <div class="mobile-card-row">
+                        <span class="mobile-card-label">Fecha:</span>
+                        <span class="mobile-card-value">${formatDate(payment.fecha)}</span>
+                    </div>
+                </div>
+                <div class="mobile-card-actions">
+                    <button onclick="viewPaymentDetails(${payment.id})" class="btn btn-primary">
+                        <i class="fas fa-eye"></i> Ver
+                    </button>
+                    <button onclick="editPayment(${payment.id})" class="btn btn-secondary">
+                        <i class="fas fa-edit"></i> Editar
+                    </button>
+                    <button onclick="deletePayment(${payment.id})" class="btn btn-secondary" style="color: #dc2626;">
+                        <i class="fas fa-trash"></i> Eliminar
+                    </button>
+                </div>
+            `;
+            cardsContainer.appendChild(card);
+        });
+        
+        // Ocultar la tabla y mostrar las cards
+        tableContainer.style.display = 'none';
+        tableContainer.parentNode.insertBefore(cardsContainer, tableContainer.nextSibling);
+    } else {
+        // Mostrar la tabla y ocultar las cards si existen
+        const tableContainer = tbody.closest('.table-responsive');
+        if (tableContainer) {
+            tableContainer.style.display = 'block';
+        }
+        
+        // Remover cards si existen
+        const existingCards = document.querySelector('#pagos-section .mobile-cards-container');
+        if (existingCards) {
+            existingCards.remove();
+        }
+        
+        // Renderizar tabla normal
+        tbody.innerHTML = payments.map(payment => `
+            <tr>
+                <td>${payment.cliente_nombre || 'Cliente no encontrado'}</td>
+                <td>${formatCurrency(payment.monto)}</td>
+                <td>${payment.metodo}</td>
+                <td>${payment.referencia || ''}</td>
+                <td>${formatDate(payment.fecha)}</td>
+                <td>
+                    <button onclick="viewPaymentDetails(${payment.id})" class="btn-icon" title="Ver detalles">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button onclick="editPayment(${payment.id})" class="btn-icon" title="Editar">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button onclick="deletePayment(${payment.id})" class="btn-icon" title="Eliminar" style="color: #dc2626;">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
 }
 
 // Función para renderizar la tabla de productos
