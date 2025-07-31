@@ -2171,9 +2171,40 @@ async function handleNewOrderSubmit(e) {
         });
         
         if (response.ok) {
+            const result = await response.json();
             showNotification('Pedido creado exitosamente', 'success');
-            closeModal('new-order-modal'); // Usar la función closeModal en lugar del método manual
-            await loadOrders();
+            closeModal('new-order-modal');
+            
+            // OPTIMIZACIÓN: Agregar el nuevo pedido directamente al array local en lugar de recargar todo
+            if (window.allOrders && Array.isArray(window.allOrders)) {
+                // Crear el objeto del nuevo pedido con la estructura esperada
+                const newOrder = {
+                    id: result.id,
+                    numero_pedido: result.numero_pedido || 'PED-' + String(result.id).padStart(4, '0'),
+                    cliente_id: clientId,
+                    descripcion: description,
+                    monto: totalAmount,
+                    estado: 'pendiente de pago',
+                    fecha: new Date().toISOString().split('T')[0],
+                    created_at: new Date().toISOString(),
+                    // Agregar información del cliente si está disponible
+                    cliente_nombre: document.getElementById('order-client-select').options[document.getElementById('order-client-select').selectedIndex]?.text || 'Cliente'
+                };
+                
+                // Agregar al inicio del array (pedidos más recientes primero)
+                window.allOrders.unshift(newOrder);
+                
+                // Actualizar solo las tablas visibles sin recargar todo
+                if (document.getElementById('orders-section').style.display !== 'none') {
+                    renderOrdersTable();
+                }
+                if (document.getElementById('fabrica-section').style.display !== 'none') {
+                    renderFabricaTable();
+                }
+            } else {
+                // Fallback: recargar todo si no hay array local
+                await loadOrders();
+            }
         } else {
             const error = await response.json();
             showNotification(error.message || 'Error al crear pedido', 'error');

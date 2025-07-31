@@ -908,7 +908,7 @@ app.post('/api/pedidos', authenticateToken, async (req, res) => {
             );
         }
 
-        res.status(201).json({ id: pedidoId, message: 'Pedido creado exitosamente' });
+        res.status(201).json({ id: pedidoId, numero_pedido: numeroPedido, message: 'Pedido creado exitosamente' });
     } catch (error) {
         console.error('Error creando pedido:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
