@@ -720,32 +720,109 @@ function renderOrdersTable(filteredOrders = null) {
         return;
     }
     
-    tbody.innerHTML = ordersToRender.map(order => `
-        <tr>
-            <td>${order.numero_pedido}</td>
-            <td>${order.cliente_nombre || 'N/A'}</td>
-            <td>${order.cliente_apellido || 'N/A'}</td>
-            <td>${order.descripcion || 'Sin descripción'}</td>
-            <td>${formatCurrency(order.monto)}</td>
-            <td>
-                <span style="${getOrderStatusStyle(order.estado)}">
-                    ${translateOrderStatus(order.estado)}
-                </span>
-            </td>
-            <td>${formatDate(order.fecha)}</td>
-            <td>
-                <button onclick="viewOrderDetails(${order.id})" class="btn-icon" title="Ver detalles">
-                    <i class="fas fa-eye"></i>
-                </button>
-                <button onclick="editOrder(${order.id})" class="btn-icon" title="Editar">
-                    <i class="fas fa-edit"></i>
-                </button>
-                <button onclick="deleteOrder(${order.id})" class="btn-icon" title="Eliminar" style="color: #dc2626;">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </td>
-        </tr>
-    `).join('');
+    // Detectar si es móvil
+    const isMobile = window.innerWidth <= 768;
+    
+    if (isMobile) {
+        // Obtener el contenedor padre (table-responsive)
+        const tableContainer = tbody.closest('.table-responsive');
+        if (!tableContainer) return;
+        
+        // Crear vista de cards para móvil
+        const cardsContainer = document.createElement('div');
+        cardsContainer.className = 'mobile-cards-container';
+        
+        // Crear cards para móvil
+        ordersToRender.forEach(order => {
+            const card = document.createElement('div');
+            card.className = 'mobile-card';
+            card.innerHTML = `
+                <div class="mobile-card-header">
+                    <div class="mobile-card-title">${order.numero_pedido}</div>
+                </div>
+                <div class="mobile-card-content">
+                    <div class="mobile-card-row">
+                        <span class="mobile-card-label">Cliente:</span>
+                        <span class="mobile-card-value">${(order.cliente_nombre || '') + ' ' + (order.cliente_apellido || '')}</span>
+                    </div>
+                    <div class="mobile-card-row">
+                        <span class="mobile-card-label">Descripción:</span>
+                        <span class="mobile-card-value">${order.descripcion || 'Sin descripción'}</span>
+                    </div>
+                    <div class="mobile-card-row">
+                        <span class="mobile-card-label">Monto:</span>
+                        <span class="mobile-card-value">${formatCurrency(order.monto)}</span>
+                    </div>
+                    <div class="mobile-card-row">
+                        <span class="mobile-card-label">Estado:</span>
+                        <span class="mobile-card-value" style="${getOrderStatusStyle(order.estado)}">
+                            ${translateOrderStatus(order.estado)}
+                        </span>
+                    </div>
+                    <div class="mobile-card-row">
+                        <span class="mobile-card-label">Fecha:</span>
+                        <span class="mobile-card-value">${formatDate(order.fecha)}</span>
+                    </div>
+                </div>
+                <div class="mobile-card-actions">
+                    <button onclick="viewOrderDetails(${order.id})" class="btn btn-primary">
+                        <i class="fas fa-eye"></i> Ver
+                    </button>
+                    <button onclick="editOrder(${order.id})" class="btn btn-secondary">
+                        <i class="fas fa-edit"></i> Editar
+                    </button>
+                    <button onclick="deleteOrder(${order.id})" class="btn btn-secondary" style="color: #dc2626;">
+                        <i class="fas fa-trash"></i> Eliminar
+                    </button>
+                </div>
+            `;
+            cardsContainer.appendChild(card);
+        });
+        
+        // Ocultar la tabla y mostrar las cards
+        tableContainer.style.display = 'none';
+        tableContainer.parentNode.insertBefore(cardsContainer, tableContainer.nextSibling);
+    } else {
+        // Mostrar la tabla y ocultar las cards si existen
+        const tableContainer = tbody.closest('.table-responsive');
+        if (tableContainer) {
+            tableContainer.style.display = 'block';
+        }
+        
+        // Remover cards si existen
+        const existingCards = document.querySelector('#pedidos-section .mobile-cards-container');
+        if (existingCards) {
+            existingCards.remove();
+        }
+        
+        // Renderizar tabla normal
+        tbody.innerHTML = ordersToRender.map(order => `
+            <tr>
+                <td>${order.numero_pedido}</td>
+                <td>${order.cliente_nombre || 'N/A'}</td>
+                <td>${order.cliente_apellido || 'N/A'}</td>
+                <td>${order.descripcion || 'Sin descripción'}</td>
+                <td>${formatCurrency(order.monto)}</td>
+                <td>
+                    <span style="${getOrderStatusStyle(order.estado)}">
+                        ${translateOrderStatus(order.estado)}
+                    </span>
+                </td>
+                <td>${formatDate(order.fecha)}</td>
+                <td>
+                    <button onclick="viewOrderDetails(${order.id})" class="btn-icon" title="Ver detalles">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button onclick="editOrder(${order.id})" class="btn-icon" title="Editar">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button onclick="deleteOrder(${order.id})" class="btn-icon" title="Eliminar" style="color: #dc2626;">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
     
     // Configurar ordenamiento de columnas después de renderizar
     setupOrdersTableSorting();
