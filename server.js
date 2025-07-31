@@ -890,15 +890,22 @@ app.post('/api/pedidos', authenticateToken, async (req, res) => {
 
         const pedidoId = result.insertId;
 
-        // Insertar los items del pedido si existen
+        // Insertar los items del pedido si existen (OPTIMIZACIÓN: Inserción en lote)
         if (items && items.length > 0) {
-            for (const item of items) {
+            // Preparar todos los valores para inserción en lote
+            const values = items.map(item => {
                 const subtotal = item.cantidad * item.precio;
-                await db.execute(
-                    'INSERT INTO pedido_items (pedido_id, producto_id, cantidad, precio, subtotal) VALUES (?, ?, ?, ?, ?)',
-                    [pedidoId, item.producto_id, item.cantidad, item.precio, subtotal]
-                );
-            }
+                return [pedidoId, item.producto_id, item.cantidad, item.precio, subtotal];
+            });
+            
+            // Crear la consulta de inserción múltiple
+            const placeholders = items.map(() => '(?, ?, ?, ?, ?)').join(', ');
+            const flatValues = values.flat();
+            
+            await db.execute(
+                `INSERT INTO pedido_items (pedido_id, producto_id, cantidad, precio, subtotal) VALUES ${placeholders}`,
+                flatValues
+            );
         }
 
         res.status(201).json({ id: pedidoId, message: 'Pedido creado exitosamente' });
@@ -938,15 +945,22 @@ app.put('/api/pedidos/:id', authenticateToken, async (req, res) => {
         // Eliminar items existentes del pedido
         await db.execute('DELETE FROM pedido_items WHERE pedido_id = ?', [pedidoId]);
 
-        // Insertar los nuevos items del pedido
+        // Insertar los nuevos items del pedido (OPTIMIZACIÓN: Inserción en lote)
         if (items && items.length > 0) {
-            for (const item of items) {
+            // Preparar todos los valores para inserción en lote
+            const values = items.map(item => {
                 const subtotal = item.cantidad * item.precio;
-                await db.execute(
-                    'INSERT INTO pedido_items (pedido_id, producto_id, cantidad, precio, subtotal) VALUES (?, ?, ?, ?, ?)',
-                    [pedidoId, item.producto_id, item.cantidad, item.precio, subtotal]
-                );
-            }
+                return [pedidoId, item.producto_id, item.cantidad, item.precio, subtotal];
+            });
+            
+            // Crear la consulta de inserción múltiple
+            const placeholders = items.map(() => '(?, ?, ?, ?, ?)').join(', ');
+            const flatValues = values.flat();
+            
+            await db.execute(
+                `INSERT INTO pedido_items (pedido_id, producto_id, cantidad, precio, subtotal) VALUES ${placeholders}`,
+                flatValues
+            );
         }
 
         res.json({ message: 'Pedido actualizado exitosamente' });
