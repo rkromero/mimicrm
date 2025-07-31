@@ -55,7 +55,7 @@ let db;
 async function connectDB() {
     try {
         console.log('🔄 Iniciando conexión a MySQL con configuración optimizada...');
-        console.log(`📊 Pool configurado: ${dbConfig.connectionLimit} conexiones máx, timeout: ${dbConfig.timeout}ms`);
+        console.log(`📊 Pool configurado: ${dbConfig.connectionLimit} conexiones máx, idleTimeout: ${dbConfig.idleTimeout}ms`);
         
         db = mysql.createPool(dbConfig);
         
@@ -1632,7 +1632,7 @@ app.put('/api/usuarios/:id', authenticateToken, async (req, res) => {
             updateValues.push(hashedPassword);
         }
         if (activo !== undefined) {
-            updateFields.push('acto = ?');
+            updateFields.push('activo = ?');
             updateValues.push(activo);
         }
 
@@ -1742,9 +1742,9 @@ app.get('/api/pool-status', authenticateToken, (req, res) => {
                 utilizationPercent,
                 configuration: {
                     connectionLimit: dbConfig.connectionLimit,
-                    acquireTimeout: dbConfig.acquireTimeout,
-                    timeout: dbConfig.timeout,
-                    idleTimeout: dbConfig.idleTimeout
+                    idleTimeout: dbConfig.idleTimeout,
+                    enableKeepAlive: dbConfig.enableKeepAlive,
+                    keepAliveInitialDelay: dbConfig.keepAliveInitialDelay
                 }
             },
             health: utilizationPercent < 80 ? 'healthy' : 
