@@ -1005,6 +1005,7 @@ app.delete('/api/pedidos/:id', authenticateToken, async (req, res) => {
 app.get('/api/pedidos/:id/items', authenticateToken, async (req, res) => {
     try {
         const pedidoId = req.params.id;
+        console.log('🔍 API - Obteniendo items para pedido:', pedidoId);
         
         const [items] = await db.execute(`
             SELECT pi.*, p.nombre as producto_nombre, p.descripcion as producto_descripcion
@@ -1014,9 +1015,55 @@ app.get('/api/pedidos/:id/items', authenticateToken, async (req, res) => {
             ORDER BY pi.id
         `, [pedidoId]);
         
+        console.log('✅ API - Items encontrados:', {
+            pedidoId,
+            itemsCount: items.length,
+            items: items
+        });
+        
         res.json(items);
     } catch (error) {
-        console.error('Error obteniendo items del pedido:', error);
+        console.error('❌ API - Error obteniendo items del pedido:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Cambiar solo el estado de un pedido (sin afectar items)
+app.patch('/api/pedidos/:id/estado', authenticateToken, async (req, res) => {
+    try {
+        const pedidoId = req.params.id;
+        const { estado } = req.body;
+
+        // Verificar que el pedido existe y el usuario tiene permisos
+        const [existingPedido] = await db.execute(
+            'SELECT * FROM pedidos WHERE id = ?',
+            [pedidoId]
+        );
+
+        if (existingPedido.length === 0) {
+            return res.status(404).json({ error: 'Pedido no encontrado' });
+        }
+
+        // Si es vendedor, verificar que sea el creador del pedido
+        if (req.user.perfil === 'Vendedor' && existingPedido[0].creado_por !== req.user.id) {
+            return res.status(403).json({ error: 'No tienes permisos para editar este pedido' });
+        }
+
+        // Validar que el estado sea válido
+        const estadosValidos = ['pendiente de pago', 'fabricar', 'sale fabrica', 'completado'];
+        if (!estadosValidos.includes(estado)) {
+            return res.status(400).json({ error: 'Estado no válido' });
+        }
+
+        // Actualizar solo el estado del pedido
+        await db.execute(
+            'UPDATE pedidos SET estado = ? WHERE id = ?',
+            [estado, pedidoId]
+        );
+
+        res.json({ message: 'Estado del pedido actualizado exitosamente' });
+    } catch (error) {
+        console.error('Error actualizando estado del pedido:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });

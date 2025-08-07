@@ -4698,6 +4698,12 @@ function viewOrderDetails(orderId) {
     
     // Cargar items del pedido y mostrar el modal
     loadOrderItems(orderId).then(items => {
+        console.log('🔍 VIEW ORDER DETAILS - Items cargados:', {
+            orderId,
+            itemsCount: items.length,
+            items: items,
+            orderEstado: order.estado
+        });
         const itemsTable = items.length > 0 ? `
             <div style="margin-bottom: 1.5rem;">
                 <h3 style="margin: 0 0 1rem 0; color: #1f2937; display: flex; align-items: center;">
@@ -5785,6 +5791,7 @@ function viewPaymentDetails(paymentId) {
 // Función para cargar items de un pedido específico
 async function loadOrderItems(orderId) {
     try {
+        console.log('🔍 LOAD ORDER ITEMS - Iniciando carga para pedido:', orderId);
         const token = localStorage.getItem('authToken');
         const response = await fetch(`/api/pedidos/${orderId}/items`, {
             headers: {
@@ -5794,13 +5801,18 @@ async function loadOrderItems(orderId) {
         
         if (response.ok) {
             const items = await response.json();
+            console.log('✅ LOAD ORDER ITEMS - Items cargados exitosamente:', {
+                orderId,
+                itemsCount: items.length,
+                items: items
+            });
             return items;
         } else {
-            console.error('Error cargando items del pedido:', response.status);
+            console.error('❌ LOAD ORDER ITEMS - Error del servidor:', response.status);
             return [];
         }
     } catch (error) {
-        console.error('Error de red cargando items:', error);
+        console.error('❌ LOAD ORDER ITEMS - Error de red:', error);
         return [];
     }
 }
@@ -6650,24 +6662,14 @@ async function markAsProduced(orderId) {
             return;
         }
         
-        // Preparar datos para actualizar
-        const updateData = {
-            cliente_id: order.cliente_id,
-            descripcion: order.descripcion,
-            monto: order.monto,
-            estado: 'sale fabrica' // Cambiar a siguiente estado
-        };
-        
-        
-        
         const token = localStorage.getItem('authToken');
-        const response = await fetch(`/api/pedidos/${orderId}`, {
-            method: 'PUT',
+        const response = await fetch(`/api/pedidos/${orderId}/estado`, {
+            method: 'PATCH',
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(updateData)
+            body: JSON.stringify({ estado: 'sale fabrica' })
         });
         
         if (response.ok) {
@@ -6681,7 +6683,6 @@ async function markAsProduced(orderId) {
             
             // También recargar pedidos desde el servidor para mantener sincronización
             await loadOrders();
-            
             
         } else {
             const error = await response.json();
