@@ -57,16 +57,16 @@ async function connectDB() {
 // Función para generar número de pedido consecutivo
 async function generateConsecutiveOrderNumber() {
     try {
-        // Optimización: Usar MAX() en lugar de ORDER BY con CAST/SUBSTRING
-        // Esto es mucho más eficiente porque usa el índice directamente
+        // OPTIMIZACIÓN: Usar el último ID insertado en lugar de parsear números de pedido
+        // Esto es mucho más eficiente porque usa el índice primario
         const [result] = await db.execute(
-            'SELECT MAX(CAST(SUBSTRING(numero_pedido, 5) AS UNSIGNED)) as max_number FROM pedidos WHERE numero_pedido LIKE "PED-%"'
+            'SELECT MAX(id) as max_id FROM pedidos'
         );
         
         let nextNumber = 1;
         
-        if (result.length > 0 && result[0].max_number !== null) {
-            nextNumber = result[0].max_number + 1;
+        if (result.length > 0 && result[0].max_id !== null) {
+            nextNumber = result[0].max_id + 1;
         }
         
         // Formatear con ceros a la izquierda (ej: PED-0001, PED-0002, etc.)
@@ -75,6 +75,41 @@ async function generateConsecutiveOrderNumber() {
         console.error('Error generando número de pedido:', error);
         // Fallback al método anterior si hay error
         return `PED-${Date.now()}`;
+    }
+}
+
+// Función alternativa usando tabla de secuencias (MÁS EFICIENTE)
+async function generateConsecutiveOrderNumberWithSequence() {
+    try {
+        // Usar transacción para evitar condiciones de carrera
+        const connection = await db.getConnection();
+        await connection.beginTransaction();
+        
+        try {
+            // Obtener y actualizar el siguiente número en una sola operación
+            const [result] = await connection.execute(
+                'UPDATE secuencias SET valor = LAST_INSERT_ID(valor + 1) WHERE nombre = "pedido_numero"'
+            );
+            
+            const [sequenceResult] = await connection.execute(
+                'SELECT LAST_INSERT_ID() as next_number'
+            );
+            
+            await connection.commit();
+            connection.release();
+            
+            const nextNumber = sequenceResult[0].next_number;
+            return `PED-${nextNumber.toString().padStart(4, '0')}`;
+            
+        } catch (error) {
+            await connection.rollback();
+            connection.release();
+            throw error;
+        }
+    } catch (error) {
+        console.error('Error generando número de pedido con secuencia:', error);
+        // Fallback al método simple
+        return generateConsecutiveOrderNumber();
     }
 }
 
@@ -177,6 +212,41 @@ async function createTables() {
                 FOREIGN KEY (pedido_id) REFERENCES pedidos(id) ON DELETE CASCADE,
                 FOREIGN KEY (producto_id) REFERENCES productos(id)
             )
+        `);
+
+        // Tabla de secuencias para números de pedido (OPTIMIZACIÓN)
+        await db.execute(`
+            CREATE TABLE IF NOT EXISTS secuencias (
+                nombre VARCHAR(50) PRIMARY KEY,
+                valor INT NOT NULL DEFAULT 1,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            )
+        `);
+
+        // Insertar secuencia inicial si no existe
+        await db.execute(`
+            INSERT IGNORE INTO secuencias (nombre, valor) VALUES ('pedido_numero', 1)
+        `);
+
+        // Crear índices optimizados para mejorar rendimiento
+        await db.execute(`
+            CREATE INDEX IF NOT EXISTS idx_pedidos_cliente ON pedidos(cliente_id)
+        `);
+        
+        await db.execute(`
+            CREATE INDEX IF NOT EXISTS idx_pedidos_estado ON pedidos(estado)
+        `);
+        
+        await db.execute(`
+            CREATE INDEX IF NOT EXISTS idx_pedidos_fecha ON pedidos(fecha)
+        `);
+        
+        await db.execute(`
+            CREATE INDEX IF NOT EXISTS idx_pedido_items_pedido ON pedido_items(pedido_id)
+        `);
+        
+        await db.execute(`
+            CREATE INDEX IF NOT EXISTS idx_pedido_items_producto ON pedido_items(producto_id)
         `);
 
         // Tabla de pagos
@@ -879,8 +949,8 @@ app.post('/api/pedidos', authenticateToken, async (req, res) => {
     try {
         const { cliente_id, descripcion, monto, estado = 'pendiente de pago', items = [] } = req.body;
 
-        // Generar número de pedido consecutivo
-        const numeroPedido = await generateConsecutiveOrderNumber();
+        // Generar número de pedido consecutivo (OPTIMIZADO)
+        const numeroPedido = await generateConsecutiveOrderNumberWithSequence();
 
         // Insertar el pedido
         const [result] = await db.execute(
