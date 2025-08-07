@@ -57,16 +57,29 @@ async function connectDB() {
 // Función para generar número de pedido consecutivo
 async function generateConsecutiveOrderNumber() {
     try {
-        // OPTIMIZACIÓN: Usar el último ID insertado en lugar de parsear números de pedido
-        // Esto es mucho más eficiente porque usa el índice primario
+        // OPTIMIZACIÓN: Usar la tabla de secuencias de manera más eficiente
+        // Primero intentar obtener el valor actual
         const [result] = await db.execute(
-            'SELECT MAX(id) as max_id FROM pedidos'
+            'SELECT valor FROM secuencias WHERE nombre = "pedido_numero"'
         );
         
         let nextNumber = 1;
         
-        if (result.length > 0 && result[0].max_id !== null) {
-            nextNumber = result[0].max_id + 1;
+        if (result.length > 0) {
+            // Incrementar el valor actual
+            nextNumber = result[0].valor + 1;
+            
+            // Actualizar el valor en la tabla de secuencias
+            await db.execute(
+                'UPDATE secuencias SET valor = ? WHERE nombre = "pedido_numero"',
+                [nextNumber]
+            );
+        } else {
+            // Si no existe, crear el registro inicial
+            await db.execute(
+                'INSERT INTO secuencias (nombre, valor) VALUES ("pedido_numero", ?)',
+                [nextNumber]
+            );
         }
         
         // Formatear con ceros a la izquierda (ej: PED-0001, PED-0002, etc.)
