@@ -994,8 +994,8 @@ app.post('/api/pedidos', authenticateToken, async (req, res) => {
     try {
         const { cliente_id, descripcion, monto, estado = 'pendiente de pago', items = [] } = req.body;
 
-        // Generar número de pedido consecutivo (OPTIMIZADO)
-        const numeroPedido = await generateConsecutiveOrderNumberWithSequence();
+        // Generar número de pedido consecutivo (ULTRA OPTIMIZADO)
+        const numeroPedido = await generateConsecutiveOrderNumber();
 
         // Insertar el pedido
         const [result] = await db.execute(
