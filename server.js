@@ -1,4 +1,4 @@
-const express = require('express');
+gconst express = require('express');
 const cors = require('cors');
 const mysql = require('mysql2/promise');
 const bcrypt = require('bcryptjs');
@@ -58,15 +58,13 @@ async function connectDB() {
 // Función para generar número de pedido consecutivo
 async function generateConsecutiveOrderNumber() {
     try {
-        // Consulta simple y eficiente
-        const [result] = await db.execute(
-            'SELECT MAX(CAST(SUBSTRING(numero_pedido, 5) AS UNSIGNED)) as max_number FROM pedidos'
-        );
+        // Consulta simple y eficiente usando MAX(id)
+        const [result] = await db.execute('SELECT MAX(id) as max_id FROM pedidos');
         
         let nextNumber = 1;
         
-        if (result.length > 0 && result[0].max_number !== null) {
-            nextNumber = result[0].max_number + 1;
+        if (result.length > 0 && result[0].max_id !== null) {
+            nextNumber = result[0].max_id + 1;
         }
         
         // Formatear con ceros a la izquierda (ej: PED-0001, PED-0002, etc.)
