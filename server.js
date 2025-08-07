@@ -57,29 +57,16 @@ async function connectDB() {
 // Función para generar número de pedido consecutivo
 async function generateConsecutiveOrderNumber() {
     try {
-        // OPTIMIZACIÓN: Usar la tabla de secuencias de manera más eficiente
-        // Primero intentar obtener el valor actual
+        // OPTIMIZACIÓN: Usar el último ID insertado en lugar de parsear números de pedido
+        // Esto es mucho más eficiente porque usa el índice primario
         const [result] = await db.execute(
-            'SELECT valor FROM secuencias WHERE nombre = "pedido_numero"'
+            'SELECT MAX(id) as max_id FROM pedidos'
         );
         
         let nextNumber = 1;
         
-        if (result.length > 0) {
-            // Incrementar el valor actual
-            nextNumber = result[0].valor + 1;
-            
-            // Actualizar el valor en la tabla de secuencias
-            await db.execute(
-                'UPDATE secuencias SET valor = ? WHERE nombre = "pedido_numero"',
-                [nextNumber]
-            );
-        } else {
-            // Si no existe, crear el registro inicial
-            await db.execute(
-                'INSERT INTO secuencias (nombre, valor) VALUES ("pedido_numero", ?)',
-                [nextNumber]
-            );
+        if (result.length > 0 && result[0].max_id !== null) {
+            nextNumber = result[0].max_id + 1;
         }
         
         // Formatear con ceros a la izquierda (ej: PED-0001, PED-0002, etc.)
@@ -304,6 +291,15 @@ async function createTables() {
         } catch (error) {
             if (!error.message.includes('Duplicate key name')) {
                 console.log('✅ Índice idx_pedidos_created_at ya existe');
+            }
+        }
+        
+        // Índice optimizado para SELECT MAX(id) - CRÍTICO para rendimiento
+        try {
+            await db.execute(`CREATE INDEX idx_pedidos_id_max ON pedidos(id DESC)`);
+        } catch (error) {
+            if (!error.message.includes('Duplicate key name')) {
+                console.log('✅ Índice idx_pedidos_id_max ya existe');
             }
         }
 
