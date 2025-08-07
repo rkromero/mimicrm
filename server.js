@@ -26,10 +26,12 @@ const dbConfig = {
     password: process.env.DB_PASSWORD || '',
     database: process.env.DB_NAME || 'mimi_crm',
     port: process.env.DB_PORT || 3306,
-    connectionLimit: 10,
-    acquireTimeout: 60000,
-    timeout: 60000,
-    reconnect: true
+    connectionLimit: 5, // Reducido para Railway
+    acquireTimeout: 30000, // Reducido
+    timeout: 30000, // Reducido
+    reconnect: true,
+    waitForConnections: true,
+    queueLimit: 0
 };
 
 // Crear pool de conexiones a la base de datos
@@ -55,11 +57,18 @@ async function connectDB() {
 }
 
 // Función para generar número de pedido consecutivo
-async function generateConsecutiveOrderNumber() {
+async function generateConsecutiveOrderNumber(connection = null) {
+    let shouldReleaseConnection = false;
     try {
+        // Si no se pasa una conexión, crear una nueva
+        if (!connection) {
+            connection = await db.getConnection();
+            shouldReleaseConnection = true;
+        }
+        
         // OPTIMIZACIÓN: Usar el último ID insertado en lugar de parsear números de pedido
         // Esto es mucho más eficiente porque usa el índice primario
-        const [result] = await db.execute(
+        const [result] = await connection.execute(
             'SELECT MAX(id) as max_id FROM pedidos'
         );
         
@@ -75,6 +84,10 @@ async function generateConsecutiveOrderNumber() {
         console.error('Error generando número de pedido:', error);
         // Fallback al método anterior si hay error
         return `PED-${Date.now()}`;
+    } finally {
+        if (shouldReleaseConnection && connection) {
+            connection.release();
+        }
     }
 }
 
@@ -1000,14 +1013,19 @@ app.get('/api/pedidos', authenticateToken, async (req, res) => {
 
 // Crear pedido
 app.post('/api/pedidos', authenticateToken, async (req, res) => {
+    let connection;
     try {
         const { cliente_id, descripcion, monto, estado = 'pendiente de pago', items = [] } = req.body;
 
+        // Usar conexión dedicada para toda la operación
+        connection = await db.getConnection();
+        await connection.beginTransaction();
+
         // Generar número de pedido consecutivo (ULTRA OPTIMIZADO)
-        const numeroPedido = await generateConsecutiveOrderNumber();
+        const numeroPedido = await generateConsecutiveOrderNumber(connection);
 
         // Insertar el pedido
-        const [result] = await db.execute(
+        const [result] = await connection.execute(
             'INSERT INTO pedidos (numero_pedido, cliente_id, descripcion, monto, estado, fecha, creado_por) VALUES (?, ?, ?, ?, ?, ?, ?)',
             [numeroPedido, cliente_id, descripcion, monto, estado, new Date().toISOString().split('T')[0], req.user.id]
         );
@@ -1026,16 +1044,24 @@ app.post('/api/pedidos', authenticateToken, async (req, res) => {
             const placeholders = items.map(() => '(?, ?, ?, ?, ?)').join(', ');
             const flatValues = values.flat();
             
-            await db.execute(
+            await connection.execute(
                 `INSERT INTO pedido_items (pedido_id, producto_id, cantidad, precio, subtotal) VALUES ${placeholders}`,
                 flatValues
             );
         }
 
+        await connection.commit();
         res.status(201).json({ id: pedidoId, numero_pedido: numeroPedido, message: 'Pedido creado exitosamente' });
     } catch (error) {
+        if (connection) {
+            await connection.rollback();
+        }
         console.error('Error creando pedido:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
+    } finally {
+        if (connection) {
+            connection.release();
+        }
     }
 });
 
