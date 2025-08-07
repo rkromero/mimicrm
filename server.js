@@ -268,6 +268,31 @@ async function createTables() {
                 console.log('✅ Índice idx_pedido_items_producto ya existe');
             }
         }
+        
+        // Índices adicionales para optimización (NUEVOS)
+        try {
+            await db.execute(`CREATE INDEX idx_pedido_items_pedido_id ON pedido_items(pedido_id)`);
+        } catch (error) {
+            if (!error.message.includes('Duplicate key name')) {
+                console.log('✅ Índice idx_pedido_items_pedido_id ya existe');
+            }
+        }
+        
+        try {
+            await db.execute(`CREATE INDEX idx_secuencias_nombre ON secuencias(nombre)`);
+        } catch (error) {
+            if (!error.message.includes('Duplicate key name')) {
+                console.log('✅ Índice idx_secuencias_nombre ya existe');
+            }
+        }
+        
+        try {
+            await db.execute(`CREATE INDEX idx_pedidos_created_at ON pedidos(created_at)`);
+        } catch (error) {
+            if (!error.message.includes('Duplicate key name')) {
+                console.log('✅ Índice idx_pedidos_created_at ya existe');
+            }
+        }
 
         // Tabla de pagos
         await db.execute(`
