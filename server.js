@@ -1105,7 +1105,10 @@ app.delete('/api/pedidos/:id', authenticateToken, async (req, res) => {
             return res.status(403).json({ error: 'No tienes permisos para eliminar este pedido' });
         }
 
-        // Eliminar items del pedido (se eliminan automáticamente por CASCADE)
+        // OPTIMIZACIÓN: Eliminar items del pedido manualmente en una sola consulta
+        // Esto es mucho más rápido que depender del CASCADE
+        await db.execute('DELETE FROM pedido_items WHERE pedido_id = ?', [pedidoId]);
+        
         // Eliminar el pedido
         await db.execute('DELETE FROM pedidos WHERE id = ?', [pedidoId]);
 
