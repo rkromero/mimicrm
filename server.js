@@ -2062,9 +2062,6 @@ app.post('/api/admin/update-productos-table', authenticateToken, async (req, res
     }
 });
 
-// Servir archivos estáticos (debe ir al final)
-app.use(express.static(__dirname));
-
 // Iniciar servidor
 async function startServer() {
     await connectDB();
