@@ -27,9 +27,8 @@ const dbConfig = {
     database: process.env.DB_NAME || 'mimi_crm',
     port: process.env.DB_PORT || 3306,
     connectionLimit: 10,
-    acquireTimeout: 10000,
-    timeout: 10000,
-    reconnect: true,
+    acquireTimeout: 60000,
+    timeout: 60000,
     waitForConnections: true,
     queueLimit: 5
 };
