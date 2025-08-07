@@ -26,12 +26,12 @@ const dbConfig = {
     password: process.env.DB_PASSWORD || '',
     database: process.env.DB_NAME || 'mimi_crm',
     port: process.env.DB_PORT || 3306,
-    connectionLimit: 5, // Reducido para Railway
-    acquireTimeout: 30000, // Reducido
-    timeout: 30000, // Reducido
+    connectionLimit: 10,
+    acquireTimeout: 10000,
+    timeout: 10000,
     reconnect: true,
     waitForConnections: true,
-    queueLimit: 0
+    queueLimit: 5
 };
 
 // Crear pool de conexiones a la base de datos
@@ -57,25 +57,17 @@ async function connectDB() {
 }
 
 // Función para generar número de pedido consecutivo
-async function generateConsecutiveOrderNumber(connection = null) {
-    let shouldReleaseConnection = false;
+async function generateConsecutiveOrderNumber() {
     try {
-        // Si no se pasa una conexión, crear una nueva
-        if (!connection) {
-            connection = await db.getConnection();
-            shouldReleaseConnection = true;
-        }
-        
-        // OPTIMIZACIÓN: Usar el último ID insertado en lugar de parsear números de pedido
-        // Esto es mucho más eficiente porque usa el índice primario
-        const [result] = await connection.execute(
-            'SELECT MAX(id) as max_id FROM pedidos'
+        // Consulta simple y eficiente
+        const [result] = await db.execute(
+            'SELECT MAX(CAST(SUBSTRING(numero_pedido, 5) AS UNSIGNED)) as max_number FROM pedidos'
         );
         
         let nextNumber = 1;
         
-        if (result.length > 0 && result[0].max_id !== null) {
-            nextNumber = result[0].max_id + 1;
+        if (result.length > 0 && result[0].max_number !== null) {
+            nextNumber = result[0].max_number + 1;
         }
         
         // Formatear con ceros a la izquierda (ej: PED-0001, PED-0002, etc.)
@@ -84,45 +76,6 @@ async function generateConsecutiveOrderNumber(connection = null) {
         console.error('Error generando número de pedido:', error);
         // Fallback al método anterior si hay error
         return `PED-${Date.now()}`;
-    } finally {
-        if (shouldReleaseConnection && connection) {
-            connection.release();
-        }
-    }
-}
-
-// Función alternativa usando tabla de secuencias (MÁS EFICIENTE)
-async function generateConsecutiveOrderNumberWithSequence() {
-    try {
-        // Usar transacción para evitar condiciones de carrera
-        const connection = await db.getConnection();
-        await connection.beginTransaction();
-        
-        try {
-            // Obtener y actualizar el siguiente número en una sola operación
-            const [result] = await connection.execute(
-                'UPDATE secuencias SET valor = LAST_INSERT_ID(valor + 1) WHERE nombre = "pedido_numero"'
-            );
-            
-            const [sequenceResult] = await connection.execute(
-                'SELECT LAST_INSERT_ID() as next_number'
-            );
-            
-            await connection.commit();
-            connection.release();
-            
-            const nextNumber = sequenceResult[0].next_number;
-            return `PED-${nextNumber.toString().padStart(4, '0')}`;
-            
-        } catch (error) {
-            await connection.rollback();
-            connection.release();
-            throw error;
-        }
-    } catch (error) {
-        console.error('Error generando número de pedido con secuencia:', error);
-        // Fallback al método simple
-        return generateConsecutiveOrderNumber();
     }
 }
 
@@ -241,80 +194,7 @@ async function createTables() {
             INSERT IGNORE INTO secuencias (nombre, valor) VALUES ('pedido_numero', 1)
         `);
 
-        // Crear índices optimizados para mejorar rendimiento
-        try {
-            await db.execute(`CREATE INDEX idx_pedidos_cliente ON pedidos(cliente_id)`);
-        } catch (error) {
-            if (!error.message.includes('Duplicate key name')) {
-                console.log('✅ Índice idx_pedidos_cliente ya existe');
-            }
-        }
-        
-        try {
-            await db.execute(`CREATE INDEX idx_pedidos_estado ON pedidos(estado)`);
-        } catch (error) {
-            if (!error.message.includes('Duplicate key name')) {
-                console.log('✅ Índice idx_pedidos_estado ya existe');
-            }
-        }
-        
-        try {
-            await db.execute(`CREATE INDEX idx_pedidos_fecha ON pedidos(fecha)`);
-        } catch (error) {
-            if (!error.message.includes('Duplicate key name')) {
-                console.log('✅ Índice idx_pedidos_fecha ya existe');
-            }
-        }
-        
-        try {
-            await db.execute(`CREATE INDEX idx_pedido_items_pedido ON pedido_items(pedido_id)`);
-        } catch (error) {
-            if (!error.message.includes('Duplicate key name')) {
-                console.log('✅ Índice idx_pedido_items_pedido ya existe');
-            }
-        }
-        
-        try {
-            await db.execute(`CREATE INDEX idx_pedido_items_producto ON pedido_items(producto_id)`);
-        } catch (error) {
-            if (!error.message.includes('Duplicate key name')) {
-                console.log('✅ Índice idx_pedido_items_producto ya existe');
-            }
-        }
-        
-        // Índices adicionales para optimización (NUEVOS)
-        try {
-            await db.execute(`CREATE INDEX idx_pedido_items_pedido_id ON pedido_items(pedido_id)`);
-        } catch (error) {
-            if (!error.message.includes('Duplicate key name')) {
-                console.log('✅ Índice idx_pedido_items_pedido_id ya existe');
-            }
-        }
-        
-        try {
-            await db.execute(`CREATE INDEX idx_secuencias_nombre ON secuencias(nombre)`);
-        } catch (error) {
-            if (!error.message.includes('Duplicate key name')) {
-                console.log('✅ Índice idx_secuencias_nombre ya existe');
-            }
-        }
-        
-        try {
-            await db.execute(`CREATE INDEX idx_pedidos_created_at ON pedidos(created_at)`);
-        } catch (error) {
-            if (!error.message.includes('Duplicate key name')) {
-                console.log('✅ Índice idx_pedidos_created_at ya existe');
-            }
-        }
-        
-        // Índice optimizado para SELECT MAX(id) - CRÍTICO para rendimiento
-        try {
-            await db.execute(`CREATE INDEX idx_pedidos_id_max ON pedidos(id DESC)`);
-        } catch (error) {
-            if (!error.message.includes('Duplicate key name')) {
-                console.log('✅ Índice idx_pedidos_id_max ya existe');
-            }
-        }
+        // Solo índices esenciales - sin overhead innecesario
 
         // Tabla de pagos
         await db.execute(`
@@ -1013,55 +893,35 @@ app.get('/api/pedidos', authenticateToken, async (req, res) => {
 
 // Crear pedido
 app.post('/api/pedidos', authenticateToken, async (req, res) => {
-    let connection;
     try {
         const { cliente_id, descripcion, monto, estado = 'pendiente de pago', items = [] } = req.body;
 
-        // Usar conexión dedicada para toda la operación
-        connection = await db.getConnection();
-        await connection.beginTransaction();
-
-        // Generar número de pedido consecutivo (ULTRA OPTIMIZADO)
-        const numeroPedido = await generateConsecutiveOrderNumber(connection);
+        // Generar número de pedido consecutivo
+        const numeroPedido = await generateConsecutiveOrderNumber();
 
         // Insertar el pedido
-        const [result] = await connection.execute(
+        const [result] = await db.execute(
             'INSERT INTO pedidos (numero_pedido, cliente_id, descripcion, monto, estado, fecha, creado_por) VALUES (?, ?, ?, ?, ?, ?, ?)',
             [numeroPedido, cliente_id, descripcion, monto, estado, new Date().toISOString().split('T')[0], req.user.id]
         );
 
         const pedidoId = result.insertId;
 
-        // Insertar los items del pedido si existen (OPTIMIZACIÓN: Inserción en lote)
+        // Insertar los items del pedido si existen
         if (items && items.length > 0) {
-            // Preparar todos los valores para inserción en lote
-            const values = items.map(item => {
+            for (const item of items) {
                 const subtotal = item.cantidad * item.precio;
-                return [pedidoId, item.producto_id, item.cantidad, item.precio, subtotal];
-            });
-            
-            // Crear la consulta de inserción múltiple
-            const placeholders = items.map(() => '(?, ?, ?, ?, ?)').join(', ');
-            const flatValues = values.flat();
-            
-            await connection.execute(
-                `INSERT INTO pedido_items (pedido_id, producto_id, cantidad, precio, subtotal) VALUES ${placeholders}`,
-                flatValues
-            );
+                await db.execute(
+                    'INSERT INTO pedido_items (pedido_id, producto_id, cantidad, precio, subtotal) VALUES (?, ?, ?, ?, ?)',
+                    [pedidoId, item.producto_id, item.cantidad, item.precio, subtotal]
+                );
+            }
         }
 
-        await connection.commit();
         res.status(201).json({ id: pedidoId, numero_pedido: numeroPedido, message: 'Pedido creado exitosamente' });
     } catch (error) {
-        if (connection) {
-            await connection.rollback();
-        }
         console.error('Error creando pedido:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
-    } finally {
-        if (connection) {
-            connection.release();
-        }
     }
 });
 

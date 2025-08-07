@@ -1,0 +1,20 @@
+[33mdc3f0bd[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m arreglo
+[33mbeac77a[m CORRECCIÓN CRÍTICA: Revertir a función simple y agregar índice optimizado para SELECT MAX(id)
+[33m4ad40d1[m OPTIMIZACIÓN CRÍTICA: Mejorar generación de números de pedido usando tabla de secuencias sin transacciones
+[33m14bd30b[m OPTIMIZACIÓN CRÍTICA: Cambiar a función simple de generación de números de pedido para reducir tiempo de creación de 8s a <1s
+[33m284f459[m Optimizar endpoint DELETE para eliminar items manualmente y evitar CASCADE lento
+[33m206a1b2[m Agregar índices adicionales para optimizar rendimiento de consultas
+[33m2ffb980[m Fix duplicate static middleware causing 502 error
+[33m752fa4d[m Fix CREATE INDEX MySQL issue
+[33m8c9610a[m Optimización de rendimiento: Mejora en generación de números de pedido y creación de índices
+[33m2f3ca19[m Fix: Los productos no se eliminan al cambiar estado del pedido a 'sale fabrica' - Agregado endpoint PATCH /api/pedidos/:id/estado para actualizar solo el estado - Modificado markAsProduced() para usar el nuevo endpoint - Agregados logs de debug para verificación
+[33m151e6af[m Fix: Implementar vista móvil para pagos - Agregar cards responsive para dispositivos móviles
+[33m9861c91[m Fix: Implementar vista móvil para pedidos - Agregar cards responsive para dispositivos móviles
+[33m3bd06e6[m Fase 4: Optimización del Frontend - Evitar recarga completa después de crear pedido
+[33mc7d7a81[m Fase 3: Optimización de inserción en lote para pedido_items - Reemplazar bucles individuales por inserción múltiple
+[33m0d3c7a8[m Fase 2: Optimización de consulta SQL en generateConsecutiveOrderNumber() - Usar MAX() en lugar de ORDER BY
+[33m561596b[m Optimización: Agregado índice para numero_pedido para mejorar rendimiento
+[33mfd7b2af[m Modificar factura para que no calcule IVA (dejarlo en 0)
+[33m1228edf[m Agregar funcionalidad de imprimir factura con formato argentino
+[33m7d236b0[m Agregar membrete de empresa con CUIT y dirección en remito de entrega
+[33m3a33deb[m Agregar funcionalidad de imprimir etiqueta de envío en modal de detalle de pedido
