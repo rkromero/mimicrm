@@ -229,25 +229,45 @@ async function createTables() {
         `);
 
         // Crear índices optimizados para mejorar rendimiento
-        await db.execute(`
-            CREATE INDEX IF NOT EXISTS idx_pedidos_cliente ON pedidos(cliente_id)
-        `);
+        try {
+            await db.execute(`CREATE INDEX idx_pedidos_cliente ON pedidos(cliente_id)`);
+        } catch (error) {
+            if (!error.message.includes('Duplicate key name')) {
+                console.log('✅ Índice idx_pedidos_cliente ya existe');
+            }
+        }
         
-        await db.execute(`
-            CREATE INDEX IF NOT EXISTS idx_pedidos_estado ON pedidos(estado)
-        `);
+        try {
+            await db.execute(`CREATE INDEX idx_pedidos_estado ON pedidos(estado)`);
+        } catch (error) {
+            if (!error.message.includes('Duplicate key name')) {
+                console.log('✅ Índice idx_pedidos_estado ya existe');
+            }
+        }
         
-        await db.execute(`
-            CREATE INDEX IF NOT EXISTS idx_pedidos_fecha ON pedidos(fecha)
-        `);
+        try {
+            await db.execute(`CREATE INDEX idx_pedidos_fecha ON pedidos(fecha)`);
+        } catch (error) {
+            if (!error.message.includes('Duplicate key name')) {
+                console.log('✅ Índice idx_pedidos_fecha ya existe');
+            }
+        }
         
-        await db.execute(`
-            CREATE INDEX IF NOT EXISTS idx_pedido_items_pedido ON pedido_items(pedido_id)
-        `);
+        try {
+            await db.execute(`CREATE INDEX idx_pedido_items_pedido ON pedido_items(pedido_id)`);
+        } catch (error) {
+            if (!error.message.includes('Duplicate key name')) {
+                console.log('✅ Índice idx_pedido_items_pedido ya existe');
+            }
+        }
         
-        await db.execute(`
-            CREATE INDEX IF NOT EXISTS idx_pedido_items_producto ON pedido_items(producto_id)
-        `);
+        try {
+            await db.execute(`CREATE INDEX idx_pedido_items_producto ON pedido_items(producto_id)`);
+        } catch (error) {
+            if (!error.message.includes('Duplicate key name')) {
+                console.log('✅ Índice idx_pedido_items_producto ya existe');
+            }
+        }
 
         // Tabla de pagos
         await db.execute(`
