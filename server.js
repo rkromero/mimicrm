@@ -861,10 +861,32 @@ app.get('/api/test', (req, res) => {
 // Obtener clientes inactivos
 app.get('/api/clientes/inactivos', authenticateToken, async (req, res) => {
     try {
-        const [clientes] = await db.execute(
-            'SELECT * FROM clientes WHERE activo = false ORDER BY nombre'
-        );
-        res.json(clientes);
+        const query = `
+            SELECT 
+                c.*,
+                COALESCE(MAX(p.fecha), c.created_at) as lastOrderDate
+            FROM clientes c
+            LEFT JOIN pedidos p ON c.id = p.cliente_id
+            WHERE c.activo = false
+            GROUP BY c.id
+            ORDER BY c.nombre
+        `;
+        
+        const [clientes] = await db.execute(query);
+        
+        // Calcular fecha de última actividad
+        let lastActivity = null;
+        if (clientes.length > 0) {
+            const dates = clientes.map(c => c.lastOrderDate).filter(d => d);
+            if (dates.length > 0) {
+                lastActivity = new Date(Math.max(...dates.map(d => new Date(d))));
+            }
+        }
+        
+        res.json({
+            inactiveClients: clientes,
+            lastActivity: lastActivity
+        });
     } catch (error) {
         console.error('Error obteniendo clientes inactivos:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
@@ -907,11 +929,53 @@ app.get('/api/ventas/completadas', authenticateToken, async (req, res) => {
 // Obtener cobros pendientes
 app.get('/api/cobros/pendientes', authenticateToken, async (req, res) => {
     try {
+        // Calcular totales generales
+        const [totalsResult] = await db.execute(`
+            SELECT 
+                COALESCE(SUM(p.monto), 0) as totalOrders,
+                COALESCE(SUM(pa.monto), 0) as totalPayments
+            FROM pedidos p
+            LEFT JOIN pagos pa ON 1=1
+        `);
+        
+        const totalOrders = parseFloat(totalsResult[0].totalOrders || 0);
+        const totalPayments = parseFloat(totalsResult[0].totalPayments || 0);
+        const pendingAmount = totalOrders - totalPayments;
+        
+        res.json({
+            pendingAmount: pendingAmount,
+            totalOrders: totalOrders,
+            totalPayments: totalPayments
+        });
+    } catch (error) {
+        console.error('Error obteniendo cobros pendientes:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Obtener detalles de cobros pendientes
+app.get('/api/cobros/pendientes/detalle', authenticateToken, async (req, res) => {
+    try {
+        // Calcular totales generales
+        const [totalsResult] = await db.execute(`
+            SELECT 
+                COALESCE(SUM(p.monto), 0) as totalOrders,
+                COALESCE(SUM(pa.monto), 0) as totalPayments
+            FROM pedidos p
+            LEFT JOIN pagos pa ON 1=1
+        `);
+        
+        const totalOrders = parseFloat(totalsResult[0].totalOrders || 0);
+        const totalPayments = parseFloat(totalsResult[0].totalPayments || 0);
+        const pendingAmount = totalOrders - totalPayments;
+        
+        // Obtener clientes con saldo pendiente
         const query = `
-            SELECT c.*, 
-                   COALESCE(pedidos_totals.total_pedidos, 0) as total_pedidos,
-                   COALESCE(pagos_totals.total_pagos, 0) as total_pagos,
-                   (COALESCE(pedidos_totals.total_pedidos, 0) - COALESCE(pagos_totals.total_pagos, 0)) as saldo_pendiente
+            SELECT 
+                c.*,
+                COALESCE(pedidos_totals.total_pedidos, 0) as totalOrders,
+                COALESCE(pagos_totals.total_pagos, 0) as totalPayments,
+                (COALESCE(pedidos_totals.total_pedidos, 0) - COALESCE(pagos_totals.total_pagos, 0)) as saldo_pendiente
             FROM clientes c
             LEFT JOIN (
                 SELECT cliente_id, SUM(monto) as total_pedidos 
@@ -928,10 +992,18 @@ app.get('/api/cobros/pendientes', authenticateToken, async (req, res) => {
             ORDER BY saldo_pendiente DESC
         `;
         
-        const [cobros] = await db.execute(query);
-        res.json(cobros);
+        const [clients] = await db.execute(query);
+        
+        res.json({
+            summary: {
+                totalOrders: totalOrders,
+                totalPayments: totalPayments,
+                pendingAmount: pendingAmount
+            },
+            clients: clients
+        });
     } catch (error) {
-        console.error('Error obteniendo cobros pendientes:', error);
+        console.error('Error obteniendo detalles de cobros pendientes:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });

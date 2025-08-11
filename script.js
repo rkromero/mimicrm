@@ -7088,7 +7088,7 @@ async function loadInactiveClients() {
         const token = localStorage.getItem('authToken');
         if (!token) {
             console.error('❌ No hay token de autenticación');
-            return;
+            return [];
         }
 
         const response = await fetch('/api/clientes/inactivos', {
@@ -7101,10 +7101,13 @@ async function loadInactiveClients() {
         if (response.ok) {
             const data = await response.json();
             
+            // Verificar que data.inactiveClients existe y es un array
+            const inactiveClients = data.inactiveClients || [];
+            
             // Actualizar contador en la tarjeta
             const countElement = document.getElementById('inactive-clients-count');
             if (countElement) {
-                countElement.textContent = data.inactiveClients.length;
+                countElement.textContent = inactiveClients.length;
             }
             
             // Actualizar fecha de última actividad
@@ -7116,7 +7119,7 @@ async function loadInactiveClients() {
             }
             
             
-            return data.inactiveClients;
+            return inactiveClients;
         } else {
             console.error('❌ Error cargando clientes inactivos:', response.status);
             return [];
