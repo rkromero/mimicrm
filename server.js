@@ -407,6 +407,71 @@ app.post('/api/clientes', authenticateToken, async (req, res) => {
     }
 });
 
+// Actualizar cliente
+app.put('/api/clientes/:clientId', authenticateToken, async (req, res) => {
+    try {
+        const { clientId } = req.params;
+        const {
+            nombre, apellido, cuit, email, telefono, direccion, provincia,
+            ciudad, localidad, codigo_postal
+        } = req.body;
+
+        // Verificar que el cliente existe
+        const [existingClient] = await db.execute(
+            'SELECT * FROM clientes WHERE id = ?',
+            [clientId]
+        );
+
+        if (existingClient.length === 0) {
+            return res.status(404).json({ error: 'Cliente no encontrado' });
+        }
+
+        // Actualizar el cliente
+        await db.execute(
+            `UPDATE clientes SET 
+                nombre = ?, apellido = ?, cuit = ?, email = ?, telefono = ?, 
+                direccion = ?, provincia = ?, ciudad = ?, localidad = ?, codigo_postal = ?
+                WHERE id = ?`,
+            [
+                nombre, apellido, cuit, email, telefono, direccion, provincia,
+                ciudad, localidad, codigo_postal, clientId
+            ]
+        );
+
+        console.log(`✅ Cliente ${clientId} actualizado exitosamente`);
+        res.json({ message: 'Cliente actualizado exitosamente' });
+    } catch (error) {
+        console.error('Error actualizando cliente:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Eliminar cliente
+app.delete('/api/clientes/:clientId', authenticateToken, async (req, res) => {
+    try {
+        const { clientId } = req.params;
+
+        // Verificar que el cliente existe
+        const [existingClient] = await db.execute(
+            'SELECT * FROM clientes WHERE id = ?',
+            [clientId]
+        );
+
+        if (existingClient.length === 0) {
+            return res.status(404).json({ error: 'Cliente no encontrado' });
+        }
+
+        // Marcar como inactivo en lugar de eliminar
+        await db.execute('UPDATE clientes SET activo = false WHERE id = ?', [clientId]);
+
+        console.log(`✅ Cliente ${clientId} marcado como inactivo`);
+        res.json({ message: 'Cliente eliminado exitosamente' });
+    } catch (error) {
+        console.error('Error eliminando cliente:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
 // RUTAS DE PRODUCTOS
 
 // Obtener todos los productos
@@ -443,6 +508,62 @@ app.post('/api/productos', authenticateToken, async (req, res) => {
         res.status(201).json({ id: result.insertId, message: 'Producto creado exitosamente' });
     } catch (error) {
         console.error('Error creando producto:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Actualizar producto
+app.put('/api/productos/:productId', authenticateToken, async (req, res) => {
+    try {
+        const { productId } = req.params;
+        const { nombre, descripcion, precio } = req.body;
+
+        // Verificar que el producto existe
+        const [existingProduct] = await db.execute(
+            'SELECT * FROM productos WHERE id = ?',
+            [productId]
+        );
+
+        if (existingProduct.length === 0) {
+            return res.status(404).json({ error: 'Producto no encontrado' });
+        }
+
+        // Actualizar el producto
+        await db.execute(
+            'UPDATE productos SET nombre = ?, descripcion = ?, precio = ? WHERE id = ?',
+            [nombre, descripcion, precio, productId]
+        );
+
+        console.log(`✅ Producto ${productId} actualizado exitosamente`);
+        res.json({ message: 'Producto actualizado exitosamente' });
+    } catch (error) {
+        console.error('Error actualizando producto:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Eliminar producto
+app.delete('/api/productos/:productId', authenticateToken, async (req, res) => {
+    try {
+        const { productId } = req.params;
+
+        // Verificar que el producto existe
+        const [existingProduct] = await db.execute(
+            'SELECT * FROM productos WHERE id = ?',
+            [productId]
+        );
+
+        if (existingProduct.length === 0) {
+            return res.status(404).json({ error: 'Producto no encontrado' });
+        }
+
+        // Marcar como inactivo en lugar de eliminar
+        await db.execute('UPDATE productos SET activo = false WHERE id = ?', [productId]);
+
+        console.log(`✅ Producto ${productId} marcado como inactivo`);
+        res.json({ message: 'Producto eliminado exitosamente' });
+    } catch (error) {
+        console.error('Error eliminando producto:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
@@ -531,6 +652,76 @@ app.get('/api/pedidos/:orderId/items', authenticateToken, async (req, res) => {
     }
 });
 
+// Actualizar pedido
+app.put('/api/pedidos/:orderId', authenticateToken, async (req, res) => {
+    try {
+        const { orderId } = req.params;
+        const { cliente_id, descripcion, monto, estado, items = [] } = req.body;
+
+        // Verificar que el pedido existe
+        const [existingOrder] = await db.execute(
+            'SELECT * FROM pedidos WHERE id = ?',
+            [orderId]
+        );
+
+        if (existingOrder.length === 0) {
+            return res.status(404).json({ error: 'Pedido no encontrado' });
+        }
+
+        // Actualizar el pedido
+        await db.execute(
+            'UPDATE pedidos SET cliente_id = ?, descripcion = ?, monto = ?, estado = ? WHERE id = ?',
+            [cliente_id, descripcion, monto, estado, orderId]
+        );
+
+        // Eliminar items existentes
+        await db.execute('DELETE FROM pedido_items WHERE pedido_id = ?', [orderId]);
+
+        // Insertar nuevos items
+        if (items && items.length > 0) {
+            for (const item of items) {
+                const subtotal = item.cantidad * item.precio;
+                await db.execute(
+                    'INSERT INTO pedido_items (pedido_id, producto_id, cantidad, precio, subtotal) VALUES (?, ?, ?, ?, ?)',
+                    [orderId, item.producto_id, item.cantidad, item.precio, subtotal]
+                );
+            }
+        }
+
+        console.log(`✅ Pedido ${orderId} actualizado exitosamente`);
+        res.json({ message: 'Pedido actualizado exitosamente' });
+    } catch (error) {
+        console.error('Error actualizando pedido:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Eliminar pedido
+app.delete('/api/pedidos/:orderId', authenticateToken, async (req, res) => {
+    try {
+        const { orderId } = req.params;
+
+        // Verificar que el pedido existe
+        const [existingOrder] = await db.execute(
+            'SELECT * FROM pedidos WHERE id = ?',
+            [orderId]
+        );
+
+        if (existingOrder.length === 0) {
+            return res.status(404).json({ error: 'Pedido no encontrado' });
+        }
+
+        // Eliminar el pedido (los items se eliminan automáticamente por CASCADE)
+        await db.execute('DELETE FROM pedidos WHERE id = ?', [orderId]);
+
+        console.log(`✅ Pedido ${orderId} eliminado exitosamente`);
+        res.json({ message: 'Pedido eliminado exitosamente' });
+    } catch (error) {
+        console.error('Error eliminando pedido:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
 // RUTAS DE PAGOS
 
 // Obtener todos los pagos
@@ -583,6 +774,62 @@ app.post('/api/pagos', authenticateToken, async (req, res) => {
     }
 });
 
+// Actualizar pago
+app.put('/api/pagos/:paymentId', authenticateToken, async (req, res) => {
+    try {
+        const { paymentId } = req.params;
+        const { cliente_id, pedido_id, monto, metodo, referencia } = req.body;
+
+        // Verificar que el pago existe
+        const [existingPayment] = await db.execute(
+            'SELECT * FROM pagos WHERE id = ?',
+            [paymentId]
+        );
+
+        if (existingPayment.length === 0) {
+            return res.status(404).json({ error: 'Pago no encontrado' });
+        }
+
+        // Actualizar el pago
+        await db.execute(
+            'UPDATE pagos SET cliente_id = ?, pedido_id = ?, monto = ?, metodo = ?, referencia = ? WHERE id = ?',
+            [cliente_id, pedido_id || null, monto, metodo, referencia, paymentId]
+        );
+
+        console.log(`✅ Pago ${paymentId} actualizado exitosamente`);
+        res.json({ message: 'Pago actualizado exitosamente' });
+    } catch (error) {
+        console.error('Error actualizando pago:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Eliminar pago
+app.delete('/api/pagos/:paymentId', authenticateToken, async (req, res) => {
+    try {
+        const { paymentId } = req.params;
+
+        // Verificar que el pago existe
+        const [existingPayment] = await db.execute(
+            'SELECT * FROM pagos WHERE id = ?',
+            [paymentId]
+        );
+
+        if (existingPayment.length === 0) {
+            return res.status(404).json({ error: 'Pago no encontrado' });
+        }
+
+        // Eliminar el pago
+        await db.execute('DELETE FROM pagos WHERE id = ?', [paymentId]);
+
+        console.log(`✅ Pago ${paymentId} eliminado exitosamente`);
+        res.json({ message: 'Pago eliminado exitosamente' });
+    } catch (error) {
+        console.error('Error eliminando pago:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
 // Ruta para servir la aplicación
 app.get('/', (req, res) => {
     res.redirect('/login.html');
@@ -605,6 +852,95 @@ app.get('/api/test', (req, res) => {
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'development'
     });
+});
+
+// Obtener clientes inactivos
+app.get('/api/clientes/inactivos', authenticateToken, async (req, res) => {
+    try {
+        const [clientes] = await db.execute(
+            'SELECT * FROM clientes WHERE activo = false ORDER BY nombre'
+        );
+        res.json(clientes);
+    } catch (error) {
+        console.error('Error obteniendo clientes inactivos:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Obtener ventas completadas
+app.get('/api/ventas/completadas', authenticateToken, async (req, res) => {
+    try {
+        const { dateFrom, dateTo } = req.query;
+        let query = `
+            SELECT p.*, c.nombre as cliente_nombre, u.nombre as creado_por_nombre
+            FROM pedidos p
+            LEFT JOIN clientes c ON p.cliente_id = c.id
+            LEFT JOIN usuarios u ON p.creado_por = u.id
+            WHERE p.estado = 'completado'
+        `;
+        
+        const params = [];
+
+        if (dateFrom) {
+            query += ' AND p.fecha >= ?';
+            params.push(dateFrom);
+        }
+        if (dateTo) {
+            query += ' AND p.fecha <= ?';
+            params.push(dateTo);
+        }
+
+        query += ' ORDER BY p.fecha DESC';
+
+        const [ventas] = await db.execute(query, params);
+        res.json(ventas);
+    } catch (error) {
+        console.error('Error obteniendo ventas completadas:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Obtener cobros pendientes
+app.get('/api/cobros/pendientes', authenticateToken, async (req, res) => {
+    try {
+        const query = `
+            SELECT c.*, 
+                   COALESCE(pedidos_totals.total_pedidos, 0) as total_pedidos,
+                   COALESCE(pagos_totals.total_pagos, 0) as total_pagos,
+                   (COALESCE(pedidos_totals.total_pedidos, 0) - COALESCE(pagos_totals.total_pagos, 0)) as saldo_pendiente
+            FROM clientes c
+            LEFT JOIN (
+                SELECT cliente_id, SUM(monto) as total_pedidos 
+                FROM pedidos 
+                GROUP BY cliente_id
+            ) pedidos_totals ON c.id = pedidos_totals.cliente_id
+            LEFT JOIN (
+                SELECT cliente_id, SUM(monto) as total_pagos 
+                FROM pagos 
+                GROUP BY cliente_id
+            ) pagos_totals ON c.id = pagos_totals.cliente_id
+            WHERE c.activo = true 
+            AND (COALESCE(pedidos_totals.total_pedidos, 0) - COALESCE(pagos_totals.total_pagos, 0)) > 0
+            ORDER BY saldo_pendiente DESC
+        `;
+        
+        const [cobros] = await db.execute(query);
+        res.json(cobros);
+    } catch (error) {
+        console.error('Error obteniendo cobros pendientes:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Obtener contactos (placeholder)
+app.get('/api/contactos', authenticateToken, async (req, res) => {
+    try {
+        // Por ahora devolver array vacío hasta que se implemente la tabla de contactos
+        res.json([]);
+    } catch (error) {
+        console.error('Error obteniendo contactos:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
 });
 
 // Iniciar servidor
