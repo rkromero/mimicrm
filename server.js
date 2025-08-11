@@ -929,18 +929,22 @@ app.get('/api/ventas/completadas', authenticateToken, async (req, res) => {
 // Obtener cobros pendientes
 app.get('/api/cobros/pendientes', authenticateToken, async (req, res) => {
     try {
-        // Calcular totales generales
-        const [totalsResult] = await db.execute(`
-            SELECT 
-                COALESCE(SUM(p.monto), 0) as totalOrders,
-                COALESCE(SUM(pa.monto), 0) as totalPayments
-            FROM pedidos p
-            LEFT JOIN pagos pa ON 1=1
+        // Calcular totales generales - consultas separadas para evitar producto cartesiano
+        const [ordersResult] = await db.execute(`
+            SELECT COALESCE(SUM(monto), 0) as totalOrders
+            FROM pedidos
         `);
         
-        const totalOrders = parseFloat(totalsResult[0].totalOrders || 0);
-        const totalPayments = parseFloat(totalsResult[0].totalPayments || 0);
+        const [paymentsResult] = await db.execute(`
+            SELECT COALESCE(SUM(monto), 0) as totalPayments
+            FROM pagos
+        `);
+        
+        const totalOrders = parseFloat(ordersResult[0].totalOrders || 0);
+        const totalPayments = parseFloat(paymentsResult[0].totalPayments || 0);
         const pendingAmount = totalOrders - totalPayments;
+        
+        console.log(`📊 Cobros pendientes - Pedidos: $${totalOrders}, Pagos: $${totalPayments}, Pendiente: $${pendingAmount}`);
         
         res.json({
             pendingAmount: pendingAmount,
@@ -956,17 +960,19 @@ app.get('/api/cobros/pendientes', authenticateToken, async (req, res) => {
 // Obtener detalles de cobros pendientes
 app.get('/api/cobros/pendientes/detalle', authenticateToken, async (req, res) => {
     try {
-        // Calcular totales generales
-        const [totalsResult] = await db.execute(`
-            SELECT 
-                COALESCE(SUM(p.monto), 0) as totalOrders,
-                COALESCE(SUM(pa.monto), 0) as totalPayments
-            FROM pedidos p
-            LEFT JOIN pagos pa ON 1=1
+        // Calcular totales generales - consultas separadas para evitar producto cartesiano
+        const [ordersResult] = await db.execute(`
+            SELECT COALESCE(SUM(monto), 0) as totalOrders
+            FROM pedidos
         `);
         
-        const totalOrders = parseFloat(totalsResult[0].totalOrders || 0);
-        const totalPayments = parseFloat(totalsResult[0].totalPayments || 0);
+        const [paymentsResult] = await db.execute(`
+            SELECT COALESCE(SUM(monto), 0) as totalPayments
+            FROM pagos
+        `);
+        
+        const totalOrders = parseFloat(ordersResult[0].totalOrders || 0);
+        const totalPayments = parseFloat(paymentsResult[0].totalPayments || 0);
         const pendingAmount = totalOrders - totalPayments;
         
         // Obtener clientes con saldo pendiente
