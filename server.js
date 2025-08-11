@@ -508,6 +508,29 @@ app.post('/api/pedidos', authenticateToken, async (req, res) => {
     }
 });
 
+// Obtener items de un pedido específico
+app.get('/api/pedidos/:orderId/items', authenticateToken, async (req, res) => {
+    try {
+        const { orderId } = req.params;
+        
+        const query = `
+            SELECT pi.*, p.nombre as producto_nombre, p.descripcion as producto_descripcion
+            FROM pedido_items pi
+            LEFT JOIN productos p ON pi.producto_id = p.id
+            WHERE pi.pedido_id = ?
+            ORDER BY pi.id
+        `;
+        
+        const [items] = await db.execute(query, [orderId]);
+        
+        console.log(`✅ Items cargados para pedido ${orderId}:`, items.length);
+        res.json(items);
+    } catch (error) {
+        console.error('Error obteniendo items del pedido:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
 // RUTAS DE PAGOS
 
 // Obtener todos los pagos
