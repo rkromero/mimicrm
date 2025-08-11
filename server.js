@@ -6,7 +6,11 @@ const jwt = require('jsonwebtoken');
 const path = require('path');
 require('dotenv').config({ path: './config.env' });
 
+// Configurar zona horaria de Argentina
+process.env.TZ = 'America/Argentina/Buenos_Aires';
+
 console.log('🚀 Iniciando servidor MIMI CRM...');
+console.log('🕐 Zona horaria configurada:', process.env.TZ);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
