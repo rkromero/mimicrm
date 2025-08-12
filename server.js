@@ -538,7 +538,7 @@ app.get('/api/clientes/sin-actividad-reciente', authenticateToken, async (req, r
                 c.created_at,
                 MAX(p.fecha) as ultimo_pedido,
                 DATEDIFF(CURDATE(), MAX(p.fecha)) as dias_sin_actividad,
-                SUM(p.total) as total_historico
+                SUM(p.monto) as total_historico
             FROM clientes c
             LEFT JOIN pedidos p ON c.id = p.cliente_id
             GROUP BY c.id, c.nombre, c.email, c.telefono, c.direccion, c.created_at
