@@ -1851,7 +1851,7 @@ function setupOrderProductHandlers() {
         });
 
         console.log('✅ Event listeners de productos configurados correctamente');
-    } else {
+        } else {
         console.error('❌ Error: No se pudieron encontrar todos los elementos necesarios para configurar los manejadores de productos');
     }
 }
@@ -7165,8 +7165,17 @@ function setupDashboardCards() {
             });
         }
         
-
+        // Configurar tarjeta de clientes inactivos
+        const inactiveClientsCard = document.getElementById('inactive-clients-card');
+        if (inactiveClientsCard) {
+            inactiveClientsCard.addEventListener('click', async function() {
+                
+                showInactiveClientsModal();
+            });
+        }
         
+        // Cargar datos iniciales de clientes inactivos
+        loadInactiveClients();
         
     } catch (error) {
         console.error('❌ Error configurando tarjetas del dashboard:', error);

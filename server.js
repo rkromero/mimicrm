@@ -525,6 +525,45 @@ app.delete('/api/clientes/:clientId', authenticateToken, async (req, res) => {
     }
 });
 
+// Endpoint para obtener clientes sin actividad reciente (sin pedidos en últimos 30 días)
+app.get('/api/clientes/sin-actividad-reciente', authenticateToken, async (req, res) => {
+    try {
+        const query = `
+            SELECT 
+                c.id,
+                c.nombre,
+                c.email,
+                c.telefono,
+                c.direccion,
+                c.created_at,
+                MAX(p.fecha) as ultimo_pedido,
+                DATEDIFF(CURDATE(), MAX(p.fecha)) as dias_sin_actividad,
+                SUM(p.total) as total_historico
+            FROM clientes c
+            LEFT JOIN pedidos p ON c.id = p.cliente_id
+            GROUP BY c.id, c.nombre, c.email, c.telefono, c.direccion, c.created_at
+            HAVING ultimo_pedido IS NULL OR ultimo_pedido < DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+            ORDER BY dias_sin_actividad DESC, c.nombre ASC
+        `;
+        
+        const [clientes] = await db.execute(query);
+        
+        // Procesar los datos para manejar NULL values
+        const clientesProcesados = clientes.map(cliente => ({
+            ...cliente,
+            ultimo_pedido: cliente.ultimo_pedido || null,
+            dias_sin_actividad: cliente.ultimo_pedido ? cliente.dias_sin_actividad : 
+                Math.floor((new Date() - new Date(cliente.created_at)) / (1000 * 60 * 60 * 24)),
+            total_historico: cliente.total_historico || 0
+        }));
+        
+        res.json(clientesProcesados);
+    } catch (error) {
+        console.error('Error obteniendo clientes sin actividad reciente:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
 // RUTAS DE PRODUCTOS
 
 // Obtener todos los productos

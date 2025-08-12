@@ -299,6 +299,23 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="dashboard-card clickable-card" id="inactive-clients-card">
+                        <div class="card-header">
+                            <h3>Sin Actividad Reciente</h3>
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="card-content">
+                            <div class="stat-item">
+                                <span class="stat-label">Clientes Inactivos</span>
+                                <span class="stat-value" id="inactive-clients-count">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">+30 días sin pedidos</span>
+                                <span class="stat-value" style="color: #dc2626; font-weight: 600;">⚠️ Oportunidad</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1033,6 +1050,51 @@
                         </thead>
                         <tbody id="pending-collections-table-body">
                             <!-- Los datos de cobros se cargarán aquí -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Clientes Sin Actividad Reciente -->
+    <div id="inactive-clients-modal" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width: 1000px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Clientes Sin Actividad Reciente</h2>
+                <button class="close-modal btn btn-secondary">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" style="padding: 1.5rem;">
+                <div style="background: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-exclamation-triangle" style="color: #92400e;"></i>
+                        <span style="color: #92400e; font-weight: 600;">Oportunidad de Venta</span>
+                    </div>
+                    <p style="color: #92400e; margin: 0.5rem 0 0 0; font-size: 0.875rem;">
+                        Estos clientes no han realizado pedidos en los últimos 30 días. ¡Es momento de contactarlos!
+                    </p>
+                </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <input type="text" id="inactive-clients-search" class="input" placeholder="Buscar cliente..." style="width: 100%;">
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="clients-table">
+                        <thead>
+                            <tr>
+                                <th>Cliente</th>
+                                <th>Último Pedido</th>
+                                <th>Días Sin Actividad</th>
+                                <th>Total Histórico</th>
+                                <th>Contacto</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inactive-clients-table-body">
+                            <!-- Los clientes inactivos se cargarán aquí -->
                         </tbody>
                     </table>
                 </div>
