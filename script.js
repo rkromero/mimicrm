@@ -575,7 +575,7 @@ function renderClientsTable() {
                     </div>
                 </div>
                 <div class="mobile-card-actions">
-                    <button onclick="viewClientDetails(${client.id})" class="btn btn-primary">
+                    <button onclick="viewClientDetails(${client.id}).catch(console.error)" class="btn btn-primary">
                         <i class="fas fa-eye"></i> Ver
                     </button>
                     <button onclick="editClient(${client.id})" class="btn btn-secondary">
@@ -629,7 +629,7 @@ function renderClientsTable() {
                                 </span>
                             </td>
                             <td>
-                                <button onclick="viewClientDetails(${client.id})" class="btn-icon" title="Ver detalles">
+                                <button onclick="viewClientDetails(${client.id}).catch(console.error)" class="btn-icon" title="Ver detalles">
                                     <i class="fas fa-eye"></i>
                                 </button>
                                 <button onclick="editClient(${client.id})" class="btn-icon" title="Editar">
@@ -4432,13 +4432,34 @@ function restoreAdminPanelStyles() {
 }
 
 // Funciones para mostrar detalles
-function viewClientDetails(clientId) {
+async function viewClientDetails(clientId) {
     
     
-    const client = clients.find(c => c.id == clientId);
+    // Primero buscar en el array local de clientes
+    let client = clients.find(c => c.id == clientId);
+    
+    // Si no se encuentra en el array local, obtener desde la API
     if (!client) {
-        showNotification('Cliente no encontrado', 'error');
-        return;
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await fetch(`/api/clientes/${clientId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                client = await response.json();
+            } else {
+                showNotification('Cliente no encontrado', 'error');
+                return;
+            }
+        } catch (error) {
+            console.error('Error obteniendo cliente desde API:', error);
+            showNotification('Error al obtener datos del cliente', 'error');
+            return;
+        }
     }
     
     // Buscar pedidos del cliente
@@ -7327,7 +7348,7 @@ function showInactiveClientsModal(inactiveClients) {
                     <td>${client.lastOrderDate ? formatDate(client.lastOrderDate) : 'Nunca'}</td>
                     <td>${daysSinceLastOrder === 'Nunca' ? 'Nunca' : daysSinceLastOrder + ' días'}</td>
                     <td>
-                        <button class="btn btn-primary" onclick="viewClientDetails(${client.id})" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                        <button class="btn btn-primary" onclick="viewClientDetails(${client.id}).catch(console.error)" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">
                             <i class="fas fa-eye"></i> Ver
                         </button>
                         <button class="btn btn-success" onclick="showModal('new-order-modal'); populateClientSelects('new-order-modal'); document.getElementById('order-client-select').value = ${client.id};" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-left: 0.25rem;">
@@ -7474,7 +7495,7 @@ async function showPendingCollectionsModal() {
                         card.addEventListener('click', () => {
                             closeModal('pending-collections-modal');
                             setTimeout(() => {
-                                viewClientDetails(client.id);
+                                viewClientDetails(client.id).catch(console.error);
                             }, 100);
                         });
                         
@@ -7530,7 +7551,7 @@ async function showPendingCollectionsModal() {
                                 </div>
                             </td>
                             <td>
-                                <button class="btn btn-primary" onclick="viewClientDetails(${client.id})" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                                <button class="btn btn-primary" onclick="viewClientDetails(${client.id}).catch(console.error)" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">
                                     <i class="fas fa-eye"></i> Ver
                                 </button>
                                 <button class="btn btn-success" onclick="showModal('new-payment-modal'); populateClientSelects('new-payment-modal'); document.getElementById('payment-client-select').value = ${client.id};" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-left: 0.25rem;">

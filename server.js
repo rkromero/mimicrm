@@ -385,6 +385,55 @@ app.get('/api/clientes', authenticateToken, async (req, res) => {
     }
 });
 
+// Obtener cliente por ID
+app.get('/api/clientes/:clientId', authenticateToken, async (req, res) => {
+    try {
+        const { clientId } = req.params;
+        
+        const query = `
+            SELECT 
+                c.*,
+                u.nombre as creado_por_nombre,
+                COALESCE(pedidos_totals.total_pedidos, 0) as total_pedidos,
+                COALESCE(pagos_totals.total_pagos, 0) as total_pagos,
+                (COALESCE(pedidos_totals.total_pedidos, 0) - COALESCE(pagos_totals.total_pagos, 0)) as saldo_real
+            FROM clientes c
+            LEFT JOIN usuarios u ON c.creado_por = u.id
+            LEFT JOIN (
+                SELECT cliente_id, SUM(monto) as total_pedidos 
+                FROM pedidos 
+                GROUP BY cliente_id
+            ) pedidos_totals ON c.id = pedidos_totals.cliente_id
+            LEFT JOIN (
+                SELECT cliente_id, SUM(monto) as total_pagos 
+                FROM pagos 
+                GROUP BY cliente_id
+            ) pagos_totals ON c.id = pagos_totals.cliente_id
+            WHERE c.id = ?
+        `;
+        
+        const [clientes] = await db.execute(query, [clientId]);
+        
+        if (clientes.length === 0) {
+            return res.status(404).json({ error: 'Cliente no encontrado' });
+        }
+        
+        const cliente = clientes[0];
+        const clienteConSaldo = {
+            ...cliente,
+            saldo: cliente.saldo_real,
+            total_pedidos: parseFloat(cliente.total_pedidos || 0),
+            total_pagos: parseFloat(cliente.total_pagos || 0),
+            saldo_calculado: parseFloat(cliente.saldo_real || 0)
+        };
+        
+        res.json(clienteConSaldo);
+    } catch (error) {
+        console.error('Error obteniendo cliente:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
 // Crear cliente
 app.post('/api/clientes', authenticateToken, async (req, res) => {
     try {
