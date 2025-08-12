@@ -996,38 +996,7 @@ app.get('/api/debug/inactive-clients', authenticateToken, async (req, res) => {
 
 
 
-// Obtener ventas completadas
-app.get('/api/ventas/completadas', authenticateToken, async (req, res) => {
-    try {
-        const { dateFrom, dateTo } = req.query;
-        let query = `
-            SELECT p.*, c.nombre as cliente_nombre, u.nombre as creado_por_nombre
-            FROM pedidos p
-            LEFT JOIN clientes c ON p.cliente_id = c.id
-            LEFT JOIN usuarios u ON p.creado_por = u.id
-            WHERE p.estado = 'completado'
-        `;
-        
-        const params = [];
 
-        if (dateFrom) {
-            query += ' AND p.fecha >= ?';
-            params.push(dateFrom);
-        }
-        if (dateTo) {
-            query += ' AND p.fecha <= ?';
-            params.push(dateTo);
-        }
-
-        query += ' ORDER BY p.fecha DESC';
-
-        const [ventas] = await db.execute(query, params);
-        res.json(ventas);
-    } catch (error) {
-        console.error('Error obteniendo ventas completadas:', error);
-        res.status(500).json({ error: 'Error interno del servidor' });
-    }
-});
 
 // Obtener cobros pendientes
 app.get('/api/cobros/pendientes', authenticateToken, async (req, res) => {

@@ -1303,7 +1303,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Cargar datos iniciales del dashboard
         
         try {
-            await loadCompletedSales();
             await loadPendingCollections();
             
         } catch (error) {
@@ -7102,60 +7101,7 @@ function configurarMenuGerenteVentas() {
 
 
 
-// Función para cargar ventas completadas
-async function loadCompletedSales(dateFrom = null, dateTo = null) {
-    
-    
-    try {
-        const token = localStorage.getItem('authToken');
-        if (!token) {
-            console.error('❌ No hay token de autenticación');
-            return;
-        }
 
-        let url = '/api/ventas/completadas';
-        const params = new URLSearchParams();
-        
-        if (dateFrom) params.append('dateFrom', dateFrom);
-        if (dateTo) params.append('dateTo', dateTo);
-        
-        if (params.toString()) {
-            url += '?' + params.toString();
-        }
-
-        const response = await fetch(url, {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            
-            // Actualizar total vendido
-            const totalSalesElement = document.getElementById('total-sales-amount');
-            if (totalSalesElement) {
-                totalSalesElement.textContent = formatCurrency(data.totalAmount);
-            }
-            
-            // Actualizar cantidad de pedidos completados
-            const completedCountElement = document.getElementById('completed-orders-count');
-            if (completedCountElement) {
-                completedCountElement.textContent = data.completedOrders;
-            }
-            
-            
-            return data;
-        } else {
-            console.error('❌ Error cargando ventas completadas:', response.status);
-            return { totalAmount: 0, completedOrders: 0 };
-        }
-    } catch (error) {
-        console.error('❌ Error de conexión cargando ventas completadas:', error);
-        return { totalAmount: 0, completedOrders: 0 };
-    }
-}
 
 // Función para cargar datos de cobros pendientes
 async function loadPendingCollections() {
@@ -7219,29 +7165,7 @@ function setupDashboardCards() {
             });
         }
         
-        // Configurar filtro de fechas para ventas
-        const filterSalesBtn = document.getElementById('filter-sales-btn');
-        if (filterSalesBtn) {
-            filterSalesBtn.addEventListener('click', function() {
-                const dateFrom = document.getElementById('sales-date-from').value;
-                const dateTo = document.getElementById('sales-date-to').value;
-                loadCompletedSales(dateFrom, dateTo);
-            });
-        }
-        
-        // Establecer fechas por defecto (último mes)
-        const today = new Date();
-        const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
-        
-        const dateFromInput = document.getElementById('sales-date-from');
-        const dateToInput = document.getElementById('sales-date-to');
-        
-        if (dateFromInput) {
-            dateFromInput.value = lastMonth.toISOString().split('T')[0];
-        }
-        if (dateToInput) {
-            dateToInput.value = today.toISOString().split('T')[0];
-        }
+
         
         
     } catch (error) {
