@@ -4703,9 +4703,9 @@ function viewOrderDetails(orderId) {
     const order = orders.find(o => o.id == orderId);
     if (!order) {
         showNotification('Pedido no encontrado', 'error');
-        return;
-    }
-    
+            return;
+        }
+        
     // Crear modal de detalles dinámicamente
     const detailsModal = document.createElement('div');
     detailsModal.className = 'modal active';
@@ -4747,11 +4747,11 @@ function viewOrderDetails(orderId) {
                                             <div style="font-weight: 600;">${item.producto_nombre || 'Producto no encontrado'}</div>
                                             ${item.producto_descripcion ? `<div style="font-size: 0.875rem; color: #6b7280;">${item.producto_descripcion}</div>` : ''}
                                         </div>
-                                    </td>
+                    </td>
                                     <td style="padding: 0.75rem; text-align: center; border-bottom: 1px solid #e5e7eb;">${item.cantidad}</td>
                                     <td style="padding: 0.75rem; text-align: right; border-bottom: 1px solid #e5e7eb;">${formatCurrency(item.precio)}</td>
                                     <td style="padding: 0.75rem; text-align: right; font-weight: 600; color: #10b981; border-bottom: 1px solid #e5e7eb;">${formatCurrency(item.subtotal)}</td>
-                                </tr>
+                </tr>
                             `).join('')}
                         </tbody>
                         <tfoot style="background: #f0f9ff;">
@@ -4780,19 +4780,19 @@ function viewOrderDetails(orderId) {
                     <button class="close-modal btn btn-secondary" onclick="this.closest('.modal').remove()">
                         <i class="fas fa-times"></i>
                     </button>
-                </div>
+                    </div>
                 <div style="padding: 1rem;">
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; background: #f8f9fa; padding: 1rem; border-radius: 8px;">
                         <div>
                             <strong>Cliente:</strong><br>
                             ${order.cliente_nombre || 'N/A'}
-                        </div>
+                    </div>
                         <div>
                             <strong>Estado:</strong><br>
                             <span class="status-badge status-${order.estado}" style="padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.875rem; font-weight: 500;">
                                 ${translateOrderStatus(order.estado)}
                             </span>
-                        </div>
+                    </div>
                         <div>
                             <strong>Fecha:</strong><br>
                             ${formatDate(order.fecha)}
@@ -4831,8 +4831,8 @@ function viewOrderDetails(orderId) {
                         </button>
                     </div>
                 </div>
-            </div>
-        `;
+                    </div>
+                `;
     });
     
     document.body.appendChild(detailsModal);
@@ -5009,7 +5009,7 @@ function generateDeliveryReceiptHTML(order, client, items) {
         
         .products-section {
             margin-bottom: 30px;
-        }
+}
         
         .products-table {
             width: 100%;
@@ -7770,8 +7770,247 @@ if (isMobileDevice()) {
     document.body.style.webkitOverflowScrolling = 'touch';
 }
 
+// Función para cargar clientes sin actividad reciente
+async function loadInactiveClients() {
+    try {
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+            console.error('❌ No hay token de autenticación');
+            return;
+        }
 
+        const response = await fetch('/api/clientes/sin-actividad-reciente', {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
 
-
-
+        if (response.ok) {
+            const data = await response.json();
             
+            // Actualizar el contador en la tarjeta
+            const countElement = document.getElementById('inactive-clients-count');
+            if (countElement) {
+                countElement.textContent = data.length;
+            }
+            
+            return data;
+        } else {
+            console.error('❌ Error cargando clientes inactivos:', response.status);
+            return [];
+        }
+    } catch (error) {
+        console.error('❌ Error de conexión cargando clientes inactivos:', error);
+        return [];
+    }
+}
+
+// Función para mostrar el modal de clientes inactivos
+async function showInactiveClientsModal() {
+    try {
+        const modal = document.getElementById('inactive-clients-modal');
+        const tableBody = document.getElementById('inactive-clients-table-body');
+        
+        if (!modal || !tableBody) {
+            console.error('❌ Elementos del modal no encontrados');
+            return;
+        }
+        
+        // Mostrar modal
+        modal.style.display = 'block';
+        
+        // Cargar datos
+        const clientes = await loadInactiveClients();
+        
+        // Limpiar tabla
+        tableBody.innerHTML = '';
+        
+        if (clientes.length === 0) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 2rem; color: #6b7280;">
+                        <i class="fas fa-check-circle" style="color: #10b981; font-size: 2rem; margin-bottom: 1rem;"></i>
+                        <br>¡Excelente! Todos los clientes han tenido actividad reciente.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        // Verificar si estamos en móvil
+        const isMobile = window.innerWidth <= 768;
+        
+        if (isMobile) {
+            // Crear container para las cards
+            const cardsContainer = document.createElement('div');
+            cardsContainer.className = 'mobile-cards-container';
+            cardsContainer.style.cssText = `
+                display: grid;
+                gap: 1rem;
+                padding: 0.5rem;
+            `;
+            
+            // Ocultar tabla y mostrar cards
+            const table = document.querySelector('#inactive-clients-modal .table-responsive');
+            table.style.display = 'none';
+            
+            // Crear cards para cada cliente
+            clientes.forEach(cliente => {
+                const card = document.createElement('div');
+                card.className = 'client-card';
+                card.style.cssText = `
+                    background: white;
+                    border: 1px solid #e5e7eb;
+                    border-radius: 8px;
+                    padding: 1rem;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                `;
+                
+                const ultimoPedido = cliente.ultimo_pedido ? 
+                    new Date(cliente.ultimo_pedido).toLocaleDateString('es-ES') : 
+                    'Sin pedidos';
+                
+                const diasSinActividad = cliente.dias_sin_actividad || 
+                    Math.floor((new Date() - new Date(cliente.created_at)) / (1000 * 60 * 60 * 24));
+                
+                card.innerHTML = `
+                    <div style="margin-bottom: 0.5rem;">
+                        <h4 style="margin: 0; color: #1f2937; font-weight: 600;">${cliente.nombre}</h4>
+                    </div>
+                    <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.5rem;">
+                        <div><strong>Último pedido:</strong> ${ultimoPedido}</div>
+                        <div><strong>Días sin actividad:</strong> <span style="color: #dc2626; font-weight: 600;">${diasSinActividad}</span></div>
+                        <div><strong>Total histórico:</strong> ${formatCurrency(cliente.total_historico)}</div>
+                    </div>
+                    <div style="font-size: 0.875rem; color: #6b7280;">
+                        <div><strong>Teléfono:</strong> ${cliente.telefono || 'No disponible'}</div>
+                        <div><strong>Email:</strong> ${cliente.email || 'No disponible'}</div>
+                    </div>
+                    <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                        <button onclick="contactarCliente('${cliente.nombre}', '${cliente.telefono || ''}', '${cliente.email || ''}')" 
+                                style="background: #3b82f6; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.875rem; cursor: pointer;">
+                            <i class="fas fa-phone"></i> Contactar
+                        </button>
+                        <button onclick="verCliente(${cliente.id})" 
+                                style="background: #6b7280; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.875rem; cursor: pointer;">
+                            <i class="fas fa-eye"></i> Ver
+                        </button>
+                    </div>
+                `;
+                
+                cardsContainer.appendChild(card);
+            });
+            
+            modal.querySelector('.modal-body').appendChild(cardsContainer);
+        } else {
+            // Mostrar tabla para desktop
+            const table = document.querySelector('#inactive-clients-modal .table-responsive');
+            table.style.display = 'block';
+            
+            clientes.forEach(cliente => {
+                const ultimoPedido = cliente.ultimo_pedido ? 
+                    new Date(cliente.ultimo_pedido).toLocaleDateString('es-ES') : 
+                    'Sin pedidos';
+                
+                const diasSinActividad = cliente.dias_sin_actividad || 
+                    Math.floor((new Date() - new Date(cliente.created_at)) / (1000 * 60 * 60 * 24));
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        <div style="font-weight: 600; color: #1f2937;">${cliente.nombre}</div>
+                        <div style="font-size: 0.875rem; color: #6b7280;">${cliente.direccion || 'Sin dirección'}</div>
+                    </td>
+                    <td>${ultimoPedido}</td>
+                    <td>
+                        <span style="color: #dc2626; font-weight: 600;">${diasSinActividad} días</span>
+                    </td>
+                    <td>${formatCurrency(cliente.total_historico)}</td>
+                    <td>
+                        <div style="font-size: 0.875rem;">
+                            <div><i class="fas fa-phone"></i> ${cliente.telefono || 'No disponible'}</div>
+                            <div><i class="fas fa-envelope"></i> ${cliente.email || 'No disponible'}</div>
+                        </div>
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 0.25rem;">
+                            <button onclick="contactarCliente('${cliente.nombre}', '${cliente.telefono || ''}', '${cliente.email || ''}')" 
+                                    class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">
+                                <i class="fas fa-phone"></i>
+                            </button>
+                            <button onclick="verCliente(${cliente.id})" 
+                                    class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+        
+        // Configurar búsqueda
+        const searchInput = document.getElementById('inactive-clients-search');
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const rows = tableBody.querySelectorAll('tr');
+                
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    row.style.display = text.includes(searchTerm) ? '' : 'none';
+                });
+            });
+        }
+        
+    } catch (error) {
+        console.error('❌ Error mostrando modal de clientes inactivos:', error);
+    }
+}
+
+// Función para contactar cliente
+function contactarCliente(nombre, telefono, email) {
+    let mensaje = `Contactando a ${nombre}\n\n`;
+    
+    if (telefono && telefono !== 'No disponible') {
+        mensaje += `📞 Teléfono: ${telefono}\n`;
+    }
+    
+    if (email && email !== 'No disponible') {
+        mensaje += `📧 Email: ${email}\n`;
+    }
+    
+    if (!telefono || telefono === 'No disponible') {
+        mensaje += '\n⚠️ No hay teléfono disponible';
+    }
+    
+    if (!email || email === 'No disponible') {
+        mensaje += '\n⚠️ No hay email disponible';
+    }
+    
+    alert(mensaje);
+}
+
+// Función para ver detalles del cliente
+function verCliente(clienteId) {
+    // Cerrar modal actual
+    const modal = document.getElementById('inactive-clients-modal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+    
+    // Navegar a la sección de clientes y buscar el cliente
+    showSection('clientes');
+    updateHeaderTitle('clientes');
+    
+    // Buscar el cliente en la lista
+    const searchInput = document.getElementById('clients-search');
+    if (searchInput) {
+        const cliente = clients.find(c => c.id === clienteId);
+        if (cliente) {
+            searchInput.value = cliente.nombre;
+            searchInput.dispatchEvent(new Event('input'));
+        }
+    }
+}
