@@ -525,9 +525,11 @@ app.delete('/api/clientes/:clientId', authenticateToken, async (req, res) => {
     }
 });
 
-// Endpoint para obtener clientes sin actividad reciente (sin pedidos en últimos 30 días) - V3 FORZADO
+// Endpoint simple para clientes sin actividad reciente
 app.get('/api/clientes/sin-actividad-reciente', authenticateToken, async (req, res) => {
     try {
+        console.log('🔍 Ejecutando consulta de clientes inactivos...');
+        
         const query = `
             SELECT 
                 c.id,
@@ -537,29 +539,22 @@ app.get('/api/clientes/sin-actividad-reciente', authenticateToken, async (req, r
                 c.direccion,
                 c.created_at,
                 MAX(p.fecha) as ultimo_pedido,
-                DATEDIFF(CURDATE(), MAX(p.fecha)) as dias_sin_actividad,
-                SUM(p.monto) as total_historico
+                COALESCE(DATEDIFF(CURDATE(), MAX(p.fecha)), 0) as dias_sin_actividad,
+                COALESCE(SUM(p.monto), 0) as total_historico
             FROM clientes c
             LEFT JOIN pedidos p ON c.id = p.cliente_id
+            WHERE c.activo = true
             GROUP BY c.id, c.nombre, c.email, c.telefono, c.direccion, c.created_at
             HAVING ultimo_pedido IS NULL OR ultimo_pedido < DATE_SUB(CURDATE(), INTERVAL 30 DAY)
             ORDER BY dias_sin_actividad DESC, c.nombre ASC
         `;
         
         const [clientes] = await db.execute(query);
+        console.log(`✅ Encontrados ${clientes.length} clientes inactivos`);
         
-        // Procesar los datos para manejar NULL values
-        const clientesProcesados = clientes.map(cliente => ({
-            ...cliente,
-            ultimo_pedido: cliente.ultimo_pedido || null,
-            dias_sin_actividad: cliente.ultimo_pedido ? cliente.dias_sin_actividad : 
-                Math.floor((new Date() - new Date(cliente.created_at)) / (1000 * 60 * 60 * 24)),
-            total_historico: cliente.total_historico || 0
-        }));
-        
-        res.json(clientesProcesados);
+        res.json(clientes);
     } catch (error) {
-        console.error('Error obteniendo clientes sin actividad reciente:', error);
+        console.error('❌ Error en endpoint de clientes inactivos:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
