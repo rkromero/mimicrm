@@ -7779,7 +7779,7 @@ async function loadInactiveClients() {
             return;
         }
 
-        const response = await fetch('/api/clientes/sin-actividad-reciente', {
+        const response = await fetch('/api/clientes/inactivos', {
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
