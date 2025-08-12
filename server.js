@@ -525,7 +525,7 @@ app.delete('/api/clientes/:clientId', authenticateToken, async (req, res) => {
     }
 });
 
-// Endpoint para obtener clientes sin actividad reciente (sin pedidos en últimos 30 días)
+// Endpoint para obtener clientes sin actividad reciente (sin pedidos en últimos 30 días) - V2
 app.get('/api/clientes/sin-actividad-reciente', authenticateToken, async (req, res) => {
     try {
         const query = `
