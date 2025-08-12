@@ -910,18 +910,24 @@ app.get('/api/test', (req, res) => {
 // Obtener clientes inactivos
 app.get('/api/clientes/inactivos', authenticateToken, async (req, res) => {
     try {
+        // Calcular la fecha de hace 30 días
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
+        
         const query = `
             SELECT 
                 c.*,
                 COALESCE(MAX(p.fecha), c.created_at) as lastOrderDate
             FROM clientes c
             LEFT JOIN pedidos p ON c.id = p.cliente_id
-            WHERE c.activo = false
+            WHERE c.activo = true
             GROUP BY c.id
+            HAVING lastOrderDate < ? OR lastOrderDate IS NULL
             ORDER BY c.nombre
         `;
         
-        const [clientes] = await db.execute(query);
+        const [clientes] = await db.execute(query, [thirtyDaysAgoStr]);
         
         // Calcular fecha de última actividad
         let lastActivity = null;
