@@ -907,6 +907,93 @@ app.get('/api/test', (req, res) => {
     });
 });
 
+// ENDPOINT DE DIAGNÓSTICO PARA CLIENTES INACTIVOS
+app.get('/api/debug/inactive-clients', authenticateToken, async (req, res) => {
+    try {
+        // Calcular la fecha de hace 30 días
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
+        
+        console.log('🔍 Fecha de hace 30 días:', thirtyDaysAgoStr);
+        
+        // 1. Verificar cuántos clientes hay en total
+        const [totalClients] = await db.execute('SELECT COUNT(*) as total FROM clientes WHERE activo = true');
+        console.log('📊 Total de clientes activos:', totalClients[0].total);
+        
+        // 2. Verificar cuántos pedidos hay en total
+        const [totalOrders] = await db.execute('SELECT COUNT(*) as total FROM pedidos');
+        console.log('📊 Total de pedidos:', totalOrders[0].total);
+        
+        // 3. Verificar pedidos recientes (últimos 30 días)
+        const [recentOrders] = await db.execute(
+            'SELECT COUNT(*) as total FROM pedidos WHERE fecha >= ?',
+            [thirtyDaysAgoStr]
+        );
+        console.log('📊 Pedidos en los últimos 30 días:', recentOrders[0].total);
+        
+        // 4. Verificar clientes con pedidos recientes
+        const [clientsWithRecentOrders] = await db.execute(`
+            SELECT COUNT(DISTINCT c.id) as total
+            FROM clientes c
+            INNER JOIN pedidos p ON c.id = p.cliente_id
+            WHERE c.activo = true AND p.fecha >= ?
+        `, [thirtyDaysAgoStr]);
+        console.log('📊 Clientes con pedidos recientes:', clientsWithRecentOrders[0].total);
+        
+        // 5. Verificar clientes sin pedidos
+        const [clientsWithoutOrders] = await db.execute(`
+            SELECT COUNT(*) as total
+            FROM clientes c
+            LEFT JOIN pedidos p ON c.id = p.cliente_id
+            WHERE c.activo = true AND p.id IS NULL
+        `);
+        console.log('📊 Clientes sin pedidos:', clientsWithoutOrders[0].total);
+        
+        // 6. Verificar clientes con pedidos antiguos
+        const [clientsWithOldOrders] = await db.execute(`
+            SELECT COUNT(DISTINCT c.id) as total
+            FROM clientes c
+            INNER JOIN pedidos p ON c.id = p.cliente_id
+            WHERE c.activo = true AND p.fecha < ?
+        `, [thirtyDaysAgoStr]);
+        console.log('📊 Clientes con pedidos antiguos:', clientsWithOldOrders[0].total);
+        
+        // 7. Ejecutar la consulta actual para ver qué devuelve
+        const query = `
+            SELECT 
+                c.*,
+                MAX(p.fecha) as lastOrderDate
+            FROM clientes c
+            LEFT JOIN pedidos p ON c.id = p.cliente_id
+            WHERE c.activo = true
+            GROUP BY c.id
+            HAVING lastOrderDate < ? OR lastOrderDate IS NULL
+            ORDER BY c.nombre
+        `;
+        
+        const [clientes] = await db.execute(query, [thirtyDaysAgoStr]);
+        console.log('📊 Resultado de la consulta actual:', clientes.length, 'clientes');
+        
+        res.json({
+            debug: {
+                fechaLimite: thirtyDaysAgoStr,
+                totalClientesActivos: totalClients[0].total,
+                totalPedidos: totalOrders[0].total,
+                pedidosRecientes: recentOrders[0].total,
+                clientesConPedidosRecientes: clientsWithRecentOrders[0].total,
+                clientesSinPedidos: clientsWithoutOrders[0].total,
+                clientesConPedidosAntiguos: clientsWithOldOrders[0].total,
+                resultadoConsultaActual: clientes.length
+            },
+            clientes: clientes.slice(0, 5) // Solo mostrar los primeros 5 para no saturar
+        });
+    } catch (error) {
+        console.error('Error en diagnóstico:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
 // Obtener clientes inactivos
 app.get('/api/clientes/inactivos', authenticateToken, async (req, res) => {
     try {
@@ -918,7 +1005,7 @@ app.get('/api/clientes/inactivos', authenticateToken, async (req, res) => {
         const query = `
             SELECT 
                 c.*,
-                COALESCE(MAX(p.fecha), c.created_at) as lastOrderDate
+                MAX(p.fecha) as lastOrderDate
             FROM clientes c
             LEFT JOIN pedidos p ON c.id = p.cliente_id
             WHERE c.activo = true
