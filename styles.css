@@ -1396,49 +1396,7 @@ tr:hover {
     text-align: center;
 }
 
-#recent-activity {
-    max-height: 200px;
-    overflow-y: auto;
-}
 
-.activity-item {
-    padding: 0.75rem 0;
-    border-bottom: 1px solid #f0f0f0;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.activity-item:last-child {
-    border-bottom: none;
-}
-
-.activity-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: #667eea;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.8rem;
-}
-
-.activity-content {
-    flex: 1;
-}
-
-.activity-title {
-    font-weight: 500;
-    color: #333;
-    font-size: 0.9rem;
-}
-
-.activity-time {
-    color: #666;
-    font-size: 0.8rem;
-}
 
 /* Responsive para dashboard */
 @media (max-width: 768px) {
