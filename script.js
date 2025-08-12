@@ -1303,7 +1303,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Cargar datos iniciales del dashboard
         
         try {
-            await loadInactiveClients();
+            await loadClientsNoRecentOrders();
             await loadCompletedSales();
             await loadPendingCollections();
             
@@ -7101,10 +7101,8 @@ function configurarMenuGerenteVentas() {
     }
 }
 
-// Función para cargar datos de clientes inactivos
-async function loadInactiveClients() {
-    
-    
+// Función para cargar datos de clientes sin pedidos recientes
+async function loadClientsNoRecentOrders() {
     try {
         const token = localStorage.getItem('authToken');
         if (!token) {
@@ -7112,7 +7110,7 @@ async function loadInactiveClients() {
             return [];
         }
 
-        const response = await fetch('/api/clientes/inactivos', {
+        const response = await fetch('/api/clientes/sin-pedidos-recientes', {
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
@@ -7122,31 +7120,28 @@ async function loadInactiveClients() {
         if (response.ok) {
             const data = await response.json();
             
-            // Verificar que data.inactiveClients existe y es un array
-            const inactiveClients = data.inactiveClients || [];
-            
             // Actualizar contador en la tarjeta
-            const countElement = document.getElementById('inactive-clients-count');
+            const countElement = document.getElementById('clients-no-recent-count');
             if (countElement) {
-                countElement.textContent = inactiveClients.length;
+                countElement.textContent = data.count || 0;
             }
             
-            // Actualizar fecha de última actividad
-            const lastActivityElement = document.getElementById('last-activity-date');
-            if (lastActivityElement && data.lastActivity) {
-                lastActivityElement.textContent = formatDate(data.lastActivity);
-            } else if (lastActivityElement) {
-                lastActivityElement.textContent = '-';
+            // Actualizar fecha límite
+            const fechaLimiteElement = document.getElementById('fecha-limite');
+            if (fechaLimiteElement && data.fechaLimite) {
+                fechaLimiteElement.textContent = formatDate(data.fechaLimite);
+            } else if (fechaLimiteElement) {
+                fechaLimiteElement.textContent = '-';
             }
             
-            
-            return inactiveClients;
+            console.log(`✅ Clientes sin pedidos recientes cargados: ${data.count}`);
+            return data.clientes || [];
         } else {
-            console.error('❌ Error cargando clientes inactivos:', response.status);
+            console.error('❌ Error cargando clientes sin pedidos recientes:', response.status);
             return [];
         }
     } catch (error) {
-        console.error('❌ Error de conexión cargando clientes inactivos:', error);
+        console.error('❌ Error de conexión cargando clientes sin pedidos recientes:', error);
         return [];
     }
 }
@@ -7259,13 +7254,13 @@ function setupDashboardCards() {
     
     
     try {
-        // Configurar tarjeta de clientes inactivos
-        const inactiveClientsCard = document.getElementById('inactive-clients-card');
-        if (inactiveClientsCard) {
-            inactiveClientsCard.addEventListener('click', async function() {
+        // Configurar tarjeta de clientes sin pedidos recientes
+        const clientsNoRecentOrdersCard = document.getElementById('clients-no-recent-orders-card');
+        if (clientsNoRecentOrdersCard) {
+            clientsNoRecentOrdersCard.addEventListener('click', async function() {
                 
-                const inactiveClients = await loadInactiveClients();
-                showInactiveClientsModal(inactiveClients);
+                const clientsNoRecent = await loadClientsNoRecentOrders();
+                showClientsNoRecentOrdersModal(clientsNoRecent);
             });
         }
         
@@ -7309,13 +7304,11 @@ function setupDashboardCards() {
 }
 
 // Función para mostrar el modal de clientes inactivos
-function showInactiveClientsModal(inactiveClients) {
-    
-    
+function showClientsNoRecentOrdersModal(clientsNoRecent) {
     try {
-        const modal = document.getElementById('inactive-clients-modal');
-        const tableBody = document.getElementById('inactive-clients-table-body');
-        const noClientsDiv = document.getElementById('no-inactive-clients');
+        const modal = document.getElementById('clients-no-recent-modal');
+        const tableBody = document.getElementById('clients-no-recent-table-body');
+        const noClientsDiv = document.getElementById('no-clients-no-recent');
         
         if (!modal || !tableBody) {
             console.error('❌ Elementos del modal no encontrados');
@@ -7325,27 +7318,27 @@ function showInactiveClientsModal(inactiveClients) {
         // Limpiar tabla
         tableBody.innerHTML = '';
         
-        if (inactiveClients.length === 0) {
-            // Mostrar mensaje de que no hay clientes inactivos
+        if (clientsNoRecent.length === 0) {
+            // Mostrar mensaje de que no hay clientes sin pedidos recientes
             tableBody.parentElement.style.display = 'none';
             noClientsDiv.style.display = 'block';
         } else {
-            // Mostrar tabla con clientes inactivos
+            // Mostrar tabla con clientes sin pedidos recientes
             tableBody.parentElement.style.display = 'table';
             noClientsDiv.style.display = 'none';
             
-            inactiveClients.forEach(client => {
+            clientsNoRecent.forEach(client => {
                 const row = document.createElement('tr');
                 
-                const daysSinceLastOrder = client.lastOrderDate ? 
-                    Math.floor((new Date() - new Date(client.lastOrderDate)) / (1000 * 60 * 60 * 24)) : 
+                const daysSinceLastOrder = client.ultimo_pedido ? 
+                    Math.floor((new Date() - new Date(client.ultimo_pedido)) / (1000 * 60 * 60 * 24)) : 
                     'Nunca';
                 
                 row.innerHTML = `
                     <td>${client.nombre}</td>
-                    <td>${client.email}</td>
-                    <td>${client.telefono}</td>
-                    <td>${client.lastOrderDate ? formatDate(client.lastOrderDate) : 'Nunca'}</td>
+                    <td>${client.email || '-'}</td>
+                    <td>${client.telefono || '-'}</td>
+                    <td>${client.ultimo_pedido ? formatDate(client.ultimo_pedido) : 'Nunca'}</td>
                     <td>${daysSinceLastOrder === 'Nunca' ? 'Nunca' : daysSinceLastOrder + ' días'}</td>
                     <td>
                         <button class="btn btn-primary" onclick="viewClientDetails(${client.id}).catch(console.error)" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">
@@ -7362,7 +7355,7 @@ function showInactiveClientsModal(inactiveClients) {
         }
         
         // Configurar búsqueda
-        const searchInput = document.getElementById('inactive-clients-search');
+        const searchInput = document.getElementById('clients-no-recent-search');
         if (searchInput) {
             searchInput.addEventListener('input', function() {
                 const searchTerm = this.value.toLowerCase();
@@ -7385,9 +7378,8 @@ function showInactiveClientsModal(inactiveClients) {
         modal.style.display = 'flex';
         modal.classList.add('active');
         
-        
     } catch (error) {
-        console.error('❌ Error mostrando modal de clientes inactivos:', error);
+        console.error('❌ Error mostrando modal de clientes sin pedidos recientes:', error);
     }
 }
 

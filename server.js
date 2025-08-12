@@ -994,43 +994,38 @@ app.get('/api/debug/inactive-clients', authenticateToken, async (req, res) => {
     }
 });
 
-// Obtener clientes inactivos
-app.get('/api/clientes/inactivos', authenticateToken, async (req, res) => {
+// Obtener clientes sin pedidos recientes
+app.get('/api/clientes/sin-pedidos-recientes', authenticateToken, async (req, res) => {
     try {
         // Calcular la fecha de hace 30 días
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
         const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
         
+        // Consulta simple: clientes que no tienen pedidos en los últimos 30 días
         const query = `
             SELECT 
                 c.*,
-                MAX(p.fecha) as lastOrderDate
+                MAX(p.fecha) as ultimo_pedido
             FROM clientes c
             LEFT JOIN pedidos p ON c.id = p.cliente_id
             WHERE c.activo = true
             GROUP BY c.id
-            HAVING lastOrderDate < ? OR lastOrderDate IS NULL
+            HAVING ultimo_pedido IS NULL OR ultimo_pedido < ?
             ORDER BY c.nombre
         `;
         
         const [clientes] = await db.execute(query, [thirtyDaysAgoStr]);
         
-        // Calcular fecha de última actividad
-        let lastActivity = null;
-        if (clientes.length > 0) {
-            const dates = clientes.map(c => c.lastOrderDate).filter(d => d);
-            if (dates.length > 0) {
-                lastActivity = new Date(Math.max(...dates.map(d => new Date(d))));
-            }
-        }
+        console.log(`📊 Clientes sin pedidos en 30 días: ${clientes.length}`);
         
         res.json({
-            inactiveClients: clientes,
-            lastActivity: lastActivity
+            count: clientes.length,
+            clientes: clientes,
+            fechaLimite: thirtyDaysAgoStr
         });
     } catch (error) {
-        console.error('Error obteniendo clientes inactivos:', error);
+        console.error('Error obteniendo clientes sin pedidos recientes:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });

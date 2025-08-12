@@ -292,19 +292,19 @@
                 
                 <!-- Segunda fila de tarjetas -->
                 <div class="dashboard-grid" style="margin-top: 1.5rem;">
-                    <div class="dashboard-card clickable-card" id="inactive-clients-card">
+                    <div class="dashboard-card clickable-card" id="clients-no-recent-orders-card">
                         <div class="card-header">
-                            <h3>Clientes Inactivos</h3>
+                            <h3>Clientes Sin Pedidos Recientes</h3>
                             <i class="fas fa-user-clock"></i>
                         </div>
                         <div class="card-content">
                             <div class="stat-item">
                                 <span class="stat-label">Sin pedidos últimos 30 días</span>
-                                <span class="stat-value" id="inactive-clients-count">0</span>
+                                <span class="stat-value" id="clients-no-recent-count">0</span>
                             </div>
                             <div class="stat-item">
-                                <span class="stat-label">Última actividad</span>
-                                <span class="stat-value" id="last-activity-date">-</span>
+                                <span class="stat-label">Fecha límite</span>
+                                <span class="stat-value" id="fecha-limite">-</span>
                             </div>
                         </div>
                     </div>
@@ -1043,18 +1043,18 @@
         </div>
     </div>
 
-    <!-- Modal de Clientes Inactivos -->
-    <div id="inactive-clients-modal" class="modal" style="display:none;">
+    <!-- Modal de Clientes Sin Pedidos Recientes -->
+    <div id="clients-no-recent-modal" class="modal" style="display:none;">
         <div class="modal-content" style="max-width: 800px;">
             <div class="modal-header">
-                <h2 class="modal-title">Clientes Inactivos - Sin pedidos en 30 días</h2>
+                <h2 class="modal-title">Clientes Sin Pedidos Recientes - Últimos 30 días</h2>
                 <button class="close-modal btn btn-secondary">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
             <div class="modal-body" style="padding: 1.5rem;">
                 <div style="margin-bottom: 1rem;">
-                    <input type="text" id="inactive-clients-search" class="input" placeholder="Buscar cliente..." style="width: 100%;">
+                    <input type="text" id="clients-no-recent-search" class="input" placeholder="Buscar cliente..." style="width: 100%;">
                 </div>
                 <div class="table-responsive">
                     <table class="clients-table">
@@ -1068,12 +1068,12 @@
                                 <th>Acciones</th>
                             </tr>
                         </thead>
-                        <tbody id="inactive-clients-table-body">
-                            <!-- Los clientes inactivos se cargarán aquí -->
+                        <tbody id="clients-no-recent-table-body">
+                            <!-- Los clientes sin pedidos recientes se cargarán aquí -->
                         </tbody>
                     </table>
                 </div>
-                <div id="no-inactive-clients" style="display: none; text-align: center; padding: 2rem; color: #6b7280;">
+                <div id="no-clients-no-recent" style="display: none; text-align: center; padding: 2rem; color: #6b7280;">
                     <i class="fas fa-thumbs-up" style="font-size: 3rem; color: #10b981; margin-bottom: 1rem;"></i>
                     <h3 style="color: #10b981; margin: 0;">¡Excelente!</h3>
                     <p style="margin: 0.5rem 0 0 0;">Todos los clientes han realizado pedidos recientemente</p>
