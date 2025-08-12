@@ -994,41 +994,7 @@ app.get('/api/debug/inactive-clients', authenticateToken, async (req, res) => {
     }
 });
 
-// Obtener clientes sin pedidos recientes
-app.get('/api/clientes/sin-pedidos-recientes', authenticateToken, async (req, res) => {
-    try {
-        // Calcular la fecha de hace 30 días
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
-        
-        // Consulta simple: clientes que no tienen pedidos en los últimos 30 días
-        const query = `
-            SELECT 
-                c.*,
-                MAX(p.fecha) as ultimo_pedido
-            FROM clientes c
-            LEFT JOIN pedidos p ON c.id = p.cliente_id
-            WHERE c.activo = true
-            GROUP BY c.id
-            HAVING ultimo_pedido IS NULL OR ultimo_pedido < ?
-            ORDER BY c.nombre
-        `;
-        
-        const [clientes] = await db.execute(query, [thirtyDaysAgoStr]);
-        
-        console.log(`📊 Clientes sin pedidos en 30 días: ${clientes.length}`);
-        
-        res.json({
-            count: clientes.length,
-            clientes: clientes,
-            fechaLimite: thirtyDaysAgoStr
-        });
-    } catch (error) {
-        console.error('Error obteniendo clientes sin pedidos recientes:', error);
-        res.status(500).json({ error: 'Error interno del servidor' });
-    }
-});
+
 
 // Obtener ventas completadas
 app.get('/api/ventas/completadas', authenticateToken, async (req, res) => {

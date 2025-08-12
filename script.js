@@ -1303,7 +1303,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Cargar datos iniciales del dashboard
         
         try {
-            await loadClientsNoRecentOrders();
             await loadCompletedSales();
             await loadPendingCollections();
             
@@ -7101,50 +7100,7 @@ function configurarMenuGerenteVentas() {
     }
 }
 
-// Función para cargar datos de clientes sin pedidos recientes
-async function loadClientsNoRecentOrders() {
-    try {
-        const token = localStorage.getItem('authToken');
-        if (!token) {
-            console.error('❌ No hay token de autenticación');
-            return [];
-        }
 
-        const response = await fetch('/api/clientes/sin-pedidos-recientes', {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            
-            // Actualizar contador en la tarjeta
-            const countElement = document.getElementById('clients-no-recent-count');
-            if (countElement) {
-                countElement.textContent = data.count || 0;
-            }
-            
-            // Actualizar fecha límite
-            const fechaLimiteElement = document.getElementById('fecha-limite');
-            if (fechaLimiteElement && data.fechaLimite) {
-                fechaLimiteElement.textContent = formatDate(data.fechaLimite);
-            } else if (fechaLimiteElement) {
-                fechaLimiteElement.textContent = '-';
-            }
-            
-            console.log(`✅ Clientes sin pedidos recientes cargados: ${data.count}`);
-            return data.clientes || [];
-        } else {
-            console.error('❌ Error cargando clientes sin pedidos recientes:', response.status);
-            return [];
-        }
-    } catch (error) {
-        console.error('❌ Error de conexión cargando clientes sin pedidos recientes:', error);
-        return [];
-    }
-}
 
 // Función para cargar ventas completadas
 async function loadCompletedSales(dateFrom = null, dateTo = null) {
@@ -7254,16 +7210,6 @@ function setupDashboardCards() {
     
     
     try {
-        // Configurar tarjeta de clientes sin pedidos recientes
-        const clientsNoRecentOrdersCard = document.getElementById('clients-no-recent-orders-card');
-        if (clientsNoRecentOrdersCard) {
-            clientsNoRecentOrdersCard.addEventListener('click', async function() {
-                
-                const clientsNoRecent = await loadClientsNoRecentOrders();
-                showClientsNoRecentOrdersModal(clientsNoRecent);
-            });
-        }
-        
         // Configurar tarjeta de cobros pendientes
         const pendingCollectionsCard = document.getElementById('pending-collections-card');
         if (pendingCollectionsCard) {
@@ -7303,85 +7249,7 @@ function setupDashboardCards() {
     }
 }
 
-// Función para mostrar el modal de clientes inactivos
-function showClientsNoRecentOrdersModal(clientsNoRecent) {
-    try {
-        const modal = document.getElementById('clients-no-recent-modal');
-        const tableBody = document.getElementById('clients-no-recent-table-body');
-        const noClientsDiv = document.getElementById('no-clients-no-recent');
-        
-        if (!modal || !tableBody) {
-            console.error('❌ Elementos del modal no encontrados');
-            return;
-        }
-        
-        // Limpiar tabla
-        tableBody.innerHTML = '';
-        
-        if (clientsNoRecent.length === 0) {
-            // Mostrar mensaje de que no hay clientes sin pedidos recientes
-            tableBody.parentElement.style.display = 'none';
-            noClientsDiv.style.display = 'block';
-        } else {
-            // Mostrar tabla con clientes sin pedidos recientes
-            tableBody.parentElement.style.display = 'table';
-            noClientsDiv.style.display = 'none';
-            
-            clientsNoRecent.forEach(client => {
-                const row = document.createElement('tr');
-                
-                const daysSinceLastOrder = client.ultimo_pedido ? 
-                    Math.floor((new Date() - new Date(client.ultimo_pedido)) / (1000 * 60 * 60 * 24)) : 
-                    'Nunca';
-                
-                row.innerHTML = `
-                    <td>${client.nombre}</td>
-                    <td>${client.email || '-'}</td>
-                    <td>${client.telefono || '-'}</td>
-                    <td>${client.ultimo_pedido ? formatDate(client.ultimo_pedido) : 'Nunca'}</td>
-                    <td>${daysSinceLastOrder === 'Nunca' ? 'Nunca' : daysSinceLastOrder + ' días'}</td>
-                    <td>
-                        <button class="btn btn-primary" onclick="viewClientDetails(${client.id}).catch(console.error)" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">
-                            <i class="fas fa-eye"></i> Ver
-                        </button>
-                        <button class="btn btn-success" onclick="showModal('new-order-modal'); populateClientSelects('new-order-modal'); document.getElementById('order-client-select').value = ${client.id};" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-left: 0.25rem;">
-                            <i class="fas fa-plus"></i> Pedido
-                        </button>
-                    </td>
-                `;
-                
-                tableBody.appendChild(row);
-            });
-        }
-        
-        // Configurar búsqueda
-        const searchInput = document.getElementById('clients-no-recent-search');
-        if (searchInput) {
-            searchInput.addEventListener('input', function() {
-                const searchTerm = this.value.toLowerCase();
-                const rows = tableBody.querySelectorAll('tr');
-                
-                rows.forEach(row => {
-                    const clientName = row.cells[0].textContent.toLowerCase();
-                    const clientEmail = row.cells[1].textContent.toLowerCase();
-                    
-                    if (clientName.includes(searchTerm) || clientEmail.includes(searchTerm)) {
-                        row.style.display = '';
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
-            });
-        }
-        
-        // Mostrar modal
-        modal.style.display = 'flex';
-        modal.classList.add('active');
-        
-    } catch (error) {
-        console.error('❌ Error mostrando modal de clientes sin pedidos recientes:', error);
-    }
-}
+
 
 // Función para mostrar el modal de cobros pendientes
 async function showPendingCollectionsModal() {
