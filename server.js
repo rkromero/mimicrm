@@ -809,6 +809,40 @@ app.delete('/api/pedidos/:orderId', authenticateToken, async (req, res) => {
     }
 });
 
+// Actualizar solo el estado de un pedido
+app.patch('/api/pedidos/:orderId/estado', authenticateToken, async (req, res) => {
+    try {
+        const { orderId } = req.params;
+        const { estado } = req.body;
+
+        if (!estado) {
+            return res.status(400).json({ error: 'El estado es requerido' });
+        }
+
+        // Verificar que el pedido existe
+        const [existingOrder] = await db.execute(
+            'SELECT * FROM pedidos WHERE id = ?',
+            [orderId]
+        );
+
+        if (existingOrder.length === 0) {
+            return res.status(404).json({ error: 'Pedido no encontrado' });
+        }
+
+        // Actualizar solo el estado del pedido
+        await db.execute(
+            'UPDATE pedidos SET estado = ? WHERE id = ?',
+            [estado, orderId]
+        );
+
+        console.log(`✅ Estado del pedido ${orderId} actualizado a: ${estado}`);
+        res.json({ message: 'Estado del pedido actualizado exitosamente' });
+    } catch (error) {
+        console.error('Error actualizando estado del pedido:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
 // RUTAS DE PAGOS
 
 // Obtener todos los pagos
