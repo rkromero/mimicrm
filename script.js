@@ -4921,7 +4921,7 @@ function generateDeliveryReceiptHTML(order, client, items) {
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 20px;
-            font-size: 12px;
+            font-size: 16px;
             line-height: 1.4;
         }
         
@@ -4950,20 +4950,20 @@ function generateDeliveryReceiptHTML(order, client, items) {
         }
         
         .receipt-title {
-            font-size: 18px;
+            font-size: 22px;
             font-weight: bold;
             margin: 10px 0;
             color: #000;
         }
         
         .receipt-number {
-            font-size: 14px;
+            font-size: 18px;
             color: #000;
             margin-bottom: 5px;
         }
         
         .receipt-date {
-            font-size: 12px;
+            font-size: 16px;
             color: #000;
         }
         
@@ -5025,12 +5025,13 @@ function generateDeliveryReceiptHTML(order, client, items) {
             padding: 12px 8px;
             text-align: left;
             font-weight: bold;
-            font-size: 13px;
+            font-size: 17px;
         }
         
         .products-table td {
             padding: 8px;
             border-bottom: 1px solid #ccc;
+            font-size: 16px;
         }
         
         .products-table tr:nth-child(even) {
@@ -5054,12 +5055,13 @@ function generateDeliveryReceiptHTML(order, client, items) {
         .signature-label {
             font-weight: bold;
             color: #000;
+            font-size: 16px;
         }
         
         .footer {
             margin-top: 30px;
             text-align: center;
-            font-size: 10px;
+            font-size: 14px;
             color: #666;
             border-top: 1px solid #ccc;
             padding-top: 15px;
@@ -5069,7 +5071,7 @@ function generateDeliveryReceiptHTML(order, client, items) {
             display: inline-block;
             padding: 4px 12px;
             border-radius: 20px;
-            font-size: 11px;
+            font-size: 15px;
             font-weight: bold;
             background-color: #f0f0f0;
             color: #000;
@@ -5081,7 +5083,7 @@ function generateDeliveryReceiptHTML(order, client, items) {
             border-radius: 6px;
             padding: 10px;
             margin: 20px 0;
-            font-size: 11px;
+            font-size: 15px;
             color: #333;
         }
     </style>
@@ -5090,8 +5092,8 @@ function generateDeliveryReceiptHTML(order, client, items) {
     <div class="receipt-header">
         <div class="receipt-left">
             <div class="company-name">MIMI</div>
-            <div style="font-size: 12px; color: #333; margin-bottom: 5px;">CUIT: 30-71751033-6</div>
-            <div style="font-size: 12px; color: #333; margin-bottom: 10px;">Dirección: José Ignacio de la Rosa 6276, Capital Federal</div>
+            <div style="font-size: 16px; color: #333; margin-bottom: 5px;">CUIT: 30-71751033-6</div>
+            <div style="font-size: 16px; color: #333; margin-bottom: 10px;">Dirección: José Ignacio de la Rosa 6276, Capital Federal</div>
             <div class="receipt-title">REMITO DE ENTREGA</div>
             <div class="receipt-number">Nº ${order.numero_pedido}</div>
         </div>
@@ -5259,7 +5261,7 @@ function generateShippingLabelHTML(client) {
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 10px;
-            font-size: 14px;
+            font-size: 18px;
             line-height: 1.3;
             background: white;
         }
@@ -5282,13 +5284,13 @@ function generateShippingLabelHTML(client) {
         }
         
         .company-name {
-            font-size: 18px;
+            font-size: 22px;
             font-weight: bold;
             margin-bottom: 5px;
         }
         
         .label-title {
-            font-size: 16px;
+            font-size: 20px;
             font-weight: bold;
             color: #000;
         }
@@ -5299,7 +5301,7 @@ function generateShippingLabelHTML(client) {
         }
         
         .recipient-name {
-            font-size: 20px;
+            font-size: 24px;
             font-weight: bold;
             margin-bottom: 15px;
             text-transform: uppercase;
@@ -5310,7 +5312,7 @@ function generateShippingLabelHTML(client) {
         }
         
         .address-line {
-            font-size: 16px;
+            font-size: 20px;
             margin-bottom: 5px;
             line-height: 1.4;
         }
@@ -5323,26 +5325,26 @@ function generateShippingLabelHTML(client) {
         
         .phone-label {
             font-weight: bold;
-            font-size: 12px;
+            font-size: 16px;
             color: #666;
             margin-bottom: 5px;
         }
         
         .phone-number {
-            font-size: 16px;
+            font-size: 20px;
             font-weight: bold;
         }
         
         .label-footer {
             text-align: center;
-            font-size: 10px;
+            font-size: 14px;
             color: #666;
             border-top: 1px solid #ccc;
             padding-top: 10px;
         }
         
         .postal-code {
-            font-size: 18px;
+            font-size: 22px;
             font-weight: bold;
             margin-top: 10px;
             text-align: center;
@@ -5473,7 +5475,7 @@ function generateInvoiceHTML(order, client, items) {
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 20px;
-            font-size: 12px;
+            font-size: 16px;
             line-height: 1.4;
             background: white;
         }
@@ -5503,26 +5505,26 @@ function generateInvoiceHTML(order, client, items) {
         }
         
         .company-details {
-            font-size: 12px;
+            font-size: 16px;
             color: #333;
             margin-bottom: 5px;
         }
         
         .invoice-title {
-            font-size: 18px;
+            font-size: 22px;
             font-weight: bold;
             margin: 10px 0;
             color: #000;
         }
         
         .invoice-number {
-            font-size: 14px;
+            font-size: 18px;
             color: #000;
             margin-bottom: 5px;
         }
         
         .invoice-date {
-            font-size: 12px;
+            font-size: 16px;
             color: #000;
         }
         
@@ -5559,11 +5561,13 @@ function generateInvoiceHTML(order, client, items) {
         .info-label {
             font-weight: bold;
             color: #000;
+            font-size: 16px;
         }
         
         .info-value {
             color: #333;
             margin-left: 5px;
+            font-size: 16px;
         }
         
         .products-section {
@@ -5582,11 +5586,13 @@ function generateInvoiceHTML(order, client, items) {
             text-align: left;
             font-weight: bold;
             border-bottom: 2px solid #000;
+            font-size: 17px;
         }
         
         .products-table td {
             padding: 8px;
             border-bottom: 1px solid #ccc;
+            font-size: 16px;
         }
         
         .totals-section {
@@ -5599,11 +5605,11 @@ function generateInvoiceHTML(order, client, items) {
             display: flex;
             justify-content: space-between;
             margin-bottom: 5px;
-            font-size: 14px;
+            font-size: 18px;
         }
         
         .total-row.final {
-            font-size: 18px;
+            font-size: 22px;
             font-weight: bold;
             color: #000;
             border-top: 1px solid #000;
@@ -5614,7 +5620,7 @@ function generateInvoiceHTML(order, client, items) {
         .footer {
             margin-top: 30px;
             text-align: center;
-            font-size: 10px;
+            font-size: 14px;
             color: #666;
             border-top: 1px solid #ccc;
             padding-top: 15px;
@@ -5626,7 +5632,7 @@ function generateInvoiceHTML(order, client, items) {
             border-radius: 6px;
             padding: 10px;
             margin: 20px 0;
-            font-size: 11px;
+            font-size: 15px;
             color: #333;
         }
         
@@ -5636,7 +5642,7 @@ function generateInvoiceHTML(order, client, items) {
             border-radius: 6px;
             padding: 10px;
             margin: 20px 0;
-            font-size: 11px;
+            font-size: 15px;
             color: #0066cc;
         }
     </style>
@@ -5653,7 +5659,7 @@ function generateInvoiceHTML(order, client, items) {
         </div>
         <div class="invoice-right">
             <div class="invoice-date">Fecha: ${currentDate}</div>
-            <div style="margin-top: 10px; font-size: 11px; color: #666;">
+            <div style="margin-top: 10px; font-size: 15px; color: #666;">
                 <div>Punto de Venta: 0001</div>
                 <div>Comprobante: FACTURA A</div>
             </div>
