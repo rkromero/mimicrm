@@ -4892,9 +4892,9 @@ function generateDeliveryReceiptHTML(order, client, items) {
     
     const itemsRows = items.map(item => `
         <tr>
-            <td style="padding: 8px; border-bottom: 1px solid #ccc;">${item.producto_nombre || 'Producto'}</td>
-            <td style="padding: 8px; text-align: center; border-bottom: 1px solid #ccc;">${item.cantidad}</td>
-            <td style="padding: 8px; border-bottom: 1px solid #ccc;">${item.producto_descripcion || '-'}</td>
+            <td style="padding: 6px; border-bottom: 1px solid #ccc;">${item.producto_nombre || 'Producto'}</td>
+            <td style="padding: 6px; text-align: center; border-bottom: 1px solid #ccc;">${item.cantidad}</td>
+            <td style="padding: 6px; border-bottom: 1px solid #ccc;">${item.producto_descripcion || '-'}</td>
         </tr>
     `).join('');
     
@@ -4908,30 +4908,38 @@ function generateDeliveryReceiptHTML(order, client, items) {
     <style>
         @media print {
             @page {
-                margin: 0.5in;
+                margin: 0.3in;
                 size: A4;
             }
             body {
                 -webkit-print-color-adjust: exact;
                 color-adjust: exact;
+                max-height: 100vh;
+                overflow: hidden;
+            }
+            .receipt-body {
+                page-break-inside: avoid;
+            }
+            .signature-section {
+                page-break-inside: avoid;
             }
         }
         
         body {
             font-family: Arial, sans-serif;
             margin: 0;
-            padding: 20px;
-            font-size: 16px;
-            line-height: 1.4;
+            padding: 10px;
+            font-size: 14px;
+            line-height: 1.3;
         }
         
         .receipt-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 30px;
+            margin-bottom: 15px;
             border-bottom: 2px solid #000;
-            padding-bottom: 20px;
+            padding-bottom: 10px;
         }
         
         .receipt-left {
@@ -4943,95 +4951,97 @@ function generateDeliveryReceiptHTML(order, client, items) {
         }
         
         .company-name {
-            font-size: 24px;
+            font-size: 20px;
             font-weight: bold;
             color: #000;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
         }
         
         .receipt-title {
-            font-size: 22px;
+            font-size: 18px;
             font-weight: bold;
-            margin: 10px 0;
+            margin: 8px 0;
             color: #000;
         }
         
         .receipt-number {
-            font-size: 18px;
+            font-size: 16px;
             color: #000;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
         }
         
         .receipt-date {
-            font-size: 16px;
+            font-size: 14px;
             color: #000;
         }
         
         .receipt-body {
-            margin-bottom: 30px;
+            margin-bottom: 15px;
         }
         
         .client-section {
-            margin-bottom: 25px;
+            margin-bottom: 15px;
             background-color: #f9f9f9;
-            padding: 15px;
-            border-radius: 8px;
+            padding: 10px;
+            border-radius: 6px;
             border-left: 4px solid #000;
         }
         
         .section-title {
-            font-size: 14px;
+            font-size: 12px;
             font-weight: bold;
             color: #000;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             text-transform: uppercase;
         }
         
         .client-info {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 10px;
+            gap: 8px;
         }
         
         .info-item {
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
         
         .info-label {
             font-weight: bold;
             color: #000;
+            font-size: 13px;
         }
         
         .info-value {
             color: #333;
             margin-left: 5px;
+            font-size: 13px;
         }
         
         .products-section {
-            margin-bottom: 30px;
-}
+            margin-bottom: 15px;
+        }
         
         .products-table {
             width: 100%;
             border-collapse: collapse;
             border: 2px solid #000;
-            border-radius: 8px;
+            border-radius: 6px;
             overflow: hidden;
         }
         
         .products-table th {
             background-color: #000;
             color: white;
-            padding: 12px 8px;
+            padding: 8px 6px;
             text-align: left;
             font-weight: bold;
-            font-size: 17px;
+            font-size: 14px;
         }
         
         .products-table td {
-            padding: 8px;
+            padding: 6px;
             border-bottom: 1px solid #ccc;
-            font-size: 16px;
+            font-size: 13px;
         }
         
         .products-table tr:nth-child(even) {
@@ -5039,39 +5049,39 @@ function generateDeliveryReceiptHTML(order, client, items) {
         }
         
         .signature-section {
-            margin-top: 40px;
+            margin-top: 20px;
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 50px;
+            gap: 30px;
         }
         
         .signature-box {
             text-align: center;
             border-top: 2px solid #000;
-            padding-top: 10px;
-            margin-top: 50px;
+            padding-top: 8px;
+            margin-top: 30px;
         }
         
         .signature-label {
             font-weight: bold;
             color: #000;
-            font-size: 16px;
+            font-size: 14px;
         }
         
         .footer {
-            margin-top: 30px;
+            margin-top: 15px;
             text-align: center;
-            font-size: 14px;
+            font-size: 12px;
             color: #666;
             border-top: 1px solid #ccc;
-            padding-top: 15px;
+            padding-top: 10px;
         }
         
         .order-status {
             display: inline-block;
             padding: 4px 12px;
             border-radius: 20px;
-            font-size: 15px;
+            font-size: 13px;
             font-weight: bold;
             background-color: #f0f0f0;
             color: #000;
@@ -5081,9 +5091,9 @@ function generateDeliveryReceiptHTML(order, client, items) {
             background-color: #f9f9f9;
             border: 1px solid #666;
             border-radius: 6px;
-            padding: 10px;
-            margin: 20px 0;
-            font-size: 15px;
+            padding: 8px;
+            margin: 12px 0;
+            font-size: 13px;
             color: #333;
         }
     </style>
@@ -5092,8 +5102,8 @@ function generateDeliveryReceiptHTML(order, client, items) {
     <div class="receipt-header">
         <div class="receipt-left">
             <div class="company-name">MIMI</div>
-            <div style="font-size: 16px; color: #333; margin-bottom: 5px;">CUIT: 30-71751033-6</div>
-            <div style="font-size: 16px; color: #333; margin-bottom: 10px;">Dirección: José Ignacio de la Rosa 6276, Capital Federal</div>
+            <div style="font-size: 13px; color: #333; margin-bottom: 3px;">CUIT: 30-71751033-6</div>
+            <div style="font-size: 13px; color: #333; margin-bottom: 8px;">Dirección: José Ignacio de la Rosa 6276, Capital Federal</div>
             <div class="receipt-title">REMITO DE ENTREGA</div>
             <div class="receipt-number">Nº ${order.numero_pedido}</div>
         </div>
@@ -5136,7 +5146,7 @@ function generateDeliveryReceiptHTML(order, client, items) {
                 </div>
             </div>
             
-            <div style="margin-top: 15px;">
+            <div style="margin-top: 10px;">
                 <div class="info-item">
                     <span class="info-label">Fecha del Pedido:</span>
                     <span class="info-value">${formatDate(order.fecha)}</span>
@@ -5187,8 +5197,8 @@ function generateDeliveryReceiptHTML(order, client, items) {
     </div>
     
     <div class="footer">
-        <p><strong>MIMI CRM</strong> - Sistema de Gestión</p>
-        <p>Remito generado el ${new Date().toLocaleDateString('es-ES')} a las ${new Date().toLocaleTimeString('es-ES')}</p>
+        <p style="margin: 5px 0;"><strong>MIMI CRM</strong> - Sistema de Gestión</p>
+        <p style="margin: 5px 0;">Remito generado el ${new Date().toLocaleDateString('es-ES')} a las ${new Date().toLocaleTimeString('es-ES')}</p>
     </div>
 </body>
 </html>
