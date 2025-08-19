@@ -2321,36 +2321,8 @@ async function handleNewOrderSubmit(e) {
             showNotification('Pedido creado exitosamente', 'success');
             closeModal('new-order-modal');
             
-            // OPTIMIZACIÓN: Agregar el nuevo pedido directamente al array local en lugar de recargar todo
-            if (window.allOrders && Array.isArray(window.allOrders)) {
-                // Crear el objeto del nuevo pedido con la estructura esperada
-                const newOrder = {
-                    id: result.id,
-                    numero_pedido: result.numero_pedido || 'PED-' + String(result.id).padStart(4, '0'),
-                    cliente_id: clientId,
-                    descripcion: description,
-                    monto: totalAmount,
-                    estado: 'pendiente de pago',
-                    fecha: new Date().toISOString().split('T')[0],
-                    created_at: new Date().toISOString(),
-                    // Agregar información del cliente si está disponible
-                    cliente_nombre: document.getElementById('order-client-select').options[document.getElementById('order-client-select').selectedIndex]?.text || 'Cliente'
-                };
-                
-                // Agregar al inicio del array (pedidos más recientes primero)
-                window.allOrders.unshift(newOrder);
-                
-                // Actualizar solo las tablas visibles sin recargar todo
-                if (document.getElementById('orders-section').style.display !== 'none') {
-                    renderOrdersTable();
-                }
-                if (document.getElementById('fabrica-section').style.display !== 'none') {
-                    renderFabricaTable();
-                }
-            } else {
-                // Fallback: recargar todo si no hay array local
-                await loadOrders();
-            }
+            // OPTIMIZACIÓN: Agregar el nuevo pedido usando la nueva función
+            await addNewOrderToLocal(result.id);
         } else {
             const error = await response.json();
             showNotification(error.message || 'Error al crear pedido', 'error');
@@ -3459,7 +3431,9 @@ async function handleEditOrderSubmit(e) {
         if (response.ok) {
             showNotification('Pedido actualizado exitosamente', 'success');
             closeModal('edit-order-modal'); // Usar la función closeModal en lugar del método manual
-            await loadOrders(); // Recargar la lista
+            
+            // OPTIMIZACIÓN: Actualizar solo el pedido modificado en lugar de recargar todo
+            await updateSingleOrder(orderId);
         } else {
             const errorData = await response.json();
             console.error('❌ Error del servidor al actualizar pedido:', response.status, errorData);
@@ -5823,6 +5797,96 @@ function viewPaymentDetails(paymentId) {
     document.body.appendChild(detailsModal);
 }
 
+// Función para actualizar un solo pedido en el array local
+async function updateSingleOrder(orderId) {
+    try {
+        console.log('🔄 UPDATE SINGLE ORDER - Actualizando pedido:', orderId);
+        const token = localStorage.getItem('authToken');
+        const response = await fetch(`/api/pedidos/${orderId}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const updatedOrder = await response.json();
+            console.log('✅ UPDATE SINGLE ORDER - Pedido actualizado:', updatedOrder);
+            
+            // Actualizar en el array local
+            const orderIndex = orders.findIndex(o => o.id == orderId);
+            if (orderIndex !== -1) {
+                orders[orderIndex] = updatedOrder;
+                console.log('✅ UPDATE SINGLE ORDER - Array local actualizado');
+            } else {
+                console.warn('⚠️ UPDATE SINGLE ORDER - Pedido no encontrado en array local, agregando...');
+                orders.unshift(updatedOrder); // Agregar al inicio si no existe
+            }
+            
+            // Re-renderizar la tabla
+            renderOrdersTable();
+            
+            // Si la sección de fábrica está visible, también actualizarla
+            const fabricaSection = document.getElementById('fabrica-section');
+            if (fabricaSection && fabricaSection.style.display !== 'none') {
+                renderFabricaTable();
+            }
+            
+            console.log('✅ UPDATE SINGLE ORDER - Tabla actualizada exitosamente');
+        } else {
+            console.error('❌ UPDATE SINGLE ORDER - Error del servidor:', response.status);
+            throw new Error(`Error del servidor: ${response.status}`);
+        }
+    } catch (error) {
+        console.error('❌ UPDATE SINGLE ORDER - Error:', error);
+        console.log('🔄 UPDATE SINGLE ORDER - Fallback: recargando todos los pedidos...');
+        // Fallback: recargar todo si falla
+        await loadOrders();
+    }
+}
+
+// Función para agregar un nuevo pedido al array local
+async function addNewOrderToLocal(orderId) {
+    try {
+        console.log('🔄 ADD NEW ORDER - Agregando nuevo pedido:', orderId);
+        const token = localStorage.getItem('authToken');
+        const response = await fetch(`/api/pedidos/${orderId}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const newOrder = await response.json();
+            console.log('✅ ADD NEW ORDER - Nuevo pedido obtenido:', newOrder);
+            
+            // Agregar al inicio del array (pedidos más recientes primero)
+            orders.unshift(newOrder);
+            console.log('✅ ADD NEW ORDER - Array local actualizado');
+            
+            // Re-renderizar la tabla
+            renderOrdersTable();
+            
+            // Si la sección de fábrica está visible, también actualizarla
+            const fabricaSection = document.getElementById('fabrica-section');
+            if (fabricaSection && fabricaSection.style.display !== 'none') {
+                renderFabricaTable();
+            }
+            
+            console.log('✅ ADD NEW ORDER - Tabla actualizada exitosamente');
+        } else {
+            console.error('❌ ADD NEW ORDER - Error del servidor:', response.status);
+            throw new Error(`Error del servidor: ${response.status}`);
+        }
+    } catch (error) {
+        console.error('❌ ADD NEW ORDER - Error:', error);
+        console.log('🔄 ADD NEW ORDER - Fallback: recargando todos los pedidos...');
+        // Fallback: recargar todo si falla
+        await loadOrders();
+    }
+}
+
 // Función para cargar items de un pedido específico
 async function loadOrderItems(orderId) {
     try {
@@ -6710,14 +6774,8 @@ async function markAsProduced(orderId) {
         if (response.ok) {
             showNotification('Pedido marcado como producido exitosamente', 'success');
             
-            // Actualizar el pedido en el array local
-            order.estado = 'sale fabrica';
-            
-            // Recargar la tabla de fábrica
-            renderFabricaTable();
-            
-            // También recargar pedidos desde el servidor para mantener sincronización
-            await loadOrders();
+            // OPTIMIZACIÓN: Actualizar solo el pedido modificado en lugar de recargar todo
+            await updateSingleOrder(orderId);
             
         } else {
             const error = await response.json();

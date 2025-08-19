@@ -716,6 +716,33 @@ app.post('/api/pedidos', authenticateToken, async (req, res) => {
     }
 });
 
+// Obtener un pedido específico
+app.get('/api/pedidos/:orderId', authenticateToken, async (req, res) => {
+    try {
+        const { orderId } = req.params;
+        
+        const query = `
+            SELECT p.*, c.nombre as cliente_nombre, c.apellido as cliente_apellido, u.nombre as creado_por_nombre
+            FROM pedidos p
+            LEFT JOIN clientes c ON p.cliente_id = c.id
+            LEFT JOIN usuarios u ON p.creado_por = u.id
+            WHERE p.id = ?
+        `;
+        
+        const [pedidos] = await db.execute(query, [orderId]);
+        
+        if (pedidos.length === 0) {
+            return res.status(404).json({ error: 'Pedido no encontrado' });
+        }
+        
+        console.log(`✅ Pedido ${orderId} obtenido exitosamente`);
+        res.json(pedidos[0]);
+    } catch (error) {
+        console.error('Error obteniendo pedido:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
 // Obtener items de un pedido específico
 app.get('/api/pedidos/:orderId/items', authenticateToken, async (req, res) => {
     try {
