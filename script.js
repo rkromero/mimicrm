@@ -5008,13 +5008,13 @@ function generateDeliveryReceiptHTML(order, client, items) {
         .info-label {
             font-weight: bold;
             color: #000;
-            font-size: 13px;
+            font-size: 16px;
         }
         
         .info-value {
             color: #333;
             margin-left: 5px;
-            font-size: 13px;
+            font-size: 16px;
         }
         
         .products-section {
@@ -5041,7 +5041,7 @@ function generateDeliveryReceiptHTML(order, client, items) {
         .products-table td {
             padding: 6px;
             border-bottom: 1px solid #ccc;
-            font-size: 13px;
+            font-size: 16px;
         }
         
         .products-table tr:nth-child(even) {
@@ -5093,7 +5093,7 @@ function generateDeliveryReceiptHTML(order, client, items) {
             border-radius: 6px;
             padding: 8px;
             margin: 12px 0;
-            font-size: 13px;
+            font-size: 16px;
             color: #333;
         }
     </style>
