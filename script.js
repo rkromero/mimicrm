@@ -2182,7 +2182,7 @@ function populateClientSelects(modalId) {
     clients.forEach(client => {
         const option = document.createElement('option');
         option.value = client.id;
-        option.textContent = client.nombre;
+        option.textContent = `${client.nombre || ''} ${client.apellido || ''}`.trim() || 'Cliente sin nombre';
         clientSelect.appendChild(option);
     });
     
@@ -2764,7 +2764,7 @@ function editPayment(paymentId) {
     clients.forEach(client => {
         const option = document.createElement('option');
         option.value = client.id;
-        option.textContent = client.nombre;
+        option.textContent = `${client.nombre || ''} ${client.apellido || ''}`.trim() || 'Cliente sin nombre';
         if (client.id == payment.cliente_id) {
             option.selected = true;
         }
@@ -3133,7 +3133,7 @@ function editContact(contactId) {
     clients.forEach(client => {
         const option = document.createElement('option');
         option.value = client.id;
-        option.textContent = client.nombre;
+        option.textContent = `${client.nombre || ''} ${client.apellido || ''}`.trim() || 'Cliente sin nombre';
         if (client.id == contact.cliente_id) {
             option.selected = true;
         }
@@ -5095,6 +5095,10 @@ function generateDeliveryReceiptHTML(order, client, items) {
                     <span class="info-value">${client.nombre || ''} ${client.apellido || ''}</span>
                 </div>
                 <div class="info-item">
+                    <span class="info-label">Documento:</span>
+                    <span class="info-value">${client.documento || client.cuit || 'No especificado'}</span>
+                </div>
+                <div class="info-item">
                     <span class="info-label">Teléfono:</span>
                     <span class="info-value">${client.telefono || 'No especificado'}</span>
                 </div>
@@ -6721,7 +6725,7 @@ function renderFabricaTable() {
     tbody.innerHTML = pedidosFabrica.map(order => `
         <tr style="background: ${order.estado === 'fabricar' ? '#f0f9ff' : '#ffffff'};">
             <td>${order.numero_pedido}</td>
-            <td>${order.cliente_nombre || 'N/A'}</td>
+            <td>${(order.cliente_nombre || '') + ' ' + (order.cliente_apellido || '') || 'N/A'}</td>
             <td>${order.descripcion || 'Sin descripción'}</td>
             <td>${formatCurrency(order.monto)}</td>
             <td>
