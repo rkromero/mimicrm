@@ -385,6 +385,40 @@ app.get('/api/clientes', authenticateToken, async (req, res) => {
     }
 });
 
+// Endpoint para obtener clientes inactivos (nueva ruta) - DEBE IR ANTES DE LA RUTA GENÉRICA :clientId
+app.get('/api/clientes/inactivos', authenticateToken, async (req, res) => {
+    try {
+        console.log('🔍 Ejecutando consulta de clientes inactivos...');
+        
+        const query = `
+            SELECT 
+                c.id,
+                c.nombre,
+                c.email,
+                c.telefono,
+                c.direccion,
+                c.created_at,
+                MAX(p.fecha) as ultimo_pedido,
+                COALESCE(DATEDIFF(CURDATE(), MAX(p.fecha)), 0) as dias_sin_actividad,
+                COALESCE(SUM(p.monto), 0) as total_historico
+            FROM clientes c
+            LEFT JOIN pedidos p ON c.id = p.cliente_id
+            WHERE c.activo = true
+            GROUP BY c.id, c.nombre, c.email, c.telefono, c.direccion, c.created_at
+            HAVING (ultimo_pedido IS NULL) OR (ultimo_pedido IS NOT NULL AND ultimo_pedido < DATE_SUB(CURDATE(), INTERVAL 30 DAY))
+            ORDER BY dias_sin_actividad DESC, c.nombre ASC
+        `;
+        
+        const [clientes] = await db.execute(query);
+        console.log(`✅ Encontrados ${clientes.length} clientes inactivos`);
+        
+        res.json(clientes);
+    } catch (error) {
+        console.error('❌ Error en endpoint de clientes inactivos:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
 // Obtener cliente por ID
 app.get('/api/clientes/:clientId', authenticateToken, async (req, res) => {
     try {
@@ -525,39 +559,6 @@ app.delete('/api/clientes/:clientId', authenticateToken, async (req, res) => {
     }
 });
 
-// Endpoint para obtener clientes inactivos (nueva ruta)
-app.get('/api/clientes/inactivos', authenticateToken, async (req, res) => {
-    try {
-        console.log('🔍 Ejecutando consulta de clientes inactivos...');
-        
-        const query = `
-            SELECT 
-                c.id,
-                c.nombre,
-                c.email,
-                c.telefono,
-                c.direccion,
-                c.created_at,
-                MAX(p.fecha) as ultimo_pedido,
-                COALESCE(DATEDIFF(CURDATE(), MAX(p.fecha)), 0) as dias_sin_actividad,
-                COALESCE(SUM(p.monto), 0) as total_historico
-            FROM clientes c
-            LEFT JOIN pedidos p ON c.id = p.cliente_id
-            WHERE c.activo = true
-            GROUP BY c.id, c.nombre, c.email, c.telefono, c.direccion, c.created_at
-            HAVING (ultimo_pedido IS NULL) OR (ultimo_pedido IS NOT NULL AND ultimo_pedido < DATE_SUB(CURDATE(), INTERVAL 30 DAY))
-            ORDER BY dias_sin_actividad DESC, c.nombre ASC
-        `;
-        
-        const [clientes] = await db.execute(query);
-        console.log(`✅ Encontrados ${clientes.length} clientes inactivos`);
-        
-        res.json(clientes);
-    } catch (error) {
-        console.error('❌ Error en endpoint de clientes inactivos:', error);
-        res.status(500).json({ error: 'Error interno del servidor' });
-    }
-});
 
 // Endpoint de diagnóstico para clientes inactivos
 app.get('/api/debug/clientes-inactivos', authenticateToken, async (req, res) => {
