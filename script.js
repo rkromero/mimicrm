@@ -8196,17 +8196,9 @@ function verCliente(clienteId) {
         modal.style.display = 'none';
     }
     
-    // Navegar a la sección de clientes y buscar el cliente
-    showSection('clientes');
-    updateHeaderTitle('clientes');
-    
-    // Buscar el cliente en la lista
-    const searchInput = document.getElementById('clients-search');
-    if (searchInput) {
-        const cliente = clients.find(c => c.id === clienteId);
-        if (cliente) {
-            searchInput.value = cliente.nombre;
-            searchInput.dispatchEvent(new Event('input'));
-        }
-    }
+    // Mostrar detalles del cliente usando la función existente
+    viewClientDetails(clienteId).catch(error => {
+        console.error('Error mostrando detalles del cliente:', error);
+        showNotification('Error al mostrar detalles del cliente', 'error');
+    });
 }
