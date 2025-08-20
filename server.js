@@ -1434,6 +1434,32 @@ app.get('/api/usuarios', authenticateToken, async (req, res) => {
     }
 });
 
+// Obtener usuario por ID (solo para administradores)
+app.get('/api/usuarios/:id', authenticateToken, async (req, res) => {
+    try {
+        // Verificar que el usuario sea administrador
+        if (req.user.perfil !== 'Administrador') {
+            return res.status(403).json({ error: 'Acceso denegado. Solo los administradores pueden ver usuarios.' });
+        }
+
+        const { id } = req.params;
+
+        const [usuarios] = await db.execute(
+            'SELECT id, nombre, email, perfil, activo, created_at FROM usuarios WHERE id = ?',
+            [id]
+        );
+
+        if (usuarios.length === 0) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+
+        res.json(usuarios[0]);
+    } catch (error) {
+        console.error('Error obteniendo usuario:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
 // Crear nuevo usuario (solo para administradores)
 app.post('/api/usuarios', authenticateToken, async (req, res) => {
     try {
