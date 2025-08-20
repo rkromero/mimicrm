@@ -5246,105 +5246,128 @@ function generateShippingLabelHTML(client) {
     <style>
         @media print {
             @page {
-                margin: 0.2in;
-                size: 4in 6in;
+                margin: 0.1in;
+                size: A4;
             }
             body {
                 -webkit-print-color-adjust: exact;
                 color-adjust: exact;
+                height: 54vh; /* 20% más grande que 45% = 54% */
+                overflow: hidden;
+            }
+            .shipping-label {
+                height: 100%;
+                max-height: 54vh;
             }
         }
         
         body {
             font-family: Arial, sans-serif;
             margin: 0;
-            padding: 10px;
-            font-size: 18px;
-            line-height: 1.3;
+            padding: 6px;
+            font-size: 16px;
+            line-height: 1.2;
             background: white;
+            height: 54vh;
+            overflow: hidden;
         }
         
         .shipping-label {
             border: 2px solid #000;
-            padding: 15px;
+            padding: 12px;
             background: white;
-            min-height: 5.5in;
+            height: 100%;
+            max-height: 54vh;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            box-sizing: border-box;
         }
         
         .label-header {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 12px;
             border-bottom: 1px solid #000;
-            padding-bottom: 10px;
+            padding-bottom: 6px;
         }
         
-        .company-name {
-            font-size: 22px;
-            font-weight: bold;
-            margin-bottom: 5px;
+        .company-logo {
+            margin-bottom: 3px;
+        }
+        
+        .company-logo img {
+            display: block;
+            max-height: 30px;
+            max-width: 75px;
+            object-fit: contain;
+            margin: 0 auto;
         }
         
         .label-title {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
             color: #000;
         }
         
         .recipient-info {
             flex-grow: 1;
-            margin-bottom: 20px;
+            margin-bottom: 12px;
         }
         
         .recipient-name {
-            font-size: 24px;
+            font-size: 22px;
             font-weight: bold;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             text-transform: uppercase;
         }
         
         .address-section {
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }
         
         .address-line {
-            font-size: 20px;
-            margin-bottom: 5px;
-            line-height: 1.4;
+            font-size: 18px;
+            margin-bottom: 4px;
+            line-height: 1.3;
+        }
+        
+        .field-label {
+            font-weight: bold;
+            color: #333;
+            font-size: 14px;
+            margin-right: 5px;
         }
         
         .phone-section {
-            margin-top: 15px;
-            padding-top: 10px;
+            margin-top: 10px;
+            padding-top: 6px;
             border-top: 1px solid #ccc;
         }
         
         .phone-label {
             font-weight: bold;
-            font-size: 16px;
+            font-size: 14px;
             color: #666;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
         }
         
         .phone-number {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
         }
         
         .label-footer {
             text-align: center;
-            font-size: 14px;
+            font-size: 12px;
             color: #666;
             border-top: 1px solid #ccc;
-            padding-top: 10px;
+            padding-top: 6px;
         }
         
         .postal-code {
-            font-size: 22px;
+            font-size: 20px;
             font-weight: bold;
-            margin-top: 10px;
+            margin-top: 6px;
             text-align: center;
         }
     </style>
@@ -5352,7 +5375,9 @@ function generateShippingLabelHTML(client) {
 <body>
     <div class="shipping-label">
         <div class="label-header">
-            <div class="company-name">MIMI</div>
+            <div class="company-logo">
+                <img src="img/logo-mimi.png" alt="MIMI" style="max-height: 30px; max-width: 75px; object-fit: contain;">
+            </div>
             <div class="label-title">ETIQUETA DE ENVÍO</div>
         </div>
         
@@ -5362,10 +5387,21 @@ function generateShippingLabelHTML(client) {
             </div>
             
             <div class="address-section">
-                <div class="address-line">${client.direccion}</div>
-                <div class="address-line">${client.localidad}, ${client.ciudad}</div>
-                <div class="address-line">${client.provincia}</div>
-                <div class="postal-code">${client.codigo_postal}</div>
+                <div class="address-line">
+                    <span class="field-label">Domicilio:</span>${client.direccion}
+                </div>
+                <div class="address-line">
+                    <span class="field-label">Localidad:</span>${client.localidad}
+                </div>
+                <div class="address-line">
+                    <span class="field-label">Ciudad:</span>${client.ciudad}
+                </div>
+                <div class="address-line">
+                    <span class="field-label">Provincia:</span>${client.provincia}
+                </div>
+                <div class="postal-code">
+                    <span class="field-label">Código Postal:</span>${client.codigo_postal}
+                </div>
             </div>
             
             <div class="phone-section">
@@ -5376,7 +5412,10 @@ function generateShippingLabelHTML(client) {
         
         <div class="label-footer">
             <div>Generado el ${new Date().toLocaleDateString('es-ES')}</div>
-            <div>MIMI CRM - Sistema de Gestión</div>
+            <div>
+                <img src="img/logo-mimi.png" alt="MIMI" style="max-height: 15px; max-width: 40px; object-fit: contain; vertical-align: middle; margin-right: 5px;">
+                <strong>Sistema de Gestión</strong>
+            </div>
         </div>
     </div>
 </body>
