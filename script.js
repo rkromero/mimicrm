@@ -4924,11 +4924,15 @@ function generateDeliveryReceiptHTML(order, client, items) {
             text-align: right;
         }
         
-        .company-name {
-            font-size: 20px;
-            font-weight: bold;
-            color: #000;
+        .company-logo {
             margin-bottom: 3px;
+        }
+        
+        .company-logo img {
+            display: block;
+            max-height: 60px;
+            max-width: 150px;
+            object-fit: contain;
         }
         
         .receipt-title {
@@ -5075,7 +5079,9 @@ function generateDeliveryReceiptHTML(order, client, items) {
 <body>
     <div class="receipt-header">
         <div class="receipt-left">
-            <div class="company-name">MIMI</div>
+            <div class="company-logo">
+                <img src="img/logo-mimi.png" alt="MIMI" style="max-height: 60px; max-width: 150px; object-fit: contain;">
+            </div>
             <div style="font-size: 13px; color: #333; margin-bottom: 3px;">CUIT: 30-71751033-6</div>
             <div style="font-size: 13px; color: #333; margin-bottom: 8px;">Dirección: José Ignacio de la Rosa 6276, Capital Federal</div>
             <div class="receipt-title">REMITO DE ENTREGA</div>
