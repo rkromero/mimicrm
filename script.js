@@ -7933,6 +7933,75 @@ async function loadInactiveClients() {
     }
 }
 
+// Función para diagnosticar clientes inactivos
+async function diagnosticarClientesInactivos() {
+    try {
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+            console.error('❌ No hay token de autenticación');
+            return;
+        }
+
+        console.log('🔍 Ejecutando diagnóstico de clientes inactivos...');
+        
+        const response = await fetch('/api/debug/clientes-inactivos', {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            console.log('📊 Diagnóstico completo:', data);
+            
+            // Mostrar resumen en consola
+            console.log('📋 RESUMEN DEL DIAGNÓSTICO:');
+            console.log(`📊 Total de clientes activos: ${data.summary.totalClients}`);
+            console.log(`📊 Clientes con pedidos: ${data.summary.clientsWithOrders}`);
+            console.log(`📊 Clientes sin pedidos: ${data.summary.clientsWithoutOrders}`);
+            console.log(`📊 Pedidos en los últimos 30 días: ${data.summary.recentOrders}`);
+            console.log(`📊 Clientes con pedidos >30 días: ${data.summary.oldOrders}`);
+            console.log(`📊 Esperados inactivos: ${data.summary.expectedInactive}`);
+            console.log(`📊 Encontrados inactivos: ${data.summary.actualInactive}`);
+            
+            // Mostrar ejemplos de clientes con pedidos muy antiguos
+            console.log('🔍 EJEMPLOS DE CLIENTES CON PEDIDOS MUY ANTIGUOS:');
+            data.veryOldOrders.forEach((client, index) => {
+                console.log(`${index + 1}. ${client.nombre} - Último pedido: ${client.ultimo_pedido} (${client.dias_sin_actividad} días sin actividad)`);
+            });
+            
+            // Mostrar resultado de la consulta original
+            console.log('🔍 RESULTADO DE LA CONSULTA ORIGINAL:');
+            data.originalQuery.forEach((client, index) => {
+                console.log(`${index + 1}. ${client.nombre} - Último pedido: ${client.ultimo_pedido} (${client.dias_sin_actividad} días sin actividad)`);
+            });
+            
+            // Mostrar alerta con resumen
+            const mensaje = `DIAGNÓSTICO COMPLETO:
+            
+📊 Total clientes activos: ${data.summary.totalClients}
+📊 Clientes con pedidos: ${data.summary.clientsWithOrders}
+📊 Clientes sin pedidos: ${data.summary.clientsWithoutOrders}
+📊 Pedidos últimos 30 días: ${data.summary.recentOrders}
+📊 Clientes con pedidos >30 días: ${data.summary.oldOrders}
+📊 Esperados inactivos: ${data.summary.expectedInactive}
+📊 Encontrados inactivos: ${data.summary.actualInactive}
+
+Revisa la consola para más detalles.`;
+            
+            alert(mensaje);
+            
+        } else {
+            console.error('❌ Error en diagnóstico:', response.statusText);
+            alert('Error al ejecutar el diagnóstico. Revisa la consola.');
+        }
+    } catch (error) {
+        console.error('❌ Error en diagnóstico:', error);
+        alert('Error de conexión al ejecutar el diagnóstico.');
+    }
+}
+
 // Función para mostrar el modal de clientes inactivos
 async function showInactiveClientsModal() {
     try {

@@ -545,7 +545,7 @@ app.get('/api/clientes/inactivos', authenticateToken, async (req, res) => {
             LEFT JOIN pedidos p ON c.id = p.cliente_id
             WHERE c.activo = true
             GROUP BY c.id, c.nombre, c.email, c.telefono, c.direccion, c.created_at
-            HAVING ultimo_pedido IS NULL OR ultimo_pedido < DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+            HAVING (ultimo_pedido IS NULL) OR (ultimo_pedido IS NOT NULL AND ultimo_pedido < DATE_SUB(CURDATE(), INTERVAL 30 DAY))
             ORDER BY dias_sin_actividad DESC, c.nombre ASC
         `;
         
@@ -555,6 +555,110 @@ app.get('/api/clientes/inactivos', authenticateToken, async (req, res) => {
         res.json(clientes);
     } catch (error) {
         console.error('❌ Error en endpoint de clientes inactivos:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Endpoint de diagnóstico para clientes inactivos
+app.get('/api/debug/clientes-inactivos', authenticateToken, async (req, res) => {
+    try {
+        console.log('🔍 Ejecutando diagnóstico de clientes inactivos...');
+        
+        // 1. Verificar total de clientes activos
+        const [totalClients] = await db.execute('SELECT COUNT(*) as total FROM clientes WHERE activo = true');
+        console.log('📊 Total de clientes activos:', totalClients[0].total);
+        
+        // 2. Verificar clientes con pedidos
+        const [clientsWithOrders] = await db.execute(`
+            SELECT COUNT(DISTINCT c.id) as total
+            FROM clientes c
+            INNER JOIN pedidos p ON c.id = p.cliente_id
+            WHERE c.activo = true
+        `);
+        console.log('📊 Clientes con pedidos:', clientsWithOrders[0].total);
+        
+        // 3. Verificar clientes sin pedidos
+        const [clientsWithoutOrders] = await db.execute(`
+            SELECT COUNT(*) as total
+            FROM clientes c
+            LEFT JOIN pedidos p ON c.id = p.cliente_id
+            WHERE c.activo = true AND p.id IS NULL
+        `);
+        console.log('📊 Clientes sin pedidos:', clientsWithoutOrders[0].total);
+        
+        // 4. Verificar pedidos recientes (últimos 30 días)
+        const [recentOrders] = await db.execute(`
+            SELECT COUNT(*) as total
+            FROM pedidos p
+            INNER JOIN clientes c ON p.cliente_id = c.id
+            WHERE c.activo = true AND p.fecha >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+        `);
+        console.log('📊 Pedidos en los últimos 30 días:', recentOrders[0].total);
+        
+        // 5. Verificar clientes con pedidos antiguos (>30 días)
+        const [oldOrders] = await db.execute(`
+            SELECT COUNT(DISTINCT c.id) as total
+            FROM clientes c
+            INNER JOIN pedidos p ON c.id = p.cliente_id
+            WHERE c.activo = true AND p.fecha < DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+        `);
+        console.log('📊 Clientes con pedidos >30 días:', oldOrders[0].total);
+        
+        // 6. Ejemplo de clientes con pedidos muy antiguos
+        const [veryOldOrders] = await db.execute(`
+            SELECT 
+                c.id,
+                c.nombre,
+                MAX(p.fecha) as ultimo_pedido,
+                DATEDIFF(CURDATE(), MAX(p.fecha)) as dias_sin_actividad
+            FROM clientes c
+            INNER JOIN pedidos p ON c.id = p.cliente_id
+            WHERE c.activo = true
+            GROUP BY c.id, c.nombre
+            HAVING ultimo_pedido < DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+            ORDER BY dias_sin_actividad DESC
+            LIMIT 10
+        `);
+        
+        // 7. Verificar la consulta original paso a paso
+        const [originalQuery] = await db.execute(`
+            SELECT 
+                c.id,
+                c.nombre,
+                c.email,
+                c.telefono,
+                c.direccion,
+                c.created_at,
+                MAX(p.fecha) as ultimo_pedido,
+                COALESCE(DATEDIFF(CURDATE(), MAX(p.fecha)), 0) as dias_sin_actividad,
+                COALESCE(SUM(p.monto), 0) as total_historico
+            FROM clientes c
+            LEFT JOIN pedidos p ON c.id = p.cliente_id
+            WHERE c.activo = true
+            GROUP BY c.id, c.nombre, c.email, c.telefono, c.direccion, c.created_at
+            HAVING (ultimo_pedido IS NULL) OR (ultimo_pedido IS NOT NULL AND ultimo_pedido < DATE_SUB(CURDATE(), INTERVAL 30 DAY))
+            ORDER BY dias_sin_actividad DESC, c.nombre ASC
+        `);
+        
+        const diagnostic = {
+            summary: {
+                totalClients: totalClients[0].total,
+                clientsWithOrders: clientsWithOrders[0].total,
+                clientsWithoutOrders: clientsWithoutOrders[0].total,
+                recentOrders: recentOrders[0].total,
+                oldOrders: oldOrders[0].total,
+                expectedInactive: clientsWithoutOrders[0].total + oldOrders[0].total,
+                actualInactive: originalQuery.length
+            },
+            veryOldOrders: veryOldOrders,
+            originalQuery: originalQuery
+        };
+        
+        console.log('📊 Diagnóstico completo:', diagnostic);
+        res.json(diagnostic);
+        
+    } catch (error) {
+        console.error('❌ Error en diagnóstico de clientes inactivos:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
