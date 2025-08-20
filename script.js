@@ -8366,9 +8366,10 @@ async function cargarDatosVentas() {
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cargando...';
         btn.disabled = true;
         
+        const token = localStorage.getItem('authToken');
         const response = await fetch(`/api/dashboard/ventas-por-vendedor?fechaDesde=${fechaDesde}&fechaHasta=${fechaHasta}`, {
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${token}`
             }
         });
         
