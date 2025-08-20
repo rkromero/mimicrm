@@ -1317,6 +1317,13 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         // Marcar dashboard como activo en la navegación
         
+        // Inicializar gráfico de ventas por vendedor
+        try {
+            initializeVentasVendedorChart();
+        } catch (error) {
+            console.error('Error inicializando gráfico de ventas:', error);
+        }
+        
         document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
         const dashboardNav = document.querySelector('.nav-item');
         if (dashboardNav) {
@@ -8263,3 +8270,238 @@ function verCliente(clienteId) {
         showNotification('Error al mostrar detalles del cliente', 'error');
     });
 }
+
+// ========================================
+// GRÁFICO DE VENTAS POR VENDEDOR
+// ========================================
+
+let ventasVendedorChart = null;
+
+// Función para inicializar el gráfico de ventas por vendedor
+function initializeVentasVendedorChart() {
+    const ctx = document.getElementById('ventasVendedorChart');
+    if (!ctx) return;
+    
+    // Configurar fechas por defecto (último mes)
+    const today = new Date();
+    const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
+    
+    document.getElementById('fecha-desde').value = lastMonth.toISOString().split('T')[0];
+    document.getElementById('fecha-hasta').value = today.toISOString().split('T')[0];
+    
+    // Crear gráfico vacío inicial
+    ventasVendedorChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Total Ventas ($)',
+                data: [],
+                backgroundColor: [
+                    '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
+                    '#06b6d4', '#84cc16', '#f97316', '#ec4899', '#6366f1'
+                ],
+                borderColor: [
+                    '#2563eb', '#059669', '#d97706', '#dc2626', '#7c3aed',
+                    '#0891b2', '#65a30d', '#ea580c', '#db2777', '#4f46e5'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `Ventas: ${formatCurrency(context.parsed.y)}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return formatCurrency(value);
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Configurar eventos
+    document.getElementById('cargar-ventas-btn').addEventListener('click', cargarDatosVentas);
+    document.getElementById('exportar-ventas-btn').addEventListener('click', exportarDatosVentas);
+    
+    // Cargar datos iniciales
+    cargarDatosVentas();
+}
+
+// Función para cargar datos de ventas por vendedor
+async function cargarDatosVentas() {
+    try {
+        const fechaDesde = document.getElementById('fecha-desde').value;
+        const fechaHasta = document.getElementById('fecha-hasta').value;
+        
+        if (!fechaDesde || !fechaHasta) {
+            showNotification('Por favor selecciona un rango de fechas', 'error');
+            return;
+        }
+        
+        if (fechaDesde > fechaHasta) {
+            showNotification('La fecha desde no puede ser mayor que la fecha hasta', 'error');
+            return;
+        }
+        
+        // Mostrar loading
+        const btn = document.getElementById('cargar-ventas-btn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cargando...';
+        btn.disabled = true;
+        
+        const response = await fetch(`/api/dashboard/ventas-por-vendedor?fechaDesde=${fechaDesde}&fechaHasta=${fechaHasta}`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Error al cargar datos');
+        }
+        
+        const data = await response.json();
+        
+        // Actualizar métricas de resumen
+        document.getElementById('total-ventas-chart').textContent = formatCurrency(data.resumen.totalVentas);
+        document.getElementById('total-pedidos-chart').textContent = data.resumen.totalPedidos;
+        document.getElementById('promedio-pedido-chart').textContent = formatCurrency(data.resumen.promedioGeneral);
+        
+        // Actualizar gráfico
+        actualizarGraficoVentas(data.ventas);
+        
+        // Actualizar tabla
+        actualizarTablaVentas(data.ventas);
+        
+        showNotification('Datos cargados correctamente', 'success');
+        
+    } catch (error) {
+        console.error('Error cargando datos de ventas:', error);
+        showNotification('Error al cargar los datos', 'error');
+    } finally {
+        // Restaurar botón
+        const btn = document.getElementById('cargar-ventas-btn');
+        btn.innerHTML = '<i class="fas fa-search"></i> Cargar Datos';
+        btn.disabled = false;
+    }
+}
+
+// Función para actualizar el gráfico
+function actualizarGraficoVentas(ventas) {
+    if (!ventasVendedorChart) return;
+    
+    const labels = ventas.map(v => v.vendedor_nombre);
+    const data = ventas.map(v => parseFloat(v.total_ventas));
+    
+    ventasVendedorChart.data.labels = labels;
+    ventasVendedorChart.data.datasets[0].data = data;
+    ventasVendedorChart.update();
+}
+
+// Función para actualizar la tabla
+function actualizarTablaVentas(ventas) {
+    const tableBody = document.getElementById('ventas-vendedor-table-body');
+    if (!tableBody) return;
+    
+    tableBody.innerHTML = '';
+    
+    if (ventas.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 2rem; color: #6b7280;">
+                    No hay datos de ventas para el período seleccionado
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    ventas.forEach(venta => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>
+                <div style="font-weight: 600; color: #1f2937;">${venta.vendedor_nombre}</div>
+            </td>
+            <td style="color: #6b7280;">${venta.vendedor_email}</td>
+            <td style="text-align: center; font-weight: 600;">${venta.cantidad_pedidos}</td>
+            <td style="font-weight: 600; color: #059669;">${formatCurrency(venta.total_ventas)}</td>
+            <td style="color: #6b7280;">${formatCurrency(venta.promedio_por_pedido)}</td>
+            <td style="text-align: center;">
+                <span style="background: #dbeafe; color: #1e40af; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.875rem;">
+                    ${venta.porcentaje}%
+                </span>
+            </td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
+
+// Función para exportar datos de ventas
+function exportarDatosVentas() {
+    try {
+        const table = document.getElementById('ventas-vendedor-table');
+        const fechaDesde = document.getElementById('fecha-desde').value;
+        const fechaHasta = document.getElementById('fecha-hasta').value;
+        
+        if (!table) {
+            showNotification('No hay datos para exportar', 'error');
+            return;
+        }
+        
+        // Crear workbook
+        const wb = XLSX.utils.book_new();
+        
+        // Obtener datos de la tabla
+        const wsData = [];
+        const headers = ['Vendedor', 'Email', 'Cantidad Pedidos', 'Total Ventas', 'Promedio por Pedido', 'Porcentaje'];
+        wsData.push(headers);
+        
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (cells.length > 0) {
+                const rowData = [];
+                cells.forEach(cell => {
+                    // Extraer solo el texto, sin HTML
+                    rowData.push(cell.textContent.trim());
+                });
+                wsData.push(rowData);
+            }
+        });
+        
+        // Crear worksheet
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+        
+        // Agregar worksheet al workbook
+        XLSX.utils.book_append_sheet(wb, ws, 'Ventas por Vendedor');
+        
+        // Generar nombre del archivo
+        const fileName = `ventas_por_vendedor_${fechaDesde}_${fechaHasta}.xlsx`;
+        
+        // Descargar archivo
+        XLSX.writeFile(wb, fileName);
+        
+        showNotification('Archivo exportado correctamente', 'success');
+        
+    } catch (error) {
+        console.error('Error exportando datos:', error);
+        showNotification('Error al exportar los datos', 'error');
+    }
+}
+

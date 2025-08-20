@@ -1355,6 +1355,63 @@ app.get('/api/usuarios/vendedores', authenticateToken, async (req, res) => {
     }
 });
 
+// Endpoint para obtener ventas por vendedor
+app.get('/api/dashboard/ventas-por-vendedor', authenticateToken, async (req, res) => {
+    try {
+        const { fechaDesde, fechaHasta } = req.query;
+        
+        // Validar fechas
+        if (!fechaDesde || !fechaHasta) {
+            return res.status(400).json({ error: 'Las fechas desde y hasta son requeridas' });
+        }
+        
+        // Construir la consulta base
+        let query = `
+            SELECT 
+                u.id as vendedor_id,
+                u.nombre as vendedor_nombre,
+                u.email as vendedor_email,
+                COUNT(p.id) as cantidad_pedidos,
+                COALESCE(SUM(p.monto), 0) as total_ventas,
+                COALESCE(AVG(p.monto), 0) as promedio_por_pedido
+            FROM usuarios u
+            LEFT JOIN pedidos p ON u.id = p.vendedor_asignado_id 
+                AND p.fecha BETWEEN ? AND ?
+            WHERE u.activo = true
+            GROUP BY u.id, u.nombre, u.email
+            ORDER BY total_ventas DESC
+        `;
+        
+        const [result] = await db.execute(query, [fechaDesde, fechaHasta]);
+        
+        // Calcular totales generales
+        const totalVentas = result.reduce((sum, item) => sum + parseFloat(item.total_ventas), 0);
+        const totalPedidos = result.reduce((sum, item) => sum + parseInt(item.cantidad_pedidos), 0);
+        
+        // Agregar porcentajes
+        const ventasConPorcentaje = result.map(item => ({
+            ...item,
+            porcentaje: totalVentas > 0 ? ((parseFloat(item.total_ventas) / totalVentas) * 100).toFixed(2) : '0.00'
+        }));
+        
+        res.json({
+            ventas: ventasConPorcentaje,
+            resumen: {
+                totalVentas: totalVentas,
+                totalPedidos: totalPedidos,
+                promedioGeneral: totalPedidos > 0 ? (totalVentas / totalPedidos).toFixed(2) : '0.00'
+            },
+            filtros: {
+                fechaDesde,
+                fechaHasta
+            }
+        });
+        
+    } catch (error) {
+        console.error('Error obteniendo ventas por vendedor:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
 
 
 // Iniciar servidor

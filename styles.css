@@ -2761,3 +2761,149 @@ body.theme-dark .date-filter-section input[type="date"] {
     color: var(--primary-color);
     opacity: 1;
 }
+
+/* ========================================
+   ESTILOS PARA GRÁFICO DE VENTAS POR VENDEDOR
+   ======================================== */
+
+.chart-filters {
+    background: #f8fafc;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.chart-filters .flex {
+    align-items: flex-end;
+}
+
+.chart-summary {
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.chart-summary .stat-badge {
+    text-align: center;
+    transition: transform 0.2s ease;
+}
+
+.chart-summary .stat-badge:hover {
+    transform: translateY(-2px);
+}
+
+/* Responsive para el gráfico */
+@media (max-width: 768px) {
+    .chart-filters .flex {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+    
+    .chart-filters .form-group {
+        width: 100%;
+    }
+    
+    .chart-filters .form-group input {
+        width: 100%;
+    }
+    
+    .chart-summary {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+    
+    .chart-summary .stat-badge {
+        padding: 0.75rem;
+    }
+    
+    .chart-summary .stat-badge div:last-child {
+        font-size: 1.25rem;
+    }
+}
+
+/* Animaciones para el gráfico */
+@keyframes chartFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.dashboard-card[style*="grid-column: 1 / -1"] {
+    animation: chartFadeIn 0.5s ease-out;
+}
+
+/* Estilos para la tabla del gráfico */
+#ventas-vendedor-table {
+    margin-top: 1rem;
+}
+
+#ventas-vendedor-table th {
+    background: #f8fafc;
+    font-weight: 600;
+    color: #374151;
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+#ventas-vendedor-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #f3f4f6;
+    vertical-align: middle;
+}
+
+#ventas-vendedor-table tbody tr:hover {
+    background-color: #f9fafb;
+}
+
+/* Estilos para botones del gráfico */
+#cargar-ventas-btn,
+#exportar-ventas-btn {
+    transition: all 0.2s ease;
+}
+
+#cargar-ventas-btn:hover,
+#exportar-ventas-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+#cargar-ventas-btn:disabled,
+#exportar-ventas-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Estilos para el contenedor del gráfico */
+#ventasVendedorChart {
+    border-radius: 8px;
+    background: #ffffff;
+}
+
+/* Mejoras para modo oscuro */
+body.theme-dark .chart-filters {
+    background: #1f2937;
+    border-color: #374151;
+}
+
+body.theme-dark .chart-summary .stat-badge {
+    background: #374151;
+    color: #f9fafb;
+}
+
+body.theme-dark #ventas-vendedor-table th {
+    background: #374151;
+    color: #f9fafb;
+    border-bottom-color: #4b5563;
+}
+
+body.theme-dark #ventas-vendedor-table tbody tr:hover {
+    background-color: #374151;
+}
