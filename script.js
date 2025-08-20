@@ -4807,9 +4807,13 @@ function viewOrderDetails(orderId) {
                 </div>
                     </div>
                 `;
-    });
-    
-    document.body.appendChild(detailsModal);
+                
+                // Agregar el modal al DOM después de cargar los items
+                document.body.appendChild(detailsModal);
+            }).catch(error => {
+                console.error('❌ VIEW ORDER DETAILS - Error cargando items:', error);
+                showNotification('Error al cargar los productos del pedido', 'error');
+            });
 }
 
 // Función para imprimir remito de entrega
