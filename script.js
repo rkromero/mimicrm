@@ -8398,7 +8398,7 @@ async function cargarDatosVentas() {
     } finally {
         // Restaurar botón
         const btn = document.getElementById('cargar-ventas-btn');
-        btn.innerHTML = '<i class="fas fa-search"></i> Cargar Datos';
+        btn.innerHTML = '<i class="fas fa-search"></i> Filtrar';
         btn.disabled = false;
     }
 }
