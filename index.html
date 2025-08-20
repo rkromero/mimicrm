@@ -123,6 +123,7 @@
                                     <th data-sort="descripcion" class="sortable">Descripción <i class="fas fa-sort"></i></th>
                                     <th data-sort="monto" class="sortable">Monto <i class="fas fa-sort"></i></th>
                                     <th data-sort="estado" class="sortable">Estado <i class="fas fa-sort"></i></th>
+                                    <th data-sort="vendedor_asignado_nombre" class="sortable">Vendedor <i class="fas fa-sort"></i></th>
                                     <th data-sort="fecha" class="sortable">Fecha <i class="fas fa-sort"></i></th>
                                     <th>Acciones</th>
                                 </tr>
@@ -482,6 +483,14 @@
                     </div>
                     
                     <div class="form-group">
+                        <label for="order-vendor-select">Vendedor Asignado</label>
+                        <select id="order-vendor-select" class="input" autocomplete="off">
+                            <option value="">Seleccione un vendedor (opcional)</option>
+                        </select>
+                        <small style="color: #6b7280; font-size: 0.875rem;">Si no selecciona, se asignará automáticamente</small>
+                    </div>
+                    
+                    <div class="form-group">
                         <label for="order-description">Descripción del Pedido</label>
                         <textarea id="order-description" class="input" autocomplete="off" placeholder="Descripción general del pedido (opcional)"></textarea>
                     </div>
@@ -612,6 +621,14 @@
                         <select id="edit-order-client-select" class="input" autocomplete="off" required>
                             <option value="">Seleccione un cliente</option>
                         </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-order-vendor-select">Vendedor Asignado</label>
+                        <select id="edit-order-vendor-select" class="input" autocomplete="off">
+                            <option value="">Seleccione un vendedor (opcional)</option>
+                        </select>
+                        <small style="color: #6b7280; font-size: 0.875rem;">Si no selecciona, se asignará automáticamente</small>
                     </div>
                     
                     <div class="form-group">

@@ -808,6 +808,7 @@ function renderOrdersTable(filteredOrders = null) {
                         ${translateOrderStatus(order.estado)}
                     </span>
                 </td>
+                <td>${order.vendedor_asignado_nombre || 'N/A'}</td>
                 <td>${formatDate(order.fecha)}</td>
                 <td>
                     <button onclick="viewOrderDetails(${order.id})" class="btn-icon" title="Ver detalles">
@@ -2033,7 +2034,7 @@ function clearOrderItems() {
 }
 
 // Función para mostrar modales con debugging mejorado
-function showModal(modalId) {
+async function showModal(modalId) {
     try {
         
         
@@ -2103,6 +2104,9 @@ function showModal(modalId) {
                 if (modalId === 'new-order-modal') {
                     // NO limpiar productos automáticamente aquí - solo configurar handlers
                     setupOrderProductHandlers(); // Configurar manejadores de productos
+                    
+                    // Cargar vendedores
+                    await populateVendorSelects();
                     
                     // Solo limpiar si no hay productos o si es un nuevo pedido
                     if (orderItems.length === 0) {
@@ -2187,6 +2191,51 @@ function populateClientSelects(modalId) {
     });
     
     
+}
+
+// Función para poblar selects de vendedores
+async function populateVendorSelects() {
+    try {
+        const token = localStorage.getItem('authToken');
+        const response = await fetch('/api/usuarios/vendedores', {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const vendedores = await response.json();
+            
+            // Poblar selector de nuevo pedido
+            const newOrderVendorSelect = document.getElementById('order-vendor-select');
+            if (newOrderVendorSelect) {
+                newOrderVendorSelect.innerHTML = '<option value="">Seleccione un vendedor (opcional)</option>';
+                vendedores.forEach(vendedor => {
+                    const option = document.createElement('option');
+                    option.value = vendedor.id;
+                    option.textContent = `${vendedor.nombre} (${vendedor.email})`;
+                    newOrderVendorSelect.appendChild(option);
+                });
+            }
+            
+            // Poblar selector de editar pedido
+            const editOrderVendorSelect = document.getElementById('edit-order-vendor-select');
+            if (editOrderVendorSelect) {
+                editOrderVendorSelect.innerHTML = '<option value="">Seleccione un vendedor (opcional)</option>';
+                vendedores.forEach(vendedor => {
+                    const option = document.createElement('option');
+                    option.value = vendedor.id;
+                    option.textContent = `${vendedor.nombre} (${vendedor.email})`;
+                    editOrderVendorSelect.appendChild(option);
+                });
+            }
+        } else {
+            console.error('❌ Error cargando vendedores:', response.status);
+        }
+    } catch (error) {
+        console.error('❌ Error cargando vendedores:', error);
+    }
 }
 
 // Función para configurar listeners de provincia y ciudad
@@ -2281,6 +2330,7 @@ async function handleNewOrderSubmit(e) {
     
     const clientId = document.getElementById('order-client-select').value;
     const description = document.getElementById('order-description').value;
+    const vendorId = document.getElementById('order-vendor-select').value;
     
     // Validar que hay productos en el pedido
     if (orderItems.length === 0) {
@@ -2296,6 +2346,7 @@ async function handleNewOrderSubmit(e) {
         descripcion: description,
         monto: totalAmount,
         estado: 'pendiente de pago', // Estado por defecto según los nuevos requerimientos
+        vendedor_asignado_id: vendorId || null, // Si no se selecciona, será null y el backend usará el usuario actual
         items: orderItems.map(item => ({
             producto_id: item.producto_id,
             cantidad: item.cantidad,
@@ -2598,10 +2649,17 @@ function editOrder(orderId) {
     populateClientSelects('edit-order-modal');
     
     // Llenar el modal con los datos del pedido (después de poblar el select)
-    setTimeout(() => {
+    setTimeout(async () => {
         document.getElementById('edit-order-client-select').value = order.cliente_id;
         document.getElementById('edit-order-description').value = order.descripcion;
         document.getElementById('edit-order-status').value = order.estado;
+        
+        // Cargar vendedores y seleccionar el actual
+        await populateVendorSelects();
+        const vendorSelect = document.getElementById('edit-order-vendor-select');
+        if (vendorSelect && order.vendedor_asignado_id) {
+            vendorSelect.value = order.vendedor_asignado_id;
+        }
         
         // Deshabilitar el campo cliente para evitar cambios accidentales
         document.getElementById('edit-order-client-select').disabled = true;
@@ -3397,6 +3455,7 @@ async function handleEditOrderSubmit(e) {
         monto: totalAmount,
         descripcion: document.getElementById('edit-order-description').value,
         estado: document.getElementById('edit-order-status').value,
+        vendedor_asignado_id: document.getElementById('edit-order-vendor-select').value || null,
         items: editOrderItems.map(item => ({
             producto_id: item.producto_id,
             cantidad: item.cantidad,
@@ -4549,6 +4608,7 @@ async function viewClientDetails(clientId) {
                                         <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Descripción</th>
                                         <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Monto</th>
                                         <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Estado</th>
+                                        <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Vendedor</th>
                                         <th style="padding: 0.75rem; text-align: left; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb;">Fecha</th>
                                     </tr>
                                 </thead>
@@ -4561,6 +4621,7 @@ async function viewClientDetails(clientId) {
                                             <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
                                                 <span class="status-badge status-${order.estado}" style="padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 500;">${translateOrderStatus(order.estado)}</span>
                                             </td>
+                                            <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; color: #6b7280;">${order.vendedor_asignado_nombre || 'N/A'}</td>
                                             <td style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; color: #6b7280;">${formatDate(order.fecha)}</td>
                                         </tr>
                                     `).join('')}

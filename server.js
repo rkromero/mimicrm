@@ -50,6 +50,9 @@ async function connectDB() {
         // Crear las tablas si no existen
         await createTables();
         
+        // Actualizar pedidos existentes con vendedor asignado
+        await updateExistingOrdersWithVendor();
+        
     } catch (error) {
         console.error('❌ Error conectando a la base de datos:', error);
         process.exit(1);
@@ -123,10 +126,12 @@ async function createTables() {
                 estado ENUM('pendiente de pago', 'fabricar', 'sale fabrica', 'completado') DEFAULT 'pendiente de pago',
                 fecha DATE NOT NULL,
                 creado_por INT,
+                vendedor_asignado_id INT DEFAULT 1,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 FOREIGN KEY (cliente_id) REFERENCES clientes(id),
-                FOREIGN KEY (creado_por) REFERENCES usuarios(id)
+                FOREIGN KEY (creado_por) REFERENCES usuarios(id),
+                FOREIGN KEY (vendedor_asignado_id) REFERENCES usuarios(id)
             )
         `);
 
@@ -167,6 +172,38 @@ async function createTables() {
         
     } catch (error) {
         console.error('❌ Error creando tablas:', error);
+    }
+}
+
+// Función para actualizar pedidos existentes con vendedor asignado
+async function updateExistingOrdersWithVendor() {
+    try {
+        // Verificar si la columna vendedor_asignado_id existe
+        const [columns] = await db.execute(`
+            SELECT COLUMN_NAME 
+            FROM INFORMATION_SCHEMA.COLUMNS 
+            WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'pedidos' AND COLUMN_NAME = 'vendedor_asignado_id'
+        `, [dbConfig.database]);
+        
+        if (columns.length === 0) {
+            console.log('📝 Agregando columna vendedor_asignado_id a tabla pedidos...');
+            await db.execute('ALTER TABLE pedidos ADD COLUMN vendedor_asignado_id INT DEFAULT 1');
+            await db.execute('ALTER TABLE pedidos ADD FOREIGN KEY (vendedor_asignado_id) REFERENCES usuarios(id)');
+        }
+        
+        // Actualizar todos los pedidos existentes que no tengan vendedor_asignado_id
+        const [result] = await db.execute(`
+            UPDATE pedidos 
+            SET vendedor_asignado_id = 1 
+            WHERE vendedor_asignado_id IS NULL OR vendedor_asignado_id = 0
+        `);
+        
+        if (result.affectedRows > 0) {
+            console.log(`✅ Actualizados ${result.affectedRows} pedidos con vendedor por defecto`);
+        }
+        
+    } catch (error) {
+        console.error('❌ Error actualizando pedidos existentes:', error);
     }
 }
 
@@ -766,18 +803,20 @@ app.delete('/api/productos/:productId', authenticateToken, async (req, res) => {
 app.get('/api/pedidos', authenticateToken, async (req, res) => {
     try {
         let query = `
-            SELECT p.*, c.nombre as cliente_nombre, c.apellido as cliente_apellido, u.nombre as creado_por_nombre
+            SELECT p.*, c.nombre as cliente_nombre, c.apellido as cliente_apellido, 
+                   u.nombre as creado_por_nombre, v.nombre as vendedor_asignado_nombre, v.email as vendedor_asignado_email
             FROM pedidos p
             LEFT JOIN clientes c ON p.cliente_id = c.id
             LEFT JOIN usuarios u ON p.creado_por = u.id
+            LEFT JOIN usuarios v ON p.vendedor_asignado_id = v.id
             WHERE 1=1
         `;
         
         const params = [];
 
         if (req.user.perfil === 'Vendedor') {
-            query += ' AND p.creado_por = ?';
-            params.push(req.user.id);
+            query += ' AND (p.creado_por = ? OR p.vendedor_asignado_id = ?)';
+            params.push(req.user.id, req.user.id);
         }
 
         query += ' ORDER BY p.created_at DESC';
@@ -793,13 +832,16 @@ app.get('/api/pedidos', authenticateToken, async (req, res) => {
 // Crear pedido
 app.post('/api/pedidos', authenticateToken, async (req, res) => {
     try {
-        const { cliente_id, descripcion, monto, estado = 'pendiente de pago', items = [] } = req.body;
+        const { cliente_id, descripcion, monto, estado = 'pendiente de pago', items = [], vendedor_asignado_id } = req.body;
 
         const numeroPedido = await generateConsecutiveOrderNumber();
+        
+        // Si no se especifica vendedor, usar el usuario actual o el admin (ID 1)
+        const vendorId = vendedor_asignado_id || req.user.id;
 
         const [result] = await db.execute(
-            'INSERT INTO pedidos (numero_pedido, cliente_id, descripcion, monto, estado, fecha, creado_por) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [numeroPedido, cliente_id, descripcion, monto, estado, new Date().toISOString().split('T')[0], req.user.id]
+            'INSERT INTO pedidos (numero_pedido, cliente_id, descripcion, monto, estado, fecha, creado_por, vendedor_asignado_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [numeroPedido, cliente_id, descripcion, monto, estado, new Date().toISOString().split('T')[0], req.user.id, vendorId]
         );
 
         const pedidoId = result.insertId;
@@ -827,10 +869,12 @@ app.get('/api/pedidos/:orderId', authenticateToken, async (req, res) => {
         const { orderId } = req.params;
         
         const query = `
-            SELECT p.*, c.nombre as cliente_nombre, c.apellido as cliente_apellido, u.nombre as creado_por_nombre
+            SELECT p.*, c.nombre as cliente_nombre, c.apellido as cliente_apellido, 
+                   u.nombre as creado_por_nombre, v.nombre as vendedor_asignado_nombre, v.email as vendedor_asignado_email
             FROM pedidos p
             LEFT JOIN clientes c ON p.cliente_id = c.id
             LEFT JOIN usuarios u ON p.creado_por = u.id
+            LEFT JOIN usuarios v ON p.vendedor_asignado_id = v.id
             WHERE p.id = ?
         `;
         
@@ -875,7 +919,7 @@ app.get('/api/pedidos/:orderId/items', authenticateToken, async (req, res) => {
 app.put('/api/pedidos/:orderId', authenticateToken, async (req, res) => {
     try {
         const { orderId } = req.params;
-        const { cliente_id, descripcion, monto, estado, items = [] } = req.body;
+        const { cliente_id, descripcion, monto, estado, items = [], vendedor_asignado_id } = req.body;
 
         // Verificar que el pedido existe
         const [existingOrder] = await db.execute(
@@ -889,8 +933,8 @@ app.put('/api/pedidos/:orderId', authenticateToken, async (req, res) => {
 
         // Actualizar el pedido
         await db.execute(
-            'UPDATE pedidos SET cliente_id = ?, descripcion = ?, monto = ?, estado = ? WHERE id = ?',
-            [cliente_id, descripcion, monto, estado, orderId]
+            'UPDATE pedidos SET cliente_id = ?, descripcion = ?, monto = ?, estado = ?, vendedor_asignado_id = ? WHERE id = ?',
+            [cliente_id, descripcion, monto, estado, vendedor_asignado_id || 1, orderId]
         );
 
         // Eliminar items existentes
@@ -1296,6 +1340,22 @@ app.get('/api/contactos', authenticateToken, async (req, res) => {
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
+
+// Endpoint para obtener lista de vendedores
+app.get('/api/usuarios/vendedores', authenticateToken, async (req, res) => {
+    try {
+        const [vendedores] = await db.execute(
+            'SELECT id, nombre, email, perfil FROM usuarios WHERE activo = true ORDER BY nombre'
+        );
+        
+        res.json(vendedores);
+    } catch (error) {
+        console.error('Error obteniendo vendedores:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+
 
 // Iniciar servidor
 async function startServer() {

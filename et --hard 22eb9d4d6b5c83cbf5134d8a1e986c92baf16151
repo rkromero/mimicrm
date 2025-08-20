@@ -1,0 +1,10 @@
+[33m75dd79b[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m Implementar funcionalidad de Vendedor Asignado en pedidos - Agregar campo vendedor_asignado_id a tabla pedidos - Actualizar endpoints de pedidos para manejar vendedor asignado - Agregar selector de vendedor en formularios de pedidos - Mostrar vendedor asignado en tabla de pedidos - Fallback automático a admin@mimi.com si no se selecciona vendedor
+[33md06efe9[m Agregar administración de usuarios - endpoints básicos
+[33mdd4daa2[m Feat: Implementar funcionalidad completa de administración de usuarios
+[33m22eb9d4[m Fix: Modificar función verCliente para mostrar detalles del cliente en lugar de navegar a otra sección
+[33m0717eee[m Fix: Mover ruta /api/clientes/inactivos antes de ruta genérica :clientId para resolver conflicto 404
+[33m3ad7570[m Fix: Corregir consulta SQL de clientes inactivos para mostrar correctamente clientes con pedidos de más de 30 días
+[33md0ee31b[m remitogrande
+[33m00a0613[m pedidos
+[33m18d9c6b[m logo
+[33maf8695b[m estetica
