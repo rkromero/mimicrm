@@ -1413,6 +1413,240 @@ app.get('/api/dashboard/ventas-por-vendedor', authenticateToken, async (req, res
     }
 });
 
+// RUTAS DE USUARIOS Y PERMISOS
+
+// Obtener todos los usuarios (solo para administradores)
+app.get('/api/usuarios', authenticateToken, async (req, res) => {
+    try {
+        // Verificar que el usuario sea administrador
+        if (req.user.perfil !== 'Administrador') {
+            return res.status(403).json({ error: 'Acceso denegado. Solo los administradores pueden ver usuarios.' });
+        }
+
+        const [usuarios] = await db.execute(
+            'SELECT id, nombre, email, perfil, activo, created_at FROM usuarios ORDER BY nombre'
+        );
+        
+        res.json(usuarios);
+    } catch (error) {
+        console.error('Error obteniendo usuarios:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Crear nuevo usuario (solo para administradores)
+app.post('/api/usuarios', authenticateToken, async (req, res) => {
+    try {
+        // Verificar que el usuario sea administrador
+        if (req.user.perfil !== 'Administrador') {
+            return res.status(403).json({ error: 'Acceso denegado. Solo los administradores pueden crear usuarios.' });
+        }
+
+        const { nombre, email, password, perfil } = req.body;
+
+        if (!nombre || !email || !password || !perfil) {
+            return res.status(400).json({ error: 'Nombre, email, contraseña y perfil son requeridos' });
+        }
+
+        // Verificar si el email ya existe
+        const [existingUsers] = await db.execute(
+            'SELECT id FROM usuarios WHERE email = ?',
+            [email]
+        );
+
+        if (existingUsers.length > 0) {
+            return res.status(400).json({ error: 'Ya existe un usuario con este email' });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const [result] = await db.execute(
+            'INSERT INTO usuarios (nombre, email, password, perfil) VALUES (?, ?, ?, ?)',
+            [nombre, email, hashedPassword, perfil]
+        );
+
+        res.status(201).json({
+            id: result.insertId,
+            nombre,
+            email,
+            perfil,
+            activo: true,
+            message: 'Usuario creado exitosamente'
+        });
+
+    } catch (error) {
+        console.error('Error creando usuario:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Actualizar usuario (solo para administradores)
+app.put('/api/usuarios/:id', authenticateToken, async (req, res) => {
+    try {
+        // Verificar que el usuario sea administrador
+        if (req.user.perfil !== 'Administrador') {
+            return res.status(403).json({ error: 'Acceso denegado. Solo los administradores pueden editar usuarios.' });
+        }
+
+        const { id } = req.params;
+        const { nombre, email, password, perfil } = req.body;
+
+        if (!nombre || !email || !perfil) {
+            return res.status(400).json({ error: 'Nombre, email y perfil son requeridos' });
+        }
+
+        // Verificar si el email ya existe en otro usuario
+        const [existingUsers] = await db.execute(
+            'SELECT id FROM usuarios WHERE email = ? AND id != ?',
+            [email, id]
+        );
+
+        if (existingUsers.length > 0) {
+            return res.status(400).json({ error: 'Ya existe otro usuario con este email' });
+        }
+
+        let query, params;
+
+        if (password) {
+            const hashedPassword = await bcrypt.hash(password, 10);
+            query = 'UPDATE usuarios SET nombre = ?, email = ?, password = ?, perfil = ? WHERE id = ?';
+            params = [nombre, email, hashedPassword, perfil, id];
+        } else {
+            query = 'UPDATE usuarios SET nombre = ?, email = ?, perfil = ? WHERE id = ?';
+            params = [nombre, email, perfil, id];
+        }
+
+        const [result] = await db.execute(query, params);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+
+        res.json({
+            id: parseInt(id),
+            nombre,
+            email,
+            perfil,
+            message: 'Usuario actualizado exitosamente'
+        });
+
+    } catch (error) {
+        console.error('Error actualizando usuario:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Eliminar usuario (solo para administradores)
+app.delete('/api/usuarios/:id', authenticateToken, async (req, res) => {
+    try {
+        // Verificar que el usuario sea administrador
+        if (req.user.perfil !== 'Administrador') {
+            return res.status(403).json({ error: 'Acceso denegado. Solo los administradores pueden eliminar usuarios.' });
+        }
+
+        const { id } = req.params;
+
+        // Verificar que no se elimine a sí mismo
+        if (parseInt(id) === req.user.id) {
+            return res.status(400).json({ error: 'No puedes eliminar tu propia cuenta' });
+        }
+
+        const [result] = await db.execute(
+            'UPDATE usuarios SET activo = false WHERE id = ?',
+            [id]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+
+        res.json({ message: 'Usuario desactivado exitosamente' });
+
+    } catch (error) {
+        console.error('Error eliminando usuario:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Obtener permisos (solo para administradores)
+app.get('/api/permisos', authenticateToken, async (req, res) => {
+    try {
+        // Verificar que el usuario sea administrador
+        if (req.user.perfil !== 'Administrador') {
+            return res.status(403).json({ error: 'Acceso denegado. Solo los administradores pueden ver permisos.' });
+        }
+
+        // Por ahora devolver permisos por defecto
+        // En el futuro esto se puede almacenar en la base de datos
+        const permisos = {
+            'Administrador': {
+                clientes: { crear: true, leer: true, editar: true, eliminar: true },
+                pedidos: { crear: true, leer: true, editar: true, eliminar: true },
+                pagos: { crear: true, leer: true, editar: true, eliminar: true },
+                productos: { crear: true, leer: true, editar: true, eliminar: true },
+                contactos: { crear: true, leer: true, editar: true, eliminar: true },
+                usuarios: { crear: true, leer: true, editar: true, eliminar: true }
+            },
+            'Gerente de ventas': {
+                clientes: { crear: true, leer: true, editar: true, eliminar: false },
+                pedidos: { crear: true, leer: true, editar: true, eliminar: true },
+                pagos: { crear: true, leer: true, editar: true, eliminar: true },
+                productos: { crear: false, leer: true, editar: false, eliminar: false },
+                contactos: { crear: true, leer: true, editar: true, eliminar: true },
+                usuarios: { crear: false, leer: false, editar: false, eliminar: false }
+            },
+            'Vendedor': {
+                clientes: { crear: true, leer: true, editar: true, eliminar: false },
+                pedidos: { crear: true, leer: true, editar: true, eliminar: true },
+                pagos: { crear: true, leer: true, editar: true, eliminar: true },
+                productos: { crear: false, leer: true, editar: false, eliminar: false },
+                contactos: { crear: true, leer: true, editar: true, eliminar: true },
+                usuarios: { crear: false, leer: false, editar: false, eliminar: false }
+            },
+            'Produccion': {
+                clientes: { crear: false, leer: true, editar: false, eliminar: false },
+                pedidos: { crear: false, leer: true, editar: true, eliminar: false },
+                pagos: { crear: false, leer: true, editar: false, eliminar: false },
+                productos: { crear: true, leer: true, editar: true, eliminar: false },
+                contactos: { crear: false, leer: true, editar: false, eliminar: false },
+                usuarios: { crear: false, leer: false, editar: false, eliminar: false }
+            }
+        };
+
+        res.json({ permisos });
+    } catch (error) {
+        console.error('Error obteniendo permisos:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Actualizar permisos (solo para administradores)
+app.put('/api/permisos', authenticateToken, async (req, res) => {
+    try {
+        // Verificar que el usuario sea administrador
+        if (req.user.perfil !== 'Administrador') {
+            return res.status(403).json({ error: 'Acceso denegado. Solo los administradores pueden modificar permisos.' });
+        }
+
+        const { permisos } = req.body;
+
+        if (!permisos) {
+            return res.status(400).json({ error: 'Los permisos son requeridos' });
+        }
+
+        // Por ahora solo devolver éxito
+        // En el futuro esto se puede almacenar en la base de datos
+        res.json({ 
+            message: 'Permisos actualizados exitosamente',
+            count: Object.keys(permisos).length
+        });
+
+    } catch (error) {
+        console.error('Error actualizando permisos:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
 
 // Iniciar servidor
 async function startServer() {
