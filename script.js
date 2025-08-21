@@ -2727,10 +2727,10 @@ async function editOrder(orderId) {
             document.getElementById('edit-order-client-select').style.cursor = 'not-allowed';
         }, 100);
         
-        // Cargar los productos del pedido
-        loadEditOrderItems(orderId);
+        // Cargar los productos del pedido y luego mostrar el modal
+        await loadEditOrderItems(orderId);
         
-        // Mostrar el modal
+        // Mostrar el modal después de cargar los datos
         showModal('edit-order-modal');
         
     } catch (error) {
@@ -2748,7 +2748,7 @@ async function loadEditOrderItems(orderId) {
         clearEditOrderItems();
         
         // Pequeño delay para asegurar que la limpieza se complete
-        await new Promise(resolve => setTimeout(resolve, 50));
+        await new Promise(resolve => setTimeout(resolve, 100));
         
         const token = localStorage.getItem('authToken');
         const response = await fetch(`/api/pedidos/${orderId}/items`, {
@@ -2771,6 +2771,9 @@ async function loadEditOrderItems(orderId) {
             }));
             
             console.log('✅ LOAD EDIT ORDER ITEMS - Items procesados:', editOrderItems);
+            
+            // Esperar a que el modal esté completamente cargado antes de renderizar
+            await new Promise(resolve => setTimeout(resolve, 200));
             
             renderEditOrderProducts();
             updateEditOrderTotal();
