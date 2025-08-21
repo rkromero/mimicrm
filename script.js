@@ -2727,11 +2727,13 @@ async function editOrder(orderId) {
             document.getElementById('edit-order-client-select').style.cursor = 'not-allowed';
         }, 100);
         
-        // Cargar los productos del pedido y luego mostrar el modal
-        await loadEditOrderItems(orderId);
-        
-        // Mostrar el modal después de cargar los datos
+        // Mostrar el modal primero
         showModal('edit-order-modal');
+        
+        // Cargar los productos del pedido después de que el modal esté abierto
+        setTimeout(async () => {
+            await loadEditOrderItems(orderId);
+        }, 300);
         
     } catch (error) {
         console.error('❌ EDIT ORDER - Error:', error);
@@ -2746,9 +2748,6 @@ async function loadEditOrderItems(orderId) {
         
         // LIMPIAR DATOS ANTERIORES ANTES DE CARGAR NUEVOS
         clearEditOrderItems();
-        
-        // Pequeño delay para asegurar que la limpieza se complete
-        await new Promise(resolve => setTimeout(resolve, 100));
         
         const token = localStorage.getItem('authToken');
         const response = await fetch(`/api/pedidos/${orderId}/items`, {
@@ -2771,9 +2770,6 @@ async function loadEditOrderItems(orderId) {
             }));
             
             console.log('✅ LOAD EDIT ORDER ITEMS - Items procesados:', editOrderItems);
-            
-            // Esperar a que el modal esté completamente cargado antes de renderizar
-            await new Promise(resolve => setTimeout(resolve, 200));
             
             renderEditOrderProducts();
             updateEditOrderTotal();
@@ -6340,7 +6336,11 @@ function renderEditOrderProducts() {
 
     // Validar que los elementos existan
     if (!productsList || !noProductsMessage) {
-        console.error('❌ RENDER EDIT ORDER PRODUCTS - Elementos no encontrados');
+        console.error('❌ RENDER EDIT ORDER PRODUCTS - Elementos no encontrados, reintentando en 100ms...');
+        // Reintentar después de un pequeño delay
+        setTimeout(() => {
+            renderEditOrderProducts();
+        }, 100);
         return;
     }
 
