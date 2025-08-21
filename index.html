@@ -1244,6 +1244,53 @@
         </div>
     </div>
 
+    <!-- Modal de Pedidos por Vendedor -->
+    <div id="vendor-orders-modal" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width: 1000px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Pedidos del Vendedor</h2>
+                <button class="close-modal btn btn-secondary">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" style="padding: 1.5rem;">
+                <div class="vendor-info" style="background: #f0f9ff; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid #0ea5e9;">
+                    <h3 id="vendor-name-display" style="margin: 0 0 0.5rem 0; color: #0c4a6e;">Vendedor</h3>
+                    <p id="vendor-email-display" style="margin: 0; color: #0c4a6e;">Email</p>
+                    <div style="display: flex; gap: 2rem; margin-top: 1rem;">
+                        <div>
+                            <span style="font-weight: 600; color: #0c4a6e;">Total Pedidos:</span>
+                            <span id="vendor-total-orders" style="margin-left: 0.5rem; color: #0ea5e9;">0</span>
+                        </div>
+                        <div>
+                            <span style="font-weight: 600; color: #0c4a6e;">Total Ventas:</span>
+                            <span id="vendor-total-sales" style="margin-left: 0.5rem; color: #0ea5e9;">$0.00</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="clients-table">
+                        <thead>
+                            <tr>
+                                <th>Número</th>
+                                <th>Cliente</th>
+                                <th>Descripción</th>
+                                <th>Monto</th>
+                                <th>Estado</th>
+                                <th>Fecha</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vendor-orders-table-body">
+                            <!-- Los pedidos del vendedor se cargarán aquí -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>

@@ -954,6 +954,48 @@ app.get('/api/pedidos/:orderId/items', authenticateToken, async (req, res) => {
     }
 });
 
+// Obtener pedidos por vendedor
+app.get('/api/pedidos/vendedor/:vendorName', authenticateToken, async (req, res) => {
+    try {
+        const { vendorName } = req.params;
+        const { fecha_desde, fecha_hasta } = req.query;
+        
+        let query = `
+            SELECT p.*, 
+                   c.nombre as cliente_nombre, 
+                   c.apellido as cliente_apellido,
+                   u.nombre as vendedor_asignado_nombre
+            FROM pedidos p
+            LEFT JOIN clientes c ON p.cliente_id = c.id
+            LEFT JOIN usuarios u ON p.vendedor_asignado_id = u.id
+            WHERE u.nombre = ?
+        `;
+        
+        const params = [vendorName];
+        
+        // Agregar filtros de fecha si están presentes
+        if (fecha_desde) {
+            query += ' AND DATE(p.fecha) >= ?';
+            params.push(fecha_desde);
+        }
+        
+        if (fecha_hasta) {
+            query += ' AND DATE(p.fecha) <= ?';
+            params.push(fecha_hasta);
+        }
+        
+        query += ' ORDER BY p.fecha DESC';
+        
+        const [orders] = await db.execute(query, params);
+        
+        console.log(`✅ Pedidos cargados para vendedor ${vendorName}:`, orders.length);
+        res.json(orders);
+    } catch (error) {
+        console.error('Error obteniendo pedidos del vendedor:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
 // Actualizar pedido
 app.put('/api/pedidos/:orderId', authenticateToken, async (req, res) => {
     try {

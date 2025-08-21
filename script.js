@@ -8638,6 +8638,7 @@ function actualizarTablaVentas(ventas) {
     
     ventas.forEach(venta => {
         const row = document.createElement('tr');
+        row.style.cursor = 'pointer';
         row.innerHTML = `
             <td>
                 <div style="font-weight: 600; color: #1f2937;">${venta.vendedor_nombre}</div>
@@ -8650,6 +8651,117 @@ function actualizarTablaVentas(ventas) {
                 <span style="background: #dbeafe; color: #1e40af; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.875rem;">
                     ${venta.porcentaje}%
                 </span>
+            </td>
+        `;
+        
+        // Agregar evento click para mostrar pedidos del vendedor
+        row.addEventListener('click', () => {
+            showVendorOrders(venta.vendedor_nombre, venta.vendedor_email, venta.cantidad_pedidos, venta.total_ventas);
+        });
+        
+        tableBody.appendChild(row);
+    });
+}
+
+// Función para mostrar pedidos de un vendedor específico
+async function showVendorOrders(vendorName, vendorEmail, totalOrders, totalSales) {
+    try {
+        // Actualizar información del vendedor en el modal
+        document.getElementById('vendor-name-display').textContent = vendorName;
+        document.getElementById('vendor-email-display').textContent = vendorEmail;
+        document.getElementById('vendor-total-orders').textContent = totalOrders;
+        document.getElementById('vendor-total-sales').textContent = formatCurrency(totalSales);
+        
+        // Mostrar el modal
+        showModal('vendor-orders-modal');
+        
+        // Cargar los pedidos del vendedor
+        await loadVendorOrders(vendorName);
+        
+    } catch (error) {
+        console.error('Error al mostrar pedidos del vendedor:', error);
+        showNotification('Error al cargar los pedidos del vendedor', 'error');
+    }
+}
+
+// Función para cargar pedidos de un vendedor específico
+async function loadVendorOrders(vendorName) {
+    try {
+        const token = localStorage.getItem('authToken');
+        const fechaDesde = document.getElementById('fecha-desde').value;
+        const fechaHasta = document.getElementById('fecha-hasta').value;
+        
+        // Construir URL con parámetros
+        let url = `/api/pedidos/vendedor/${encodeURIComponent(vendorName)}`;
+        const params = new URLSearchParams();
+        
+        if (fechaDesde) params.append('fecha_desde', fechaDesde);
+        if (fechaHasta) params.append('fecha_hasta', fechaHasta);
+        
+        if (params.toString()) {
+            url += '?' + params.toString();
+        }
+        
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const orders = await response.json();
+            renderVendorOrders(orders);
+        } else {
+            throw new Error(`Error del servidor: ${response.status}`);
+        }
+        
+    } catch (error) {
+        console.error('Error al cargar pedidos del vendedor:', error);
+        showNotification('Error al cargar los pedidos', 'error');
+    }
+}
+
+// Función para renderizar los pedidos del vendedor
+function renderVendorOrders(orders) {
+    const tableBody = document.getElementById('vendor-orders-table-body');
+    if (!tableBody) return;
+    
+    tableBody.innerHTML = '';
+    
+    if (orders.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="7" style="text-align: center; padding: 2rem; color: #6b7280;">
+                    No hay pedidos para este vendedor en el período seleccionado
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    orders.forEach(order => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td style="font-weight: 600; color: #1f2937;">${order.numero_pedido}</td>
+            <td>${order.cliente_nombre} ${order.cliente_apellido}</td>
+            <td style="color: #6b7280;">${order.descripcion || 'Sin descripción'}</td>
+            <td style="font-weight: 600; color: #059669;">${formatCurrency(order.monto)}</td>
+            <td>
+                <span class="status-badge status-${order.estado.replace(' ', '-')}">
+                    ${order.estado}
+                </span>
+            </td>
+            <td style="color: #6b7280;">${formatDate(order.fecha)}</td>
+            <td>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button onclick="viewOrderDetails(${order.id})" class="btn-icon" title="Ver detalles">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button onclick="editOrder(${order.id})" class="btn-icon" title="Editar">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                </div>
             </td>
         `;
         tableBody.appendChild(row);
