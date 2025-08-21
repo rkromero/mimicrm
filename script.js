@@ -2743,6 +2743,13 @@ async function editOrder(orderId) {
 async function loadEditOrderItems(orderId) {
     try {
         console.log('🔍 LOAD EDIT ORDER ITEMS - Iniciando carga para pedido:', orderId);
+        
+        // LIMPIAR DATOS ANTERIORES ANTES DE CARGAR NUEVOS
+        clearEditOrderItems();
+        
+        // Pequeño delay para asegurar que la limpieza se complete
+        await new Promise(resolve => setTimeout(resolve, 50));
+        
         const token = localStorage.getItem('authToken');
         const response = await fetch(`/api/pedidos/${orderId}/items`, {
             headers: {
