@@ -2989,7 +2989,7 @@ input:checked + .toggle-slider:before {
 }
 
 .transport-fields.visible {
-    max-height: 200px;
+    max-height: 300px; /* Increased to accommodate the textarea */
     opacity: 1;
     margin-bottom: 1rem;
 }
