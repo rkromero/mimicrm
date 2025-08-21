@@ -2771,20 +2771,27 @@ async function loadEditOrderItems(orderId) {
             
             console.log('✅ LOAD EDIT ORDER ITEMS - Items procesados:', editOrderItems);
             
-            renderEditOrderProducts();
-            updateEditOrderTotal();
+            // Add a small delay before rendering products to ensure DOM is ready
+            setTimeout(() => {
+                renderEditOrderProducts();
+                updateEditOrderTotal();
+            }, 50); // Small delay
             
         } else {
             console.error('❌ LOAD EDIT ORDER ITEMS - Error del servidor:', response.statusText);
             editOrderItems = [];
-            renderEditOrderProducts();
-            updateEditOrderTotal();
+            setTimeout(() => {
+                renderEditOrderProducts();
+                updateEditOrderTotal();
+            }, 50); // Small delay even on error
         }
     } catch (error) {
         console.error('❌ LOAD EDIT ORDER ITEMS - Error de red:', error);
         editOrderItems = [];
-        renderEditOrderProducts();
-        updateEditOrderTotal();
+        setTimeout(() => {
+            renderEditOrderProducts();
+            updateEditOrderTotal();
+        }, 50); // Small delay even on error
     }
 }
 
@@ -6336,11 +6343,7 @@ function renderEditOrderProducts() {
 
     // Validar que los elementos existan
     if (!productsList || !noProductsMessage) {
-        console.error('❌ RENDER EDIT ORDER PRODUCTS - Elementos no encontrados, reintentando en 100ms...');
-        // Reintentar después de un pequeño delay
-        setTimeout(() => {
-            renderEditOrderProducts();
-        }, 100);
+        console.error('❌ RENDER EDIT ORDER PRODUCTS - Elementos del DOM no encontrados. Esto es crítico y no debería ocurrir si el modal está abierto y la estructura HTML es correcta.');
         return;
     }
 

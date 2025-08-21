@@ -805,13 +805,16 @@
                             </div>
                         </div>
 
-                        <!-- Lista de productos agregados -->
+                        <!-- Mensaje de no productos (inicialmente visible si no hay productos) -->
+                        <div id="edit-no-products-message" style="text-align: center; padding: 2rem; color: #6b7280; background: #f9fafb; border-radius: 8px; margin-bottom: 1rem;">
+                            <i class="fas fa-box-open" style="font-size: 2rem; margin-bottom: 0.5rem; display: block; color: #d1d5db;"></i>
+                            <p style="margin: 0;">No hay productos en este pedido</p>
+                            <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem;">Haga clic en "Agregar Producto" para añadir productos</p>
+                        </div>
+
+                        <!-- Lista de productos agregados (inicialmente oculta o vacía) -->
                         <div id="edit-order-products-list">
-                            <div id="edit-no-products-message" style="text-align: center; padding: 2rem; color: #6b7280; background: #f9fafb; border-radius: 8px;">
-                                <i class="fas fa-box-open" style="font-size: 2rem; margin-bottom: 0.5rem; display: block; color: #d1d5db;"></i>
-                                <p style="margin: 0;">No hay productos en este pedido</p>
-                                <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem;">Haga clic en "Agregar Producto" para añadir productos</p>
-                            </div>
+                            <!-- Products will be rendered here -->
                         </div>
                     </div>
 
