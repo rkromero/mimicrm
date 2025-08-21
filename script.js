@@ -4926,6 +4926,28 @@ function viewOrderDetails(orderId) {
                             </div>
                         </div>
                     ` : ''}
+                    ${(order.nombre_transporte || order.direccion_transporte) ? `
+                        <div style="margin-bottom: 1.5rem;">
+                            <h3 style="margin: 0 0 1rem 0; color: #1f2937; display: flex; align-items: center;">
+                                <i class="fas fa-truck" style="margin-right: 0.5rem; color: #6366f1;"></i>
+                                Información de Transporte
+                            </h3>
+                            <div style="background: white; padding: 1rem; border-radius: 6px; border-left: 4px solid #6366f1;">
+                                ${order.nombre_transporte ? `
+                                    <div style="margin-bottom: 0.75rem;">
+                                        <strong>Nombre del Transporte:</strong><br>
+                                        <span style="color: #374151;">${order.nombre_transporte}</span>
+                                    </div>
+                                ` : ''}
+                                ${order.direccion_transporte ? `
+                                    <div>
+                                        <strong>Dirección del Transporte:</strong><br>
+                                        <span style="color: #374151;">${order.direccion_transporte}</span>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    ` : ''}
                     ${itemsTable}
                     <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
                         <button class="btn btn-warning" onclick="printInvoice(${order.id})" style="background: #f59e0b; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;" title="Imprimir Factura">
