@@ -563,6 +563,28 @@
                         <small style="color: #6b7280; font-size: 0.875rem;">Si no selecciona, se asignará automáticamente</small>
                     </div>
                     
+                    <!-- Toggle para transporte -->
+                    <div class="toggle-container">
+                        <span class="toggle-label">Utiliza transporte?</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="order-transport-toggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    
+                    <!-- Campos de transporte (inicialmente ocultos) -->
+                    <div class="transport-fields hidden" id="order-transport-fields">
+                        <div class="form-group">
+                            <label for="order-transport-name">Nombre del Transporte</label>
+                            <input type="text" id="order-transport-name" class="input" autocomplete="off" placeholder="Nombre de la empresa de transporte">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="order-transport-address">Dirección de Transporte</label>
+                            <textarea id="order-transport-address" class="input" autocomplete="off" placeholder="Dirección completa del transporte"></textarea>
+                        </div>
+                    </div>
+                    
                     <div class="form-group">
                         <label for="order-description">Descripción del Pedido</label>
                         <textarea id="order-description" class="input" autocomplete="off" placeholder="Descripción general del pedido (opcional)"></textarea>
@@ -702,6 +724,28 @@
                             <option value="">Seleccione un vendedor (opcional)</option>
                         </select>
                         <small style="color: #6b7280; font-size: 0.875rem;">Si no selecciona, se asignará automáticamente</small>
+                    </div>
+                    
+                    <!-- Toggle para transporte -->
+                    <div class="toggle-container">
+                        <span class="toggle-label">Utiliza transporte?</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="edit-order-transport-toggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    
+                    <!-- Campos de transporte (inicialmente ocultos) -->
+                    <div class="transport-fields hidden" id="edit-order-transport-fields">
+                        <div class="form-group">
+                            <label for="edit-order-transport-name">Nombre del Transporte</label>
+                            <input type="text" id="edit-order-transport-name" class="input" autocomplete="off" placeholder="Nombre de la empresa de transporte">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="edit-order-transport-address">Dirección de Transporte</label>
+                            <textarea id="edit-order-transport-address" class="input" autocomplete="off" placeholder="Dirección completa del transporte"></textarea>
+                        </div>
                     </div>
                     
                     <div class="form-group">

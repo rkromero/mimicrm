@@ -1290,6 +1290,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         setupModals();
         
+        // Configurar toggle switches para transporte
+        setupTransportToggles();
         
         setupDashboardCards();
         
@@ -2345,6 +2347,23 @@ async function handleNewOrderSubmit(e) {
         return;
     }
     
+    // Validar campos de transporte si el toggle está activado
+    const transportToggle = document.getElementById('order-transport-toggle');
+    if (transportToggle && transportToggle.checked) {
+        const transportName = document.getElementById('order-transport-name').value.trim();
+        const transportAddress = document.getElementById('order-transport-address').value.trim();
+        
+        if (!transportName) {
+            showNotification('El nombre del transporte es obligatorio cuando se utiliza transporte', 'error');
+            return;
+        }
+        
+        if (!transportAddress) {
+            showNotification('La dirección del transporte es obligatoria cuando se utiliza transporte', 'error');
+            return;
+        }
+    }
+    
     // Calcular el monto total
     const totalAmount = orderItems.reduce((sum, item) => sum + item.subtotal, 0);
     
@@ -2354,6 +2373,8 @@ async function handleNewOrderSubmit(e) {
         monto: totalAmount,
         estado: 'pendiente de pago', // Estado por defecto según los nuevos requerimientos
         vendedor_asignado_id: vendorId || null, // Si no se selecciona, será null y el backend usará el usuario actual
+        nombre_transporte: document.getElementById('order-transport-name').value,
+        direccion_transporte: document.getElementById('order-transport-address').value,
         items: orderItems.map(item => ({
             producto_id: item.producto_id,
             cantidad: item.cantidad,
@@ -2660,6 +2681,22 @@ function editOrder(orderId) {
         document.getElementById('edit-order-client-select').value = order.cliente_id;
         document.getElementById('edit-order-description').value = order.descripcion;
         document.getElementById('edit-order-status').value = order.estado;
+        
+        // Cargar datos de transporte y configurar toggle
+        const transportName = order.nombre_transporte || '';
+        const transportAddress = order.direccion_transporte || '';
+        const hasTransport = transportName || transportAddress;
+        
+        // Configurar toggle basado en si el pedido tiene datos de transporte
+        const transportToggle = document.getElementById('edit-order-transport-toggle');
+        if (transportToggle) {
+            transportToggle.checked = hasTransport;
+            toggleTransportFields('edit-order-transport-fields', hasTransport);
+        }
+        
+        // Cargar datos de transporte
+        document.getElementById('edit-order-transport-name').value = transportName;
+        document.getElementById('edit-order-transport-address').value = transportAddress;
         
         // Cargar vendedores y seleccionar el actual
         await populateVendorSelects();
@@ -3454,6 +3491,27 @@ async function handleEditOrderSubmit(e) {
         return;
     }
 
+    // Validar campos de transporte si el toggle está activado
+    const transportToggle = document.getElementById('edit-order-transport-toggle');
+    if (transportToggle && transportToggle.checked) {
+        const transportName = document.getElementById('edit-order-transport-name').value.trim();
+        const transportAddress = document.getElementById('edit-order-transport-address').value.trim();
+        
+        if (!transportName) {
+            showNotification('El nombre del transporte es obligatorio cuando se utiliza transporte', 'error');
+            // Volver a deshabilitar el campo cliente
+            clientSelect.disabled = true;
+            return;
+        }
+        
+        if (!transportAddress) {
+            showNotification('La dirección del transporte es obligatoria cuando se utiliza transporte', 'error');
+            // Volver a deshabilitar el campo cliente
+            clientSelect.disabled = true;
+            return;
+        }
+    }
+
     // Calcular el monto total
     const totalAmount = editOrderItems.reduce((sum, item) => sum + item.subtotal, 0);
     
@@ -3463,6 +3521,8 @@ async function handleEditOrderSubmit(e) {
         descripcion: document.getElementById('edit-order-description').value,
         estado: document.getElementById('edit-order-status').value,
         vendedor_asignado_id: document.getElementById('edit-order-vendor-select').value || null,
+        nombre_transporte: document.getElementById('edit-order-transport-name').value,
+        direccion_transporte: document.getElementById('edit-order-transport-address').value,
         items: editOrderItems.map(item => ({
             producto_id: item.producto_id,
             cantidad: item.cantidad,
@@ -3605,6 +3665,18 @@ function setupHeaderButtons() {
                             showNotification('Error: Modal de usuario no encontrado', 'error');
                         }
                     };
+                } else if (config.id === 'new-order-btn' || config.id === 'new-order-btn-section') {
+                    // Para botones de nuevo pedido, limpiar toggle y campos de transporte
+                    button.onclick = safeExecute(function() {
+                        // Limpiar toggle y campos de transporte
+                        const transportToggle = document.getElementById('order-transport-toggle');
+                        if (transportToggle) {
+                            transportToggle.checked = false;
+                            toggleTransportFields('order-transport-fields', false);
+                        }
+                        
+                        showModal(config.modal);
+                    }, `Click ${config.name}`);
                 } else {
                     // Para otros botones, usar la función normal
                     button.onclick = safeExecute(function() {
@@ -7229,6 +7301,54 @@ function setupModals() {
         
     } catch (error) {
         console.error('❌ Error configurando modales:', error);
+    }
+}
+
+// Función para configurar toggle switches de transporte
+function setupTransportToggles() {
+    console.log('🔧 Configurando toggle switches de transporte...');
+    
+    try {
+        // Configurar toggle para nuevo pedido
+        const newOrderToggle = document.getElementById('order-transport-toggle');
+        if (newOrderToggle) {
+            newOrderToggle.addEventListener('change', function() {
+                toggleTransportFields('order-transport-fields', this.checked);
+            });
+        }
+        
+        // Configurar toggle para editar pedido
+        const editOrderToggle = document.getElementById('edit-order-transport-toggle');
+        if (editOrderToggle) {
+            editOrderToggle.addEventListener('change', function() {
+                toggleTransportFields('edit-order-transport-fields', this.checked);
+            });
+        }
+        
+        console.log('✅ Toggle switches de transporte configurados correctamente');
+        
+    } catch (error) {
+        console.error('❌ Error configurando toggle switches de transporte:', error);
+    }
+}
+
+// Función para mostrar/ocultar campos de transporte
+function toggleTransportFields(containerId, show) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    if (show) {
+        container.classList.remove('hidden');
+        container.classList.add('visible');
+    } else {
+        container.classList.remove('visible');
+        container.classList.add('hidden');
+        
+        // Limpiar campos cuando se ocultan
+        const inputs = container.querySelectorAll('input, textarea');
+        inputs.forEach(input => {
+            input.value = '';
+        });
     }
 }
 

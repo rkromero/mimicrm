@@ -53,6 +53,9 @@ async function connectDB() {
         // Actualizar pedidos existentes con vendedor asignado
         await updateExistingOrdersWithVendor();
         
+        // Agregar columnas de transporte si no existen
+        await addTransportColumns();
+        
     } catch (error) {
         console.error('❌ Error conectando a la base de datos:', error);
         process.exit(1);
@@ -127,6 +130,8 @@ async function createTables() {
                 fecha DATE NOT NULL,
                 creado_por INT,
                 vendedor_asignado_id INT DEFAULT 1,
+                nombre_transporte VARCHAR(255),
+                direccion_transporte TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 FOREIGN KEY (cliente_id) REFERENCES clientes(id),
@@ -204,6 +209,40 @@ async function updateExistingOrdersWithVendor() {
         
     } catch (error) {
         console.error('❌ Error actualizando pedidos existentes:', error);
+    }
+}
+
+// Función para agregar columnas de transporte
+async function addTransportColumns() {
+    try {
+        // Verificar si la columna nombre_transporte existe
+        const [nombreTransporteColumns] = await db.execute(`
+            SELECT COLUMN_NAME 
+            FROM INFORMATION_SCHEMA.COLUMNS 
+            WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'pedidos' AND COLUMN_NAME = 'nombre_transporte'
+        `, [dbConfig.database]);
+        
+        if (nombreTransporteColumns.length === 0) {
+            console.log('📝 Agregando columna nombre_transporte a tabla pedidos...');
+            await db.execute('ALTER TABLE pedidos ADD COLUMN nombre_transporte VARCHAR(255)');
+        }
+        
+        // Verificar si la columna direccion_transporte existe
+        const [direccionTransporteColumns] = await db.execute(`
+            SELECT COLUMN_NAME 
+            FROM INFORMATION_SCHEMA.COLUMNS 
+            WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'pedidos' AND COLUMN_NAME = 'direccion_transporte'
+        `, [dbConfig.database]);
+        
+        if (direccionTransporteColumns.length === 0) {
+            console.log('📝 Agregando columna direccion_transporte a tabla pedidos...');
+            await db.execute('ALTER TABLE pedidos ADD COLUMN direccion_transporte TEXT');
+        }
+        
+        console.log('✅ Columnas de transporte verificadas/agregadas correctamente');
+        
+    } catch (error) {
+        console.error('❌ Error agregando columnas de transporte:', error);
     }
 }
 
@@ -832,7 +871,7 @@ app.get('/api/pedidos', authenticateToken, async (req, res) => {
 // Crear pedido
 app.post('/api/pedidos', authenticateToken, async (req, res) => {
     try {
-        const { cliente_id, descripcion, monto, estado = 'pendiente de pago', items = [], vendedor_asignado_id } = req.body;
+        const { cliente_id, descripcion, monto, estado = 'pendiente de pago', items = [], vendedor_asignado_id, nombre_transporte, direccion_transporte } = req.body;
 
         const numeroPedido = await generateConsecutiveOrderNumber();
         
@@ -840,8 +879,8 @@ app.post('/api/pedidos', authenticateToken, async (req, res) => {
         const vendorId = vendedor_asignado_id || req.user.id;
 
         const [result] = await db.execute(
-            'INSERT INTO pedidos (numero_pedido, cliente_id, descripcion, monto, estado, fecha, creado_por, vendedor_asignado_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-            [numeroPedido, cliente_id, descripcion, monto, estado, new Date().toISOString().split('T')[0], req.user.id, vendorId]
+            'INSERT INTO pedidos (numero_pedido, cliente_id, descripcion, monto, estado, fecha, creado_por, vendedor_asignado_id, nombre_transporte, direccion_transporte) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [numeroPedido, cliente_id, descripcion, monto, estado, new Date().toISOString().split('T')[0], req.user.id, vendorId, nombre_transporte || null, direccion_transporte || null]
         );
 
         const pedidoId = result.insertId;
@@ -919,7 +958,7 @@ app.get('/api/pedidos/:orderId/items', authenticateToken, async (req, res) => {
 app.put('/api/pedidos/:orderId', authenticateToken, async (req, res) => {
     try {
         const { orderId } = req.params;
-        const { cliente_id, descripcion, monto, estado, items = [], vendedor_asignado_id } = req.body;
+        const { cliente_id, descripcion, monto, estado, items = [], vendedor_asignado_id, nombre_transporte, direccion_transporte } = req.body;
 
         // Verificar que el pedido existe
         const [existingOrder] = await db.execute(
@@ -933,8 +972,8 @@ app.put('/api/pedidos/:orderId', authenticateToken, async (req, res) => {
 
         // Actualizar el pedido
         await db.execute(
-            'UPDATE pedidos SET cliente_id = ?, descripcion = ?, monto = ?, estado = ?, vendedor_asignado_id = ? WHERE id = ?',
-            [cliente_id, descripcion, monto, estado, vendedor_asignado_id || 1, orderId]
+            'UPDATE pedidos SET cliente_id = ?, descripcion = ?, monto = ?, estado = ?, vendedor_asignado_id = ?, nombre_transporte = ?, direccion_transporte = ? WHERE id = ?',
+            [cliente_id, descripcion, monto, estado, vendedor_asignado_id || 1, nombre_transporte || null, direccion_transporte || null, orderId]
         );
 
         // Eliminar items existentes
