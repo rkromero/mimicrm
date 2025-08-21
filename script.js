@@ -96,11 +96,17 @@ const provinciasYLocalidades = {
 
 // Funciones de utilidad
 function formatCurrency(amount) {
-    if (amount === null || amount === undefined) return '$0.00';
+    if (amount === null || amount === undefined || isNaN(amount)) return '$ 0,00';
+    
+    // Convertir a número si es string
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    
+    if (isNaN(numAmount)) return '$ 0,00';
+    
     return new Intl.NumberFormat('es-AR', {
         style: 'currency',
         currency: 'ARS'
-    }).format(amount);
+    }).format(numAmount);
 }
 
 function translateOrderStatus(status) {
@@ -4950,8 +4956,8 @@ function viewOrderDetails(orderId) {
                     ` : ''}
                     ${itemsTable}
                     <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
-                        <button class="btn btn-warning" onclick="printInvoice(${order.id})" style="background: #f59e0b; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;" title="Imprimir Factura">
-                            <i class="fas fa-file-invoice"></i> Imprimir Factura
+                        <button class="btn btn-warning" onclick="printInvoice(${order.id})" style="background: #f59e0b; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;" title="Imprimir Proforma">
+                            <i class="fas fa-file-invoice"></i> Imprimir Proforma
                         </button>
                         <button class="btn btn-info" onclick="printShippingLabel(${order.id})" style="background: #06b6d4; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;" title="Imprimir Etiqueta de Envío">
                             <i class="fas fa-tag"></i> Imprimir Etiqueta
@@ -5609,7 +5615,7 @@ function generateShippingLabelHTML(client) {
     `;
 }
 
-// Función para imprimir factura
+// Función para imprimir proforma
 async function printInvoice(orderId) {
     try {
         // Encontrar el pedido
@@ -5629,7 +5635,7 @@ async function printInvoice(orderId) {
         // Cargar los items del pedido
         const items = await loadOrderItems(orderId);
         
-        // Generar el HTML de la factura
+        // Generar el HTML de la proforma
         const invoiceHTML = generateInvoiceHTML(order, client, items);
         
         // Abrir ventana de impresión
@@ -5648,12 +5654,12 @@ async function printInvoice(orderId) {
         };
         
     } catch (error) {
-        console.error('Error generando factura:', error);
-        showNotification('Error al generar la factura', 'error');
+        console.error('Error generando proforma:', error);
+        showNotification('Error al generar la proforma', 'error');
     }
 }
 
-// Función para generar el HTML de la factura argentina
+// Función para generar el HTML de la proforma argentina
 function generateInvoiceHTML(order, client, items) {
     const currentDate = new Date().toLocaleDateString('es-ES', {
         year: 'numeric',
@@ -5662,7 +5668,10 @@ function generateInvoiceHTML(order, client, items) {
     });
     
     // Calcular subtotales y totales
-    const subtotal = items.reduce((sum, item) => sum + (item.subtotal || 0), 0);
+    const subtotal = items.reduce((sum, item) => {
+        const itemSubtotal = parseFloat(item.subtotal) || 0;
+        return sum + itemSubtotal;
+    }, 0);
     const iva = 0; // IVA en 0
     const total = subtotal; // Total igual al subtotal
     
@@ -5681,7 +5690,7 @@ function generateInvoiceHTML(order, client, items) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Factura - ${order.numero_pedido}</title>
+    <title>Proforma - ${order.numero_pedido}</title>
     <style>
         @media print {
             @page {
@@ -5877,14 +5886,14 @@ function generateInvoiceHTML(order, client, items) {
             <div class="company-details">CUIT: 30-71751033-6</div>
             <div class="company-details">Dirección: José Ignacio de la Rosa 6276, Capital Federal</div>
             <div class="company-details">Condición IVA: Responsable Inscripto</div>
-            <div class="invoice-title">FACTURA</div>
+            <div class="invoice-title">PROFORMA</div>
             <div class="invoice-number">Nº ${order.numero_pedido}</div>
         </div>
         <div class="invoice-right">
             <div class="invoice-date">Fecha: ${currentDate}</div>
             <div style="margin-top: 10px; font-size: 15px; color: #666;">
                 <div>Punto de Venta: 0001</div>
-                <div>Comprobante: FACTURA A</div>
+                <div>Comprobante: PROFORMA</div>
             </div>
         </div>
     </div>
@@ -5957,7 +5966,7 @@ function generateInvoiceHTML(order, client, items) {
         
         <div class="fiscal-info">
             <strong>ℹ️ Información Fiscal:</strong><br>
-            • Este documento es una factura tipo "A" según normativa AFIP<br>
+            • Este documento es una proforma según normativa AFIP<br>
             • No corresponde IVA discriminado<br>
             • Conserve este comprobante para su contabilidad
         </div>
@@ -5966,7 +5975,7 @@ function generateInvoiceHTML(order, client, items) {
     <div class="footer">
         <p><strong>MIMI</strong> - CUIT: 30-71751033-6 - Responsable Inscripto</p>
         <p>José Ignacio de la Rosa 6276, Capital Federal</p>
-        <p>Factura generada el ${new Date().toLocaleDateString('es-ES')} a las ${new Date().toLocaleTimeString('es-ES')}</p>
+        <p>Proforma generada el ${new Date().toLocaleDateString('es-ES')} a las ${new Date().toLocaleTimeString('es-ES')}</p>
     </div>
 </body>
 </html>
