@@ -2742,6 +2742,7 @@ async function editOrder(orderId) {
 // Función para cargar los productos de un pedido específico para edición
 async function loadEditOrderItems(orderId) {
     try {
+        console.log('🔍 LOAD EDIT ORDER ITEMS - Iniciando carga para pedido:', orderId);
         const token = localStorage.getItem('authToken');
         const response = await fetch(`/api/pedidos/${orderId}/items`, {
             headers: {
@@ -2752,6 +2753,8 @@ async function loadEditOrderItems(orderId) {
         
         if (response.ok) {
             const items = await response.json();
+            console.log('✅ LOAD EDIT ORDER ITEMS - Items recibidos de la API:', items);
+            
             editOrderItems = items.map(item => ({
                 producto_id: item.producto_id,
                 producto_nombre: item.producto_nombre,
@@ -2760,17 +2763,19 @@ async function loadEditOrderItems(orderId) {
                 subtotal: item.cantidad * parseFloat(item.precio)
             }));
             
+            console.log('✅ LOAD EDIT ORDER ITEMS - Items procesados:', editOrderItems);
+            
             renderEditOrderProducts();
             updateEditOrderTotal();
             
         } else {
-            console.error('Error cargando items del pedido:', response.statusText);
+            console.error('❌ LOAD EDIT ORDER ITEMS - Error del servidor:', response.statusText);
             editOrderItems = [];
             renderEditOrderProducts();
             updateEditOrderTotal();
         }
     } catch (error) {
-        console.error('Error cargando items del pedido:', error);
+        console.error('❌ LOAD EDIT ORDER ITEMS - Error de red:', error);
         editOrderItems = [];
         renderEditOrderProducts();
         updateEditOrderTotal();
