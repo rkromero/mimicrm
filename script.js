@@ -5252,6 +5252,11 @@ function generateDeliveryReceiptHTML(order, client, items) {
             <div style="font-size: 13px; color: #333; margin-bottom: 8px;">Dirección: José Ignacio de la Rosa 6276, Capital Federal</div>
             <div class="receipt-title">REMITO DE ENTREGA</div>
             <div class="receipt-number">Nº ${order.numero_pedido}</div>
+            ${order.vendedor_asignado ? `
+                <div style="font-size: 14px; color: #333; margin-top: 3px;">
+                    <strong>Vendedor:</strong> ${order.vendedor_asignado}
+                </div>
+            ` : ''}
         </div>
         <div class="receipt-right">
             <div class="receipt-date">${currentDate}</div>
