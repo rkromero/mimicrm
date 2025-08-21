@@ -6329,37 +6329,32 @@ function cancelEditAddProduct() {
 }
 
 function renderEditOrderProducts() {
-    // Agregar un pequeño delay para asegurar que el modal esté completamente cargado
-    setTimeout(() => {
-        const productsList = document.getElementById('edit-order-products-list');
-        const noProductsMessage = document.getElementById('edit-no-products-message');
+    console.log('🔍 RENDER EDIT ORDER PRODUCTS - Iniciando renderizado');
+    console.log('🔍 RENDER EDIT ORDER PRODUCTS - editOrderItems:', editOrderItems);
+    
+    const productsList = document.getElementById('edit-order-products-list');
+    const noProductsMessage = document.getElementById('edit-no-products-message');
 
-        // Validar que los elementos existan
-        if (!productsList || !noProductsMessage) {
-            
-            // Intentar de nuevo después de otro pequeño delay
-            setTimeout(() => {
-                const productsList2 = document.getElementById('edit-order-products-list');
-                const noProductsMessage2 = document.getElementById('edit-no-products-message');
-                if (!productsList2 || !noProductsMessage2) {
-                    
-                    return;
-                }
-                renderEditOrderProductsInternal(productsList2, noProductsMessage2);
-            }, 100);
-            return;
-        }
+    // Validar que los elementos existan
+    if (!productsList || !noProductsMessage) {
+        console.error('❌ RENDER EDIT ORDER PRODUCTS - Elementos no encontrados');
+        return;
+    }
 
-        renderEditOrderProductsInternal(productsList, noProductsMessage);
-    }, 50);
+    console.log('✅ RENDER EDIT ORDER PRODUCTS - Elementos encontrados, renderizando...');
+    renderEditOrderProductsInternal(productsList, noProductsMessage);
 }
 
 function renderEditOrderProductsInternal(productsList, noProductsMessage) {
+    console.log('🔍 RENDER EDIT ORDER PRODUCTS INTERNAL - editOrderItems:', editOrderItems);
+    
     if (editOrderItems.length === 0) {
+        console.log('📝 RENDER EDIT ORDER PRODUCTS INTERNAL - No hay productos, mostrando mensaje');
         noProductsMessage.style.display = 'block';
         return;
     }
 
+    console.log('📝 RENDER EDIT ORDER PRODUCTS INTERNAL - Renderizando', editOrderItems.length, 'productos');
     noProductsMessage.style.display = 'none';
 
     const productsTable = `
