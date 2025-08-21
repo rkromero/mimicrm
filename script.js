@@ -2666,62 +2666,77 @@ async function deleteClientFromServer(clientId) {
     }
 }
 
-function editOrder(orderId) {
-    
-    
-    // Buscar el pedido en el array
-    const order = orders.find(o => o.id == orderId);
-    if (!order) {
-        showNotification('Pedido no encontrado', 'error');
-        return;
+async function editOrder(orderId) {
+    try {
+        console.log('🔍 EDIT ORDER - Iniciando edición del pedido:', orderId);
+        
+        // Guardar el ID del pedido en el modal para usarlo al guardar
+        document.getElementById('edit-order-modal').setAttribute('data-order-id', orderId);
+        
+        // Poblar el select de clientes primero
+        populateClientSelects('edit-order-modal');
+        
+        // Cargar datos frescos del pedido desde la base de datos
+        const token = localStorage.getItem('authToken');
+        const response = await fetch(`/api/pedidos/${orderId}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Error al cargar pedido: ${response.status}`);
+        }
+        
+        const order = await response.json();
+        console.log('✅ EDIT ORDER - Datos del pedido cargados:', order);
+        
+        // Llenar el modal con los datos del pedido (después de poblar el select)
+        setTimeout(async () => {
+            document.getElementById('edit-order-client-select').value = order.cliente_id;
+            document.getElementById('edit-order-description').value = order.descripcion;
+            document.getElementById('edit-order-status').value = order.estado;
+            
+            // Cargar datos de transporte y configurar toggle
+            const transportName = order.nombre_transporte || '';
+            const transportAddress = order.direccion_transporte || '';
+            const hasTransport = transportName || transportAddress;
+            
+            // Configurar toggle basado en si el pedido tiene datos de transporte
+            const transportToggle = document.getElementById('edit-order-transport-toggle');
+            if (transportToggle) {
+                transportToggle.checked = hasTransport;
+                toggleTransportFields('edit-order-transport-fields', hasTransport);
+            }
+            
+            // Cargar datos de transporte
+            document.getElementById('edit-order-transport-name').value = transportName;
+            document.getElementById('edit-order-transport-address').value = transportAddress;
+            
+            // Cargar vendedores y seleccionar el actual
+            await populateVendorSelects();
+            const vendorSelect = document.getElementById('edit-order-vendor-select');
+            if (vendorSelect && order.vendedor_asignado_id) {
+                vendorSelect.value = order.vendedor_asignado_id;
+            }
+            
+            // Deshabilitar el campo cliente para evitar cambios accidentales
+            document.getElementById('edit-order-client-select').disabled = true;
+            document.getElementById('edit-order-client-select').style.backgroundColor = '#f3f4f6';
+            document.getElementById('edit-order-client-select').style.cursor = 'not-allowed';
+        }, 100);
+        
+        // Cargar los productos del pedido
+        loadEditOrderItems(orderId);
+        
+        // Mostrar el modal
+        showModal('edit-order-modal');
+        
+    } catch (error) {
+        console.error('❌ EDIT ORDER - Error:', error);
+        showNotification(`Error al cargar pedido: ${error.message}`, 'error');
     }
-    
-    // Guardar el ID del pedido en el modal para usarlo al guardar
-    document.getElementById('edit-order-modal').setAttribute('data-order-id', orderId);
-    
-    // Poblar el select de clientes primero
-    populateClientSelects('edit-order-modal');
-    
-    // Llenar el modal con los datos del pedido (después de poblar el select)
-    setTimeout(async () => {
-        document.getElementById('edit-order-client-select').value = order.cliente_id;
-        document.getElementById('edit-order-description').value = order.descripcion;
-        document.getElementById('edit-order-status').value = order.estado;
-        
-        // Cargar datos de transporte y configurar toggle
-        const transportName = order.nombre_transporte || '';
-        const transportAddress = order.direccion_transporte || '';
-        const hasTransport = transportName || transportAddress;
-        
-        // Configurar toggle basado en si el pedido tiene datos de transporte
-        const transportToggle = document.getElementById('edit-order-transport-toggle');
-        if (transportToggle) {
-            transportToggle.checked = hasTransport;
-            toggleTransportFields('edit-order-transport-fields', hasTransport);
-        }
-        
-        // Cargar datos de transporte
-        document.getElementById('edit-order-transport-name').value = transportName;
-        document.getElementById('edit-order-transport-address').value = transportAddress;
-        
-        // Cargar vendedores y seleccionar el actual
-        await populateVendorSelects();
-        const vendorSelect = document.getElementById('edit-order-vendor-select');
-        if (vendorSelect && order.vendedor_asignado_id) {
-            vendorSelect.value = order.vendedor_asignado_id;
-        }
-        
-        // Deshabilitar el campo cliente para evitar cambios accidentales
-        document.getElementById('edit-order-client-select').disabled = true;
-        document.getElementById('edit-order-client-select').style.backgroundColor = '#f3f4f6';
-        document.getElementById('edit-order-client-select').style.cursor = 'not-allowed';
-    }, 100);
-    
-    // Cargar los productos del pedido
-    loadEditOrderItems(orderId);
-    
-    // Mostrar el modal
-    showModal('edit-order-modal');
 }
 
 // Función para cargar los productos de un pedido específico para edición
