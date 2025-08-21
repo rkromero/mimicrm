@@ -5348,6 +5348,13 @@ function generateDeliveryReceiptHTML(order, client, items) {
             <strong>⚠️ Importante:</strong> Este remito debe ser firmado por el cliente al momento de la entrega. 
             Verificar que los productos entregados coincidan con lo detallado en este documento.
         </div>
+        
+        <div style="margin: 15px 0; padding: 10px; border: 2px solid #000; border-radius: 6px; background-color: #f9f9f9;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <strong style="font-size: 16px; color: #000;">CANTIDAD DE BULTOS:</strong>
+                <div style="width: 100px; height: 30px; border: 2px solid #000; background-color: white; display: inline-block;"></div>
+            </div>
+        </div>
     </div>
     
     <div class="signature-section">
