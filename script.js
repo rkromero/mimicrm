@@ -5327,6 +5327,18 @@ function generateDeliveryReceiptHTML(order, client, items) {
             </div>
         ` : ''}
         
+        ${(order.nombre_transporte || order.direccion_transporte) ? `
+            <div class="important-note">
+                <strong>🚚 Transporte a Utilizar:</strong><br>
+                ${order.nombre_transporte ? `
+                    <strong>Nombre del Transporte:</strong> ${order.nombre_transporte}<br>
+                ` : ''}
+                ${order.direccion_transporte ? `
+                    <strong>Dirección del Transporte:</strong> ${order.direccion_transporte}
+                ` : ''}
+            </div>
+        ` : ''}
+        
         <div class="important-note">
             <strong>⚠️ Importante:</strong> Este remito debe ser firmado por el cliente al momento de la entrega. 
             Verificar que los productos entregados coincidan con lo detallado en este documento.
