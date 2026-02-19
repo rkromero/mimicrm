@@ -238,6 +238,25 @@ function getCurrentUserFromAuth() {
     return userStr ? JSON.parse(userStr) : null;
 }
 
+function openDynamicModal(modalEl) {
+    document.body.appendChild(modalEl);
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(() => {
+        modalEl.classList.add('active');
+    });
+    modalEl.addEventListener('click', (e) => {
+        if (e.target === modalEl) {
+            closeDynamicModal(modalEl);
+        }
+    });
+}
+
+function closeDynamicModal(modalEl) {
+    modalEl.classList.remove('active');
+    document.body.style.overflow = '';
+    setTimeout(() => modalEl.remove(), 300);
+}
+
 // Función para hacer logout
 function logoutUser() {
     localStorage.removeItem('authToken');
@@ -1731,19 +1750,22 @@ function setupForms() {
             btn.onclick = function() {
                 const modal = this.closest('.modal');
                 if (modal) {
-                    modal.style.display = 'none';
-                    modal.classList.remove('active');
-                    document.body.style.overflow = ''; // Restaurar scroll del body
+                    if (modal.id) {
+                        closeModal(modal.id);
+                    } else {
+                        closeDynamicModal(modal);
+                    }
                 }
             };
         });
         
-        // Configurar cierre de modales al hacer clic fuera
         document.addEventListener('click', function(e) {
             if (e.target.classList.contains('modal')) {
-                e.target.style.display = 'none';
-                e.target.classList.remove('active');
-                document.body.style.overflow = ''; // Restaurar scroll del body
+                if (e.target.id) {
+                    closeModal(e.target.id);
+                } else {
+                    closeDynamicModal(e.target);
+                }
             }
         });
         
@@ -2070,34 +2092,24 @@ async function showModal(modalId) {
             console.warn(`⚠️ El elemento ${modalId} no tiene la clase 'modal'`);
         }
         
-        // Detectar si hay otro modal abierto para ajustar z-index
         const existingActiveModals = document.querySelectorAll('.modal.active');
         const baseZIndex = 10000;
         const modalZIndex = baseZIndex + (existingActiveModals.length * 100);
         
-        // Mostrar el modal
         modal.style.display = 'block';
         modal.style.zIndex = modalZIndex;
-        modal.classList.add('active');
         
-        // También ajustar z-index del contenido del modal
         const modalContent = modal.querySelector('.modal-content');
         if (modalContent) {
             modalContent.style.zIndex = modalZIndex + 1;
         }
-        
-        // Asegurar que el modal se vea desde el inicio (scroll al top)
-        setTimeout(() => {
-            modal.scrollTop = 0;
-            const modalContent = modal.querySelector('.modal-content');
-            if (modalContent) {
-                modalContent.scrollTop = 0;
-            }
-            document.body.style.overflow = 'hidden'; // Prevenir scroll del body
-            
-            // Forzar posicionamiento al inicio de la viewport
-            modal.scrollIntoView({ block: 'start', behavior: 'instant' });
-        }, 10);
+
+        requestAnimationFrame(() => {
+            modal.classList.add('active');
+            const mc = modal.querySelector('.modal-content');
+            if (mc) mc.scrollTop = 0;
+            document.body.style.overflow = 'hidden';
+        });
         
         // Configuraciones específicas por modal
         if (modalId === 'new-client-modal') {
@@ -2872,54 +2884,52 @@ function editPayment(paymentId) {
     
     // Crear modal de edición dinámicamente
     const editModal = document.createElement('div');
-    editModal.className = 'modal active';
-    editModal.style.cssText = `
-        display: flex !important;
-        z-index: 12000 !important;
-        background-color: rgba(0, 0, 0, 0.7) !important;
-    `;
+    editModal.className = 'modal';
+    editModal.style.cssText = 'display: block; z-index: 12000;';
     
     editModal.innerHTML = `
-        <div class="modal-content" style="max-width: 600px; z-index: 12001 !important;">
+        <div class="modal-content" style="z-index: 12001;">
             <div class="modal-header">
                 <h2 class="modal-title">Editar Pago</h2>
-                <button class="close-modal btn btn-secondary" onclick="this.closest('.modal').remove()">
+                <button class="close-modal btn btn-secondary" onclick="closeDynamicModal(this.closest('.modal'))">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <form id="edit-payment-form-${payment.id}">
-                <div class="mb-4">
-                    <label for="edit-payment-client-${payment.id}">Cliente</label>
-                    <select id="edit-payment-client-${payment.id}" class="input" required disabled style="background-color: #f3f4f6; color: #6b7280;">
-                        <option value="">Seleccione un cliente</option>
-                    </select>
-                    <small style="color: #6b7280; font-size: 0.875rem;">El cliente no puede modificarse una vez creado el pago</small>
+            <form id="edit-payment-form-${payment.id}" style="display: flex; flex-direction: column; flex: 1; overflow: hidden;">
+                <div class="modal-body">
+                    <div class="mb-4">
+                        <label for="edit-payment-client-${payment.id}">Cliente</label>
+                        <select id="edit-payment-client-${payment.id}" class="input" required disabled style="background-color: #f3f4f6; color: #6b7280;">
+                            <option value="">Seleccione un cliente</option>
+                        </select>
+                        <small style="color: #6b7280; font-size: 0.875rem;">El cliente no puede modificarse una vez creado el pago</small>
+                    </div>
+                    <div class="mb-4">
+                        <label for="edit-payment-amount-${payment.id}">Monto</label>
+                        <input type="number" id="edit-payment-amount-${payment.id}" class="input" step="0.01" value="${payment.monto}" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="edit-payment-method-${payment.id}">Método de Pago</label>
+                        <select id="edit-payment-method-${payment.id}" class="input" required>
+                            <option value="efectivo" ${payment.metodo === 'efectivo' ? 'selected' : ''}>Efectivo</option>
+                            <option value="transferencia" ${payment.metodo === 'transferencia' ? 'selected' : ''}>Transferencia</option>
+                            <option value="tarjeta" ${payment.metodo === 'tarjeta' ? 'selected' : ''}>Tarjeta</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label for="edit-payment-reference-${payment.id}">Referencia</label>
+                        <input type="text" id="edit-payment-reference-${payment.id}" class="input" value="${payment.referencia || ''}" required>
+                    </div>
                 </div>
-                <div class="mb-4">
-                    <label for="edit-payment-amount-${payment.id}">Monto</label>
-                    <input type="number" id="edit-payment-amount-${payment.id}" class="input" step="0.01" value="${payment.monto}" required>
-                </div>
-                <div class="mb-4">
-                    <label for="edit-payment-method-${payment.id}">Método de Pago</label>
-                    <select id="edit-payment-method-${payment.id}" class="input" required>
-                        <option value="efectivo" ${payment.metodo === 'efectivo' ? 'selected' : ''}>Efectivo</option>
-                        <option value="transferencia" ${payment.metodo === 'transferencia' ? 'selected' : ''}>Transferencia</option>
-                        <option value="tarjeta" ${payment.metodo === 'tarjeta' ? 'selected' : ''}>Tarjeta</option>
-                    </select>
-                </div>
-                <div class="mb-4">
-                    <label for="edit-payment-reference-${payment.id}">Referencia</label>
-                    <input type="text" id="edit-payment-reference-${payment.id}" class="input" value="${payment.referencia || ''}" required>
-                </div>
-                <div class="flex justify-between">
-                    <button type="button" class="btn btn-secondary" onclick="this.closest('.modal').remove()">Cancelar</button>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeDynamicModal(this.closest('.modal'))">Cancelar</button>
                     <button type="submit" class="btn btn-primary">Guardar Cambios</button>
                 </div>
             </form>
         </div>
     `;
     
-    document.body.appendChild(editModal);
+    openDynamicModal(editModal);
     
     // Poblar select de clientes y preseleccionar el cliente actual
     const clientSelect = document.getElementById(`edit-payment-client-${payment.id}`);
@@ -3025,22 +3035,20 @@ function viewProductDetails(productId) {
     
     // Crear modal de detalles dinámicamente
     const detailsModal = document.createElement('div');
-    detailsModal.className = 'modal active';
+    detailsModal.className = 'modal';
     detailsModal.style.cssText = `
-        display: flex !important;
-        z-index: 12000 !important;
-        background-color: rgba(0, 0, 0, 0.7) !important;
+        display: block; z-index: 12000;
     `;
     
     detailsModal.innerHTML = `
-        <div class="modal-content" style="max-width: 600px; z-index: 12001 !important;">
+        <div class="modal-content" style="z-index: 12001;">
             <div class="modal-header">
                 <h2 class="modal-title">Detalles del Producto</h2>
-                <button class="close-modal btn btn-secondary" onclick="this.closest('.modal').remove()">
+                <button class="close-modal btn btn-secondary" onclick="closeDynamicModal(this.closest('.modal'))">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <div style="padding: 1rem;">
+            <div class="modal-body">
                 <div style="background: #f8fafc; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
                     <h3 style="margin: 0 0 1rem 0; color: #1f2937;">Información del Producto</h3>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
@@ -3070,20 +3078,19 @@ function viewProductDetails(productId) {
                         </div>
                     ` : ''}
                 </div>
-                
-                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
-                    <button class="btn btn-primary" onclick="editProduct(${product.id}); this.closest('.modal').remove();" style="background: #4f46e5; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;">
-                        <i class="fas fa-edit"></i> Editar Producto
-                    </button>
-                    <button class="btn btn-secondary" onclick="this.closest('.modal').remove()" style="background: #6b7280; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;">
-                        <i class="fas fa-times"></i> Cerrar
-                    </button>
-                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-primary" onclick="editProduct(${product.id}); closeDynamicModal(this.closest('.modal'));" style="background: #4f46e5; color: white; padding: 0.6rem 1.2rem; border: none; border-radius: 6px; cursor: pointer;">
+                    <i class="fas fa-edit"></i> Editar Producto
+                </button>
+                <button class="btn btn-secondary" onclick="closeDynamicModal(this.closest('.modal'))" style="background: #6b7280; color: white; padding: 0.6rem 1.2rem; border: none; border-radius: 6px; cursor: pointer;">
+                    <i class="fas fa-times"></i> Cerrar
+                </button>
             </div>
         </div>
     `;
     
-    document.body.appendChild(detailsModal);
+    openDynamicModal(detailsModal);
 }
 
 function editProduct(productId) {
@@ -3098,43 +3105,43 @@ function editProduct(productId) {
     
     // Crear modal de edición dinámicamente
     const editModal = document.createElement('div');
-    editModal.className = 'modal active';
+    editModal.className = 'modal';
     editModal.style.cssText = `
-        display: flex !important;
-        z-index: 12000 !important;
-        background-color: rgba(0, 0, 0, 0.7) !important;
+        display: block; z-index: 12000;
     `;
     
     editModal.innerHTML = `
-        <div class="modal-content" style="max-width: 600px; z-index: 12001 !important;">
+        <div class="modal-content" style="z-index: 12001;">
             <div class="modal-header">
                 <h2 class="modal-title">Editar Producto</h2>
-                <button class="close-modal btn btn-secondary" onclick="this.closest('.modal').remove()">
+                <button class="close-modal btn btn-secondary" onclick="closeDynamicModal(this.closest('.modal'))">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <form id="edit-product-form-${product.id}">
-                <div class="mb-4">
-                    <label for="edit-product-name-${product.id}">Nombre del Producto</label>
-                    <input type="text" id="edit-product-name-${product.id}" class="input" value="${product.nombre}" required>
+            <form id="edit-product-form-${product.id}" style="display: flex; flex-direction: column; flex: 1; overflow: hidden;">
+                <div class="modal-body">
+                    <div class="mb-4">
+                        <label for="edit-product-name-${product.id}">Nombre del Producto</label>
+                        <input type="text" id="edit-product-name-${product.id}" class="input" value="${product.nombre}" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="edit-product-description-${product.id}">Descripción</label>
+                        <textarea id="edit-product-description-${product.id}" class="input" rows="3">${product.descripcion || ''}</textarea>
+                    </div>
+                    <div class="mb-4">
+                        <label for="edit-product-price-${product.id}">Precio</label>
+                        <input type="number" id="edit-product-price-${product.id}" class="input" step="0.01" min="0.01" value="${product.precio}" required>
+                    </div>
                 </div>
-                <div class="mb-4">
-                    <label for="edit-product-description-${product.id}">Descripción</label>
-                    <textarea id="edit-product-description-${product.id}" class="input" rows="3">${product.descripcion || ''}</textarea>
-                </div>
-                <div class="mb-4">
-                    <label for="edit-product-price-${product.id}">Precio</label>
-                    <input type="number" id="edit-product-price-${product.id}" class="input" step="0.01" min="0.01" value="${product.precio}" required>
-                </div>
-                <div class="flex justify-between">
-                    <button type="button" class="btn btn-secondary" onclick="this.closest('.modal').remove()">Cancelar</button>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeDynamicModal(this.closest('.modal'))">Cancelar</button>
                     <button type="submit" class="btn btn-primary">Guardar Cambios</button>
                 </div>
             </form>
         </div>
     `;
     
-    document.body.appendChild(editModal);
+    openDynamicModal(editModal);
     
     // Manejar envío del formulario
     document.getElementById(`edit-product-form-${product.id}`).addEventListener('submit', async (e) => {
@@ -3237,58 +3244,58 @@ function editContact(contactId) {
     
     // Crear modal de edición dinámicamente
     const editModal = document.createElement('div');
-    editModal.className = 'modal active';
+    editModal.className = 'modal';
     editModal.style.cssText = `
-        display: flex !important;
-        z-index: 12000 !important;
-        background-color: rgba(0, 0, 0, 0.7) !important;
+        display: block; z-index: 12000;
     `;
     
     editModal.innerHTML = `
-        <div class="modal-content" style="max-width: 600px; z-index: 12001 !important;">
+        <div class="modal-content" style="z-index: 12001;">
             <div class="modal-header">
                 <h2 class="modal-title">Editar Contacto</h2>
-                <button class="close-modal btn btn-secondary" onclick="this.closest('.modal').remove()">
+                <button class="close-modal btn btn-secondary" onclick="closeDynamicModal(this.closest('.modal'))">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <form id="edit-contact-form-${contact.id}">
-                <div class="mb-4">
-                    <label for="edit-contact-client-${contact.id}">Cliente</label>
-                    <select id="edit-contact-client-${contact.id}" class="input" required disabled style="background-color: #f3f4f6; color: #6b7280;">
-                        <option value="">Seleccione un cliente</option>
-                    </select>
-                    <small style="color: #6b7280; font-size: 0.875rem;">El cliente no puede modificarse una vez creado el contacto</small>
+            <form id="edit-contact-form-${contact.id}" style="display: flex; flex-direction: column; flex: 1; overflow: hidden;">
+                <div class="modal-body">
+                    <div class="mb-4">
+                        <label for="edit-contact-client-${contact.id}">Cliente</label>
+                        <select id="edit-contact-client-${contact.id}" class="input" required disabled style="background-color: #f3f4f6; color: #6b7280;">
+                            <option value="">Seleccione un cliente</option>
+                        </select>
+                        <small style="color: #6b7280; font-size: 0.875rem;">El cliente no puede modificarse una vez creado el contacto</small>
+                    </div>
+                    <div class="mb-4">
+                        <label for="edit-contact-name-${contact.id}">Nombre Completo</label>
+                        <input type="text" id="edit-contact-name-${contact.id}" class="input" value="${contact.nombre}" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="edit-contact-email-${contact.id}">Email</label>
+                        <input type="email" id="edit-contact-email-${contact.id}" class="input" value="${contact.email}" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="edit-contact-phone-${contact.id}">Teléfono</label>
+                        <input type="tel" id="edit-contact-phone-${contact.id}" class="input" value="${contact.telefono || ''}" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="edit-contact-position-${contact.id}">Cargo</label>
+                        <input type="text" id="edit-contact-position-${contact.id}" class="input" value="${contact.cargo || ''}" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="edit-contact-department-${contact.id}">Departamento</label>
+                        <input type="text" id="edit-contact-department-${contact.id}" class="input" value="${contact.departamento || ''}">
+                    </div>
                 </div>
-                <div class="mb-4">
-                    <label for="edit-contact-name-${contact.id}">Nombre Completo</label>
-                    <input type="text" id="edit-contact-name-${contact.id}" class="input" value="${contact.nombre}" required>
-                </div>
-                <div class="mb-4">
-                    <label for="edit-contact-email-${contact.id}">Email</label>
-                    <input type="email" id="edit-contact-email-${contact.id}" class="input" value="${contact.email}" required>
-                </div>
-                <div class="mb-4">
-                    <label for="edit-contact-phone-${contact.id}">Teléfono</label>
-                    <input type="tel" id="edit-contact-phone-${contact.id}" class="input" value="${contact.telefono || ''}" required>
-                </div>
-                <div class="mb-4">
-                    <label for="edit-contact-position-${contact.id}">Cargo</label>
-                    <input type="text" id="edit-contact-position-${contact.id}" class="input" value="${contact.cargo || ''}" required>
-                </div>
-                <div class="mb-4">
-                    <label for="edit-contact-department-${contact.id}">Departamento</label>
-                    <input type="text" id="edit-contact-department-${contact.id}" class="input" value="${contact.departamento || ''}">
-                </div>
-                <div class="flex justify-between">
-                    <button type="button" class="btn btn-secondary" onclick="this.closest('.modal').remove()">Cancelar</button>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeDynamicModal(this.closest('.modal'))">Cancelar</button>
                     <button type="submit" class="btn btn-primary">Guardar Cambios</button>
                 </div>
             </form>
         </div>
     `;
     
-    document.body.appendChild(editModal);
+    openDynamicModal(editModal);
     
     // Poblar select de clientes y preseleccionar el cliente actual
     const clientSelect = document.getElementById(`edit-contact-client-${contact.id}`);
@@ -3352,22 +3359,20 @@ function viewContactDetails(contactId) {
     
     // Crear modal de detalles dinámicamente
     const detailsModal = document.createElement('div');
-    detailsModal.className = 'modal active';
+    detailsModal.className = 'modal';
     detailsModal.style.cssText = `
-        display: flex !important;
-        z-index: 12000 !important;
-        background-color: rgba(0, 0, 0, 0.7) !important;
+        display: block; z-index: 12000;
     `;
     
     detailsModal.innerHTML = `
-        <div class="modal-content" style="max-width: 600px; z-index: 12001 !important;">
+        <div class="modal-content" style="z-index: 12001;">
             <div class="modal-header">
                 <h2 class="modal-title">Detalles del Contacto</h2>
-                <button class="close-modal btn btn-secondary" onclick="this.closest('.modal').remove()">
+                <button class="close-modal btn btn-secondary" onclick="closeDynamicModal(this.closest('.modal'))">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <div style="padding: 1rem;">
+            <div class="modal-body">
                 <div style="background: #f8fafc; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
                     <h3 style="margin: 0 0 1rem 0; color: #1f2937;">Información del Contacto</h3>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
@@ -3397,20 +3402,19 @@ function viewContactDetails(contactId) {
                         </div>
                     </div>
                 </div>
-                
-                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
-                    <button class="btn btn-primary" onclick="editContact(${contact.id}); this.closest('.modal').remove();" style="background: #4f46e5; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;">
-                        <i class="fas fa-edit"></i> Editar Contacto
-                    </button>
-                    <button class="btn btn-secondary" onclick="this.closest('.modal').remove()" style="background: #6b7280; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;">
-                        <i class="fas fa-times"></i> Cerrar
-                    </button>
-                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-primary" onclick="editContact(${contact.id}); closeDynamicModal(this.closest('.modal'));" style="background: #4f46e5; color: white; padding: 0.6rem 1.2rem; border: none; border-radius: 6px; cursor: pointer;">
+                    <i class="fas fa-edit"></i> Editar Contacto
+                </button>
+                <button class="btn btn-secondary" onclick="closeDynamicModal(this.closest('.modal'))" style="background: #6b7280; color: white; padding: 0.6rem 1.2rem; border: none; border-radius: 6px; cursor: pointer;">
+                    <i class="fas fa-times"></i> Cerrar
+                </button>
             </div>
         </div>
     `;
     
-    document.body.appendChild(detailsModal);
+    openDynamicModal(detailsModal);
 }
 
 function deleteContact(contactId) {
@@ -4659,22 +4663,20 @@ async function viewClientDetails(clientId) {
     
     // Crear modal de detalles dinámicamente
     const detailsModal = document.createElement('div');
-    detailsModal.className = 'modal active';
+    detailsModal.className = 'modal';
     detailsModal.style.cssText = `
-        display: flex !important;
-        z-index: 12000 !important;
-        background-color: rgba(0, 0, 0, 0.7) !important;
+        display: block; z-index: 12000;
     `;
     
     detailsModal.innerHTML = `
-        <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto; z-index: 12001 !important;">
+        <div class="modal-content" style="z-index: 12001;">
             <div class="modal-header">
                 <h2 class="modal-title">Detalles del Cliente</h2>
-                <button class="close-modal btn btn-secondary" onclick="this.closest('.modal').remove()">
+                <button class="close-modal btn btn-secondary" onclick="closeDynamicModal(this.closest('.modal'))">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <div style="padding: 1rem;">
+            <div class="modal-body">
                 <!-- Información básica del cliente -->
                 <div style="background: #f8fafc; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
                     <h3 style="margin: 0 0 1rem 0; color: #1f2937;">Información Personal</h3>
@@ -4812,32 +4814,31 @@ async function viewClientDetails(clientId) {
                     `}
                 </div>
 
-                <!-- Botones de acción -->
-                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; flex-wrap: wrap;">
-                    <button class="btn btn-whatsapp" onclick="openWhatsAppChat('${client.telefono}', '${(client.nombre || client.name || '') + ' ' + (client.apellido || '')}')" style="background: #25D366; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
-                        </svg>
-                        WhatsApp
-                    </button>
-                    <button class="btn btn-primary" onclick="editClient(${client.id}); this.closest('.modal').remove();" style="background: #4f46e5; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;">
-                        <i class="fas fa-edit"></i> Editar Cliente
-                    </button>
-                    <button class="btn btn-success" onclick="showModal('new-order-modal'); document.getElementById('order-client-select').value='${client.id}'; this.closest('.modal').remove();" style="background: #10b981; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;">
-                        <i class="fas fa-plus"></i> Nuevo Pedido
-                    </button>
-                    <button class="btn btn-info" onclick="showModal('new-payment-modal'); document.getElementById('payment-client-select').value='${client.id}'; this.closest('.modal').remove();" style="background: #0ea5e9; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;">
-                        <i class="fas fa-credit-card"></i> Nuevo Pago
-                    </button>
-                    <button class="btn btn-secondary" onclick="this.closest('.modal').remove()" style="background: #6b7280; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;">
-                        <i class="fas fa-times"></i> Cerrar
-                    </button>
-                </div>
+            </div>
+            <div class="modal-actions" style="flex-wrap: wrap; gap: 0.5rem;">
+                <button class="btn btn-whatsapp" onclick="openWhatsAppChat('${client.telefono}', '${(client.nombre || client.name || '') + ' ' + (client.apellido || '')}')" style="background: #25D366; color: white; padding: 0.6rem 1rem; border: none; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
+                    </svg>
+                    WhatsApp
+                </button>
+                <button class="btn btn-primary" onclick="editClient(${client.id}); closeDynamicModal(this.closest('.modal'));" style="background: #4f46e5; color: white; padding: 0.6rem 1rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
+                    <i class="fas fa-edit"></i> Editar
+                </button>
+                <button class="btn btn-success" onclick="showModal('new-order-modal'); document.getElementById('order-client-select').value='${client.id}'; closeDynamicModal(this.closest('.modal'));" style="background: #10b981; color: white; padding: 0.6rem 1rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
+                    <i class="fas fa-plus"></i> Pedido
+                </button>
+                <button class="btn btn-info" onclick="showModal('new-payment-modal'); document.getElementById('payment-client-select').value='${client.id}'; closeDynamicModal(this.closest('.modal'));" style="background: #0ea5e9; color: white; padding: 0.6rem 1rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
+                    <i class="fas fa-credit-card"></i> Pago
+                </button>
+                <button class="btn btn-secondary" onclick="closeDynamicModal(this.closest('.modal'))" style="background: #6b7280; color: white; padding: 0.6rem 1rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
+                    <i class="fas fa-times"></i> Cerrar
+                </button>
             </div>
         </div>
     `;
     
-    document.body.appendChild(detailsModal);
+    openDynamicModal(detailsModal);
 }
 
 // Función para abrir WhatsApp con mensaje al cliente
@@ -4882,11 +4883,9 @@ function viewOrderDetails(orderId) {
         
     // Crear modal de detalles dinámicamente
     const detailsModal = document.createElement('div');
-    detailsModal.className = 'modal active';
+    detailsModal.className = 'modal';
     detailsModal.style.cssText = `
-        display: flex !important;
-        z-index: 12000 !important;
-        background-color: rgba(0, 0, 0, 0.7) !important;
+        display: block; z-index: 12000;
     `;
     
     // Cargar items del pedido y mostrar el modal
@@ -4948,25 +4947,25 @@ function viewOrderDetails(orderId) {
         `;
 
         detailsModal.innerHTML = `
-            <div class="modal-content" style="max-width: 800px; z-index: 12001 !important;">
+            <div class="modal-content" style="z-index: 12001;">
                 <div class="modal-header">
                     <h2 class="modal-title">Detalles del Pedido #${order.numero_pedido}</h2>
-                    <button class="close-modal btn btn-secondary" onclick="this.closest('.modal').remove()">
+                    <button class="close-modal btn btn-secondary" onclick="closeDynamicModal(this.closest('.modal'))">
                         <i class="fas fa-times"></i>
                     </button>
-                    </div>
-                <div style="padding: 1rem;">
+                </div>
+                <div class="modal-body">
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; background: #f8f9fa; padding: 1rem; border-radius: 8px;">
                         <div>
                             <strong>Cliente:</strong><br>
                             ${order.cliente_nombre || 'N/A'}
-                    </div>
+                        </div>
                         <div>
                             <strong>Estado:</strong><br>
                             <span class="status-badge status-${order.estado}" style="padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.875rem; font-weight: 500;">
                                 ${translateOrderStatus(order.estado)}
                             </span>
-                    </div>
+                        </div>
                         <div>
                             <strong>Fecha:</strong><br>
                             ${formatDate(order.fecha)}
@@ -5009,36 +5008,36 @@ function viewOrderDetails(orderId) {
                         </div>
                     ` : ''}
                     ${itemsTable}
-                    <div style="display: flex; gap: 1rem; justify-content: space-between; align-items: center; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
-                        ${getCurrentUserFromAuth()?.perfil === 'Administrador' ? `
-                        <button class="btn" onclick="if(confirm('¿Está seguro que quiere eliminar el pedido #${order.numero_pedido}?\\n\\nEsta acción no se puede deshacer.')) { this.closest('.modal').remove(); deleteOrderFromServer(${order.id}); }" style="background: #dc2626; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;" title="Eliminar Pedido">
-                            <i class="fas fa-trash-alt"></i> Eliminar Pedido
+                </div>
+                <div class="modal-actions" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                    ${getCurrentUserFromAuth()?.perfil === 'Administrador' ? `
+                    <button class="btn" onclick="if(confirm('¿Está seguro que quiere eliminar el pedido #${order.numero_pedido}?\\n\\nEsta acción no se puede deshacer.')) { closeDynamicModal(this.closest('.modal')); deleteOrderFromServer(${order.id}); }" style="background: #dc2626; color: white; padding: 0.6rem 1rem; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;" title="Eliminar Pedido">
+                        <i class="fas fa-trash-alt"></i> Eliminar
+                    </button>
+                    ` : '<div></div>'}
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
+                        <button class="btn btn-warning" onclick="printInvoice(${order.id})" style="background: #f59e0b; color: white; padding: 0.6rem 1rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;" title="Imprimir Proforma">
+                            <i class="fas fa-file-invoice"></i> Proforma
                         </button>
-                        ` : '<div></div>'}
-                        <div style="display: flex; gap: 1rem; flex-wrap: wrap; justify-content: flex-end;">
-                            <button class="btn btn-warning" onclick="printInvoice(${order.id})" style="background: #f59e0b; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;" title="Imprimir Proforma">
-                                <i class="fas fa-file-invoice"></i> Imprimir Proforma
-                            </button>
-                            <button class="btn btn-info" onclick="printShippingLabel(${order.id})" style="background: #06b6d4; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;" title="Imprimir Etiqueta de Envío">
-                                <i class="fas fa-tag"></i> Imprimir Etiqueta
-                            </button>
-                            <button class="btn btn-success" onclick="printDeliveryReceipt(${order.id})" style="background: #10b981; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;" title="Imprimir Remito de Entrega">
-                                <i class="fas fa-print"></i> Imprimir Remito
-                            </button>
-                            <button class="btn btn-primary" onclick="editOrder(${order.id}); this.closest('.modal').remove();" style="background: #4f46e5; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;">
-                                <i class="fas fa-edit"></i> Editar Pedido
-                            </button>
-                            <button class="btn btn-secondary" onclick="this.closest('.modal').remove()" style="background: #6b7280; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;">
-                                <i class="fas fa-times"></i> Cerrar
-                            </button>
-                        </div>
+                        <button class="btn btn-info" onclick="printShippingLabel(${order.id})" style="background: #06b6d4; color: white; padding: 0.6rem 1rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;" title="Imprimir Etiqueta">
+                            <i class="fas fa-tag"></i> Etiqueta
+                        </button>
+                        <button class="btn btn-success" onclick="printDeliveryReceipt(${order.id})" style="background: #10b981; color: white; padding: 0.6rem 1rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;" title="Imprimir Remito">
+                            <i class="fas fa-print"></i> Remito
+                        </button>
+                        <button class="btn btn-primary" onclick="editOrder(${order.id}); closeDynamicModal(this.closest('.modal'));" style="background: #4f46e5; color: white; padding: 0.6rem 1rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
+                            <i class="fas fa-edit"></i> Editar
+                        </button>
+                        <button class="btn btn-secondary" onclick="closeDynamicModal(this.closest('.modal'))" style="background: #6b7280; color: white; padding: 0.6rem 1rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
+                            <i class="fas fa-times"></i> Cerrar
+                        </button>
                     </div>
                 </div>
-                    </div>
+            </div>
                 `;
                 
                 // Agregar el modal al DOM después de cargar los items
-                document.body.appendChild(detailsModal);
+                openDynamicModal(detailsModal);
             }).catch(error => {
                 console.error('❌ VIEW ORDER DETAILS - Error cargando items:', error);
                 showNotification('Error al cargar los productos del pedido', 'error');
@@ -6054,22 +6053,20 @@ function viewPaymentDetails(paymentId) {
     
     // Crear modal de detalles dinámicamente
     const detailsModal = document.createElement('div');
-    detailsModal.className = 'modal active';
+    detailsModal.className = 'modal';
     detailsModal.style.cssText = `
-        display: flex !important;
-        z-index: 12000 !important;
-        background-color: rgba(0, 0, 0, 0.7) !important;
+        display: block; z-index: 12000;
     `;
     
     detailsModal.innerHTML = `
-        <div class="modal-content" style="max-width: 600px; z-index: 12001 !important;">
+        <div class="modal-content" style="z-index: 12001;">
             <div class="modal-header">
                 <h2 class="modal-title">Detalles del Pago</h2>
-                <button class="close-modal btn btn-secondary" onclick="this.closest('.modal').remove()">
+                <button class="close-modal btn btn-secondary" onclick="closeDynamicModal(this.closest('.modal'))">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <div style="padding: 1rem;">
+            <div class="modal-body">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
                     <div>
                         <strong>Cliente:</strong><br>
@@ -6094,16 +6091,16 @@ function viewPaymentDetails(paymentId) {
                     <strong>Referencia:</strong><br>
                     ${payment.referencia || 'Sin referencia'}
                 </div>
-                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
-                    <button class="btn btn-secondary" onclick="this.closest('.modal').remove()">
-                        Cerrar
-                    </button>
-                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeDynamicModal(this.closest('.modal'))">
+                    Cerrar
+                </button>
             </div>
         </div>
     `;
     
-    document.body.appendChild(detailsModal);
+    openDynamicModal(detailsModal);
 }
 
 // Función para actualizar un solo pedido en el array local
@@ -7846,41 +7843,31 @@ function closeModal(modalId) {
     }
     
     try {
-        // Cerrar el modal
-        modal.style.display = 'none';
-        modal.style.zIndex = ''; // Restaurar z-index
         modal.classList.remove('active');
-        document.body.style.overflow = ''; // Restaurar scroll del body
-        
-        // Restaurar z-index del contenido del modal
-        const modalContent = modal.querySelector('.modal-content');
-        if (modalContent) {
-            modalContent.style.zIndex = '';
-        }
-        
-        // Limpiar formulario si existe
-        const form = modal.querySelector('form');
-        if (form) {
-            form.reset();
-        }
-        
-        // Limpiar elementos específicos del modal de pedidos
-        if (modal.id === 'new-order-modal') {
-            clearOrderItems();
-        } else if (modal.id === 'edit-order-modal') {
-            clearEditOrderItems();
-        } else if (modal.id === 'pending-collections-modal') {
-            // Limpiar cards móviles si existen
-            const cardsContainer = modal.querySelector('.mobile-cards-container');
-            if (cardsContainer) {
-                cardsContainer.remove();
+        document.body.style.overflow = '';
+
+        const finishClose = () => {
+            modal.style.display = 'none';
+            modal.style.zIndex = '';
+            const modalContent = modal.querySelector('.modal-content');
+            if (modalContent) modalContent.style.zIndex = '';
+
+            const form = modal.querySelector('form');
+            if (form) form.reset();
+
+            if (modal.id === 'new-order-modal') {
+                clearOrderItems();
+            } else if (modal.id === 'edit-order-modal') {
+                clearEditOrderItems();
+            } else if (modal.id === 'pending-collections-modal') {
+                const cardsContainer = modal.querySelector('.mobile-cards-container');
+                if (cardsContainer) cardsContainer.remove();
+                const table = modal.querySelector('.table-responsive');
+                if (table) table.style.display = 'block';
             }
-            // Restaurar tabla si estaba oculta
-            const table = modal.querySelector('.table-responsive');
-            if (table) {
-                table.style.display = 'block';
-            }
-        }
+        };
+
+        setTimeout(finishClose, 300);
         
         console.log(`✅ Modal ${modal.id} cerrado correctamente`);
     } catch (error) {
