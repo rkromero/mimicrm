@@ -5009,28 +5009,32 @@ function viewOrderDetails(orderId) {
                     ` : ''}
                     ${itemsTable}
                 </div>
-                <div class="modal-actions" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
-                    ${getCurrentUserFromAuth()?.perfil === 'Administrador' ? `
-                    <button class="btn" onclick="if(confirm('¿Está seguro que quiere eliminar el pedido #${order.numero_pedido}?\\n\\nEsta acción no se puede deshacer.')) { closeDynamicModal(this.closest('.modal')); deleteOrderFromServer(${order.id}); }" style="background: #dc2626; color: white; padding: 0.6rem 1rem; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;" title="Eliminar Pedido">
-                        <i class="fas fa-trash-alt"></i> Eliminar
-                    </button>
-                    ` : '<div></div>'}
-                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
-                        <button class="btn btn-warning" onclick="printInvoice(${order.id})" style="background: #f59e0b; color: white; padding: 0.6rem 1rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;" title="Imprimir Proforma">
+                <div style="flex-shrink: 0; border-top: 1px solid #e2e8f0; background: #f8fafc;">
+                    <div style="display: flex; gap: 0.5rem; padding: 0.75rem 1.5rem; border-bottom: 1px solid #e9ecef; justify-content: center;">
+                        <button class="btn" onclick="printInvoice(${order.id})" style="background: #f59e0b; color: white; padding: 0.5rem 0.9rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.8rem; white-space: nowrap;" title="Imprimir Proforma">
                             <i class="fas fa-file-invoice"></i> Proforma
                         </button>
-                        <button class="btn btn-info" onclick="printShippingLabel(${order.id})" style="background: #06b6d4; color: white; padding: 0.6rem 1rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;" title="Imprimir Etiqueta">
+                        <button class="btn" onclick="printShippingLabel(${order.id})" style="background: #06b6d4; color: white; padding: 0.5rem 0.9rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.8rem; white-space: nowrap;" title="Etiqueta">
                             <i class="fas fa-tag"></i> Etiqueta
                         </button>
-                        <button class="btn btn-success" onclick="printDeliveryReceipt(${order.id})" style="background: #10b981; color: white; padding: 0.6rem 1rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;" title="Imprimir Remito">
+                        <button class="btn" onclick="printDeliveryReceipt(${order.id})" style="background: #10b981; color: white; padding: 0.5rem 0.9rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.8rem; white-space: nowrap;" title="Remito">
                             <i class="fas fa-print"></i> Remito
                         </button>
-                        <button class="btn btn-primary" onclick="editOrder(${order.id}); closeDynamicModal(this.closest('.modal'));" style="background: #4f46e5; color: white; padding: 0.6rem 1rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
-                            <i class="fas fa-edit"></i> Editar
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1.5rem;">
+                        ${getCurrentUserFromAuth()?.perfil === 'Administrador' ? `
+                        <button class="btn" onclick="if(confirm('¿Está seguro que quiere eliminar el pedido #${order.numero_pedido}?\\n\\nEsta acción no se puede deshacer.')) { closeDynamicModal(this.closest('.modal')); deleteOrderFromServer(${order.id}); }" style="background: #dc2626; color: white; padding: 0.6rem 1rem; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 0.85rem;" title="Eliminar Pedido">
+                            <i class="fas fa-trash-alt"></i> Eliminar
                         </button>
-                        <button class="btn btn-secondary" onclick="closeDynamicModal(this.closest('.modal'))" style="background: #6b7280; color: white; padding: 0.6rem 1rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
-                            <i class="fas fa-times"></i> Cerrar
-                        </button>
+                        ` : '<div></div>'}
+                        <div style="display: flex; gap: 0.75rem; margin-left: auto;">
+                            <button class="btn" onclick="editOrder(${order.id}); closeDynamicModal(this.closest('.modal'));" style="background: #4f46e5; color: white; padding: 0.6rem 1.25rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
+                                <i class="fas fa-edit"></i> Editar Pedido
+                            </button>
+                            <button class="btn" onclick="closeDynamicModal(this.closest('.modal'))" style="background: #6b7280; color: white; padding: 0.6rem 1.25rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
+                                Cerrar
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
