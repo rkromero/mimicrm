@@ -1040,9 +1040,13 @@ app.put('/api/pedidos/:orderId', authenticateToken, async (req, res) => {
     }
 });
 
-// Eliminar pedido
+// Eliminar pedido (solo administradores)
 app.delete('/api/pedidos/:orderId', authenticateToken, async (req, res) => {
     try {
+        if (req.user.perfil !== 'Administrador') {
+            return res.status(403).json({ error: 'Acceso denegado. Solo los administradores pueden eliminar pedidos.' });
+        }
+
         const { orderId } = req.params;
 
         // Verificar que el pedido existe

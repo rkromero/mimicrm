@@ -2727,6 +2727,13 @@ async function editOrder(orderId) {
             document.getElementById('edit-order-client-select').style.cursor = 'not-allowed';
         }, 100);
         
+        // Mostrar/ocultar botón de eliminar según perfil
+        const deleteBtn = document.getElementById('edit-order-delete-btn');
+        const currentUser = getCurrentUserFromAuth();
+        if (deleteBtn) {
+            deleteBtn.style.display = currentUser?.perfil === 'Administrador' ? 'inline-flex' : 'none';
+        }
+
         // Mostrar el modal primero
         showModal('edit-order-modal');
         
@@ -2738,6 +2745,20 @@ async function editOrder(orderId) {
     } catch (error) {
         console.error('❌ EDIT ORDER - Error:', error);
         showNotification(`Error al cargar pedido: ${error.message}`, 'error');
+    }
+}
+
+function deleteOrderFromEditModal() {
+    const modal = document.getElementById('edit-order-modal');
+    const orderId = modal.getAttribute('data-order-id');
+    if (!orderId) return;
+
+    const order = orders.find(o => o.id == orderId);
+    const orderLabel = order ? `#${order.numero_pedido}` : `#${orderId}`;
+
+    if (confirm(`¿Está seguro que quiere eliminar el pedido ${orderLabel}?\n\nEsta acción no se puede deshacer.`)) {
+        closeModal('edit-order-modal');
+        deleteOrderFromServer(orderId);
     }
 }
 
@@ -4988,22 +5009,29 @@ function viewOrderDetails(orderId) {
                         </div>
                     ` : ''}
                     ${itemsTable}
-                    <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
-                        <button class="btn btn-warning" onclick="printInvoice(${order.id})" style="background: #f59e0b; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;" title="Imprimir Proforma">
-                            <i class="fas fa-file-invoice"></i> Imprimir Proforma
+                    <div style="display: flex; gap: 1rem; justify-content: space-between; align-items: center; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+                        ${getCurrentUserFromAuth()?.perfil === 'Administrador' ? `
+                        <button class="btn" onclick="if(confirm('¿Está seguro que quiere eliminar el pedido #${order.numero_pedido}?\\n\\nEsta acción no se puede deshacer.')) { this.closest('.modal').remove(); deleteOrderFromServer(${order.id}); }" style="background: #dc2626; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer; font-weight: 500;" title="Eliminar Pedido">
+                            <i class="fas fa-trash-alt"></i> Eliminar Pedido
                         </button>
-                        <button class="btn btn-info" onclick="printShippingLabel(${order.id})" style="background: #06b6d4; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;" title="Imprimir Etiqueta de Envío">
-                            <i class="fas fa-tag"></i> Imprimir Etiqueta
-                        </button>
-                        <button class="btn btn-success" onclick="printDeliveryReceipt(${order.id})" style="background: #10b981; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;" title="Imprimir Remito de Entrega">
-                            <i class="fas fa-print"></i> Imprimir Remito
-                        </button>
-                        <button class="btn btn-primary" onclick="editOrder(${order.id}); this.closest('.modal').remove();" style="background: #4f46e5; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;">
-                            <i class="fas fa-edit"></i> Editar Pedido
-                        </button>
-                        <button class="btn btn-secondary" onclick="this.closest('.modal').remove()" style="background: #6b7280; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;">
-                            <i class="fas fa-times"></i> Cerrar
-                        </button>
+                        ` : '<div></div>'}
+                        <div style="display: flex; gap: 1rem; flex-wrap: wrap; justify-content: flex-end;">
+                            <button class="btn btn-warning" onclick="printInvoice(${order.id})" style="background: #f59e0b; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;" title="Imprimir Proforma">
+                                <i class="fas fa-file-invoice"></i> Imprimir Proforma
+                            </button>
+                            <button class="btn btn-info" onclick="printShippingLabel(${order.id})" style="background: #06b6d4; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;" title="Imprimir Etiqueta de Envío">
+                                <i class="fas fa-tag"></i> Imprimir Etiqueta
+                            </button>
+                            <button class="btn btn-success" onclick="printDeliveryReceipt(${order.id})" style="background: #10b981; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;" title="Imprimir Remito de Entrega">
+                                <i class="fas fa-print"></i> Imprimir Remito
+                            </button>
+                            <button class="btn btn-primary" onclick="editOrder(${order.id}); this.closest('.modal').remove();" style="background: #4f46e5; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;">
+                                <i class="fas fa-edit"></i> Editar Pedido
+                            </button>
+                            <button class="btn btn-secondary" onclick="this.closest('.modal').remove()" style="background: #6b7280; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;">
+                                <i class="fas fa-times"></i> Cerrar
+                            </button>
+                        </div>
                     </div>
                 </div>
                     </div>
