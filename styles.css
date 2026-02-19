@@ -271,6 +271,20 @@ tr:hover {
     padding: 1.5rem 2rem;
 }
 
+.modal-body .table-responsive {
+    overflow-x: auto;
+}
+
+.modal-body .clients-table {
+    font-size: 0.875rem;
+}
+
+.modal-body .clients-table th,
+.modal-body .clients-table td {
+    padding: 0.6rem 0.75rem;
+    white-space: nowrap;
+}
+
 .form-group {
     margin-bottom: 1rem;
     position: relative;

@@ -7771,12 +7771,14 @@ async function showPendingCollectionsModal() {
                                 </div>
                             </td>
                             <td>
-                                <button class="btn btn-primary" onclick="viewClientDetails(${client.id}).catch(console.error)" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">
-                                    <i class="fas fa-eye"></i> Ver
-                                </button>
-                                <button class="btn btn-success" onclick="showModal('new-payment-modal'); populateClientSelects('new-payment-modal'); document.getElementById('payment-client-select').value = ${client.id};" style="padding: 0.25rem 0.5rem; font-size: 0.8rem; margin-left: 0.25rem;">
-                                    <i class="fas fa-money-bill-wave"></i> Pago
-                                </button>
+                                <div style="display: flex; gap: 0.4rem; white-space: nowrap;">
+                                    <button class="btn btn-primary" onclick="viewClientDetails(${client.id}).catch(console.error)" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-success" onclick="showModal('new-payment-modal'); populateClientSelects('new-payment-modal'); document.getElementById('payment-client-select').value = ${client.id};" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">
+                                        <i class="fas fa-money-bill-wave"></i>
+                                    </button>
+                                </div>
                             </td>
                         `;
                         
