@@ -8068,7 +8068,7 @@ async function showPendingCollectionsModal() {
                         card.innerHTML = `
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <div>
-                                    <h3 style="margin: 0 0 0.5rem 0; font-size: 1.1rem; color: #1f2937;">${client.nombre}</h3>
+                                    <h3 style="margin: 0 0 0.5rem 0; font-size: 1.1rem; color: #1f2937;">${client.nombre || ''}${client.apellido ? ' ' + client.apellido : ''}</h3>
                                     <p style="margin: 0; font-size: 1.2rem; font-weight: bold; color: #dc2626;">
                                         Debe: ${formatCurrency(pendingAmount)}
                                     </p>
@@ -8124,7 +8124,9 @@ async function showPendingCollectionsModal() {
                         const row = document.createElement('tr');
                         
                         row.innerHTML = `
-                            <td>${client.nombre}</td>
+                            <td>${client.nombre || ''}${client.apellido ? ' ' + client.apellido : ''}</td>
+                            <td>${client.documento || '-'}</td>
+                            <td>${client.provincia || '-'}</td>
                             <td>${formatCurrency(client.totalOrders)}</td>
                             <td>${formatCurrency(client.totalPayments)}</td>
                             <td style="color: #dc2626; font-weight: bold;">
