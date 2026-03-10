@@ -1122,10 +1122,18 @@ function renderProductsTable() {
 
     if (products.length === 0) {
         tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><div class="empty-state-icon"><i class="fas fa-box"></i></div><div class="empty-state-title">Sin productos registrados</div><div class="empty-state-desc">Usa el botón "Nuevo Producto" para crear el primero.</div></div></td></tr>`;
+        const pc = document.getElementById('products-pagination');
+        if (pc) pc.innerHTML = '';
         return;
     }
-    
-    tbody.innerHTML = products.map(product => `
+
+    const PROD_PAGE_SIZE = 10;
+    if (!paginationState.products) paginationState.products = 1;
+    const total = products.length;
+    const start = (paginationState.products - 1) * PROD_PAGE_SIZE;
+    const pageProducts = products.slice(start, start + PROD_PAGE_SIZE);
+
+    tbody.innerHTML = pageProducts.map(product => `
         <tr>
             <td>${product.nombre}</td>
             <td>${product.descripcion || '-'}</td>
@@ -1143,6 +1151,11 @@ function renderProductsTable() {
             </td>
         </tr>
     `).join('');
+
+    renderPagination('products-pagination', paginationState.products, total, function(page) {
+        paginationState.products = page;
+        renderProductsTable();
+    });
 }
 
 // Función para renderizar la tabla de contactos
