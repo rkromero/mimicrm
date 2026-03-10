@@ -8125,7 +8125,7 @@ async function showPendingCollectionsModal() {
                         
                         row.innerHTML = `
                             <td>${client.nombre || ''}${client.apellido ? ' ' + client.apellido : ''}</td>
-                            <td>${client.documento || '-'}</td>
+                            <td>${client.cuit || client.documento || '-'}</td>
                             <td>${client.provincia || '-'}</td>
                             <td>${formatCurrency(client.totalOrders)}</td>
                             <td>${formatCurrency(client.totalPayments)}</td>
