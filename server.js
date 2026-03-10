@@ -1107,6 +1107,26 @@ app.patch('/api/pedidos/:orderId/estado', authenticateToken, async (req, res) =>
     }
 });
 
+// Actualizar estado de múltiples pedidos
+app.patch('/api/pedidos/bulk/estado', authenticateToken, async (req, res) => {
+    try {
+        const { ids, estado } = req.body;
+        if (!ids || !Array.isArray(ids) || ids.length === 0 || !estado) {
+            return res.status(400).json({ error: 'ids (array) y estado son requeridos' });
+        }
+        const placeholders = ids.map(() => '?').join(',');
+        await db.execute(
+            `UPDATE pedidos SET estado = ? WHERE id IN (${placeholders})`,
+            [estado, ...ids]
+        );
+        console.log(`✅ Bulk update: ${ids.length} pedidos → estado "${estado}"`);
+        res.json({ message: `${ids.length} pedidos actualizados`, updated: ids.length });
+    } catch (error) {
+        console.error('Error en bulk update de pedidos:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
 // RUTAS DE PAGOS
 
 // Obtener todos los pagos

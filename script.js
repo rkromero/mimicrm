@@ -749,7 +749,7 @@ function renderOrdersTable(filteredOrders = null) {
     
     if (ordersToRender.length === 0) {
         const msg = (filteredOrders !== null) ? 'No hay pedidos que coincidan con tu búsqueda.' : 'Todavía no hay pedidos registrados.';
-        tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><i class="fas fa-shopping-cart empty-state-icon"></i><div class="empty-state-title">Sin pedidos</div><div class="empty-state-desc">' + msg + '</div></div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state"><i class="fas fa-shopping-cart empty-state-icon"></i><div class="empty-state-title">Sin pedidos</div><div class="empty-state-desc">' + msg + '</div></div></td></tr>';
         const pg = document.getElementById('orders-pagination');
         if (pg) pg.innerHTML = '';
         updateSectionCount('pedidos-count', 0);
@@ -838,9 +838,14 @@ function renderOrdersTable(filteredOrders = null) {
         const _pageOrders = ordersToRender.slice(_startO, _startO + PAGE_SIZE);
         updateSectionCount('pedidos-count', _totalOrders);
 
+        // Resetear select-all al re-renderizar
+        const selectAll = document.getElementById('orders-select-all');
+        if (selectAll) selectAll.checked = false;
+
         // Renderizar tabla normal (página actual)
         tbody.innerHTML = _pageOrders.map(order => `
-            <tr>
+            <tr data-order-id="${order.id}">
+                <td><input type="checkbox" class="order-checkbox" value="${order.id}" onchange="onOrderCheckboxChange()"></td>
                 <td>${order.numero_pedido}</td>
                 <td>${order.cliente_nombre || 'N/A'}</td>
                 <td>${order.cliente_apellido || 'N/A'}</td>
@@ -1553,6 +1558,73 @@ function _executeCpItem(idx) {
         const navItem = Array.from(document.querySelectorAll('.nav-item')).find(function(n) { return n.textContent.includes('Pedidos'); });
         if (navItem) navItem.click();
         setTimeout(function() { viewOrderDetails(result.id); }, 600);
+    }
+}
+
+// === EDICIÓN MASIVA DE PEDIDOS ===
+
+function onOrderCheckboxChange() {
+    const checked = document.querySelectorAll('.order-checkbox:checked');
+    const toolbar = document.getElementById('bulk-toolbar');
+    const countEl = document.getElementById('bulk-count');
+    if (checked.length > 0) {
+        toolbar.style.display = 'flex';
+        countEl.textContent = `${checked.length} pedido${checked.length > 1 ? 's' : ''} seleccionado${checked.length > 1 ? 's' : ''}`;
+    } else {
+        toolbar.style.display = 'none';
+    }
+    // Sync select-all
+    const all = document.querySelectorAll('.order-checkbox');
+    const selectAll = document.getElementById('orders-select-all');
+    if (selectAll) selectAll.checked = all.length > 0 && checked.length === all.length;
+}
+
+function toggleSelectAllOrders(checked) {
+    document.querySelectorAll('.order-checkbox').forEach(cb => { cb.checked = checked; });
+    onOrderCheckboxChange();
+}
+
+function clearBulkSelection() {
+    document.querySelectorAll('.order-checkbox').forEach(cb => { cb.checked = false; });
+    const selectAll = document.getElementById('orders-select-all');
+    if (selectAll) selectAll.checked = false;
+    document.getElementById('bulk-toolbar').style.display = 'none';
+    document.getElementById('bulk-status-select').value = '';
+}
+
+async function applyBulkStatus() {
+    const estado = document.getElementById('bulk-status-select').value;
+    if (!estado) { showNotification('Seleccioná un estado', 'warning'); return; }
+    const ids = [...document.querySelectorAll('.order-checkbox:checked')].map(cb => parseInt(cb.value));
+    if (ids.length === 0) return;
+
+    const confirmed = await showConfirm({
+        title: 'Cambio masivo de estado',
+        message: `¿Cambiar ${ids.length} pedido${ids.length > 1 ? 's' : ''} a "${translateOrderStatus(estado)}"?`,
+        confirmText: 'Aplicar',
+        confirmClass: 'btn-primary'
+    });
+    if (!confirmed) return;
+
+    try {
+        const token = localStorage.getItem('authToken');
+        const response = await fetch('/api/pedidos/bulk/estado', {
+            method: 'PATCH',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids, estado })
+        });
+        if (response.ok) {
+            const data = await response.json();
+            showNotification(`${data.updated} pedido${data.updated > 1 ? 's' : ''} actualizados a "${translateOrderStatus(estado)}"`, 'success');
+            clearBulkSelection();
+            invalidateCache('orders');
+            await loadOrders(true);
+        } else {
+            const err = await response.json();
+            showNotification(err.error || 'Error al actualizar', 'error');
+        }
+    } catch (error) {
+        showNotification('Error de conexión', 'error');
     }
 }
 

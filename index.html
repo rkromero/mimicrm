@@ -143,10 +143,30 @@
                             </button>
                         </div>
                     </div>
+                    <!-- Barra de edición masiva (visible solo con selección activa) -->
+                    <div id="bulk-toolbar" style="display:none; align-items:center; gap:0.75rem; background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:0.65rem 1rem; margin-bottom:0.75rem;">
+                        <span id="bulk-count" style="font-weight:600; color:#1e40af; white-space:nowrap;"></span>
+                        <select id="bulk-status-select" class="input" style="width:auto; padding:0.35rem 0.6rem; font-size:0.875rem;">
+                            <option value="">— Cambiar estado a —</option>
+                            <option value="pendiente de pago">Pendiente de pago</option>
+                            <option value="fabricar">Fabricar</option>
+                            <option value="sale fabrica">Sale Fábrica</option>
+                            <option value="en camino">En camino</option>
+                            <option value="entregado">Entregado</option>
+                            <option value="cancelado">Cancelado</option>
+                        </select>
+                        <button onclick="applyBulkStatus()" class="btn btn-primary" style="white-space:nowrap;">
+                            <i class="fas fa-check"></i> Aplicar
+                        </button>
+                        <button onclick="clearBulkSelection()" class="btn btn-secondary" style="white-space:nowrap; margin-left:auto;">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                    </div>
                     <div class="table-responsive">
                         <table class="clients-table">
                             <thead>
                                 <tr>
+                                    <th style="width:36px;"><input type="checkbox" id="orders-select-all" title="Seleccionar todos" onchange="toggleSelectAllOrders(this.checked)"></th>
                                     <th data-sort="numero_pedido" class="sortable">Número <i class="fas fa-sort"></i></th>
                                     <th data-sort="cliente_nombre" class="sortable">Cliente <i class="fas fa-sort"></i></th>
                                     <th data-sort="cliente_apellido" class="sortable">Apellido <i class="fas fa-sort"></i></th>
