@@ -8675,9 +8675,9 @@ async function showInactiveClientsModal() {
             return;
         }
         
-        // Mostrar modal
-        modal.style.display = 'block';
-        
+        // Mostrar modal con animación slide-in
+        await showModal('inactive-clients-modal');
+
         // Cargar datos
         const clientes = await loadInactiveClients();
         
@@ -8935,6 +8935,28 @@ function initializeVentasVendedorChart() {
     document.getElementById('exportar-ventas-btn').addEventListener('click', exportarDatosVentas);
     
     // Cargar datos iniciales
+    cargarDatosVentas();
+}
+
+// Filtros rápidos de fecha para ventas por vendedor
+function filtroRapidoVentas(periodo) {
+    const hoy = new Date();
+    let desde, hasta;
+
+    if (periodo === 'mes') {
+        desde = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+        hasta = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
+    } else if (periodo === 'mes-pasado') {
+        desde = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
+        hasta = new Date(hoy.getFullYear(), hoy.getMonth(), 0);
+    } else if (periodo === 'año') {
+        desde = new Date(hoy.getFullYear(), 0, 1);
+        hasta = new Date(hoy.getFullYear(), 11, 31);
+    }
+
+    const fmt = d => d.toISOString().split('T')[0];
+    document.getElementById('fecha-desde').value = fmt(desde);
+    document.getElementById('fecha-hasta').value = fmt(hasta);
     cargarDatosVentas();
 }
 
