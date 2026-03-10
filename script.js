@@ -4988,9 +4988,13 @@ async function viewClientDetails(clientId) {
         }
     }
     
+    // Asegurar que pedidos y pagos estén cargados (pueden estar vacíos por lazy loading)
+    if (orders.length === 0) await loadOrders(true);
+    if (payments.length === 0) await loadPayments(true);
+
     // Buscar pedidos del cliente
     const clientOrders = orders.filter(order => order.cliente_id == clientId);
-    
+
     // Buscar pagos del cliente
     const clientPayments = payments.filter(payment => payment.cliente_id == clientId);
     
