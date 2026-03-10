@@ -221,7 +221,7 @@ tr:hover {
     background: white;
     padding: 0;
     border-radius: 12px 0 0 12px;
-    width: 680px;
+    width: min(95vw, 960px);
     max-width: 95vw;
     box-shadow: -4px 0 25px rgba(0, 0, 0, 0.15);
     position: fixed;
@@ -276,13 +276,19 @@ tr:hover {
 }
 
 .modal-body .clients-table {
-    font-size: 0.875rem;
+    font-size: 0.82rem;
 }
 
 .modal-body .clients-table th,
 .modal-body .clients-table td {
-    padding: 0.6rem 0.75rem;
+    padding: 0.45rem 0.55rem;
     white-space: nowrap;
+}
+
+/* Columnas con texto largo pueden envolver */
+.modal-body .clients-table td:first-child {
+    white-space: normal;
+    min-width: 120px;
 }
 
 .form-group {
