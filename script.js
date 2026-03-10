@@ -8731,9 +8731,12 @@ async function showInactiveClientsModal() {
                 const diasSinActividad = cliente.dias_sin_actividad || 
                     Math.floor((new Date() - new Date(cliente.created_at)) / (1000 * 60 * 60 * 24));
                 
+                const waPhoneM = (cliente.telefono || '').replace(/\D/g, '');
+                const waMsgM = encodeURIComponent(`Hola ${cliente.nombre}${cliente.apellido ? ' ' + cliente.apellido : ''}, te contactamos desde MIMI para retomar contacto. ¿Podemos ayudarte con algún pedido?`);
                 card.innerHTML = `
                     <div style="margin-bottom: 0.5rem;">
-                        <h4 style="margin: 0; color: #1f2937; font-weight: 600;">${cliente.nombre}</h4>
+                        <h4 style="margin: 0; color: #1f2937; font-weight: 600;">${cliente.nombre}${cliente.apellido ? ' ' + cliente.apellido : ''}</h4>
+                        <div style="font-size: 0.8rem; color: #6b7280;">${cliente.provincia || ''}</div>
                     </div>
                     <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.5rem;">
                         <div><strong>Último pedido:</strong> ${ultimoPedido}</div>
@@ -8745,11 +8748,8 @@ async function showInactiveClientsModal() {
                         <div><strong>Email:</strong> ${cliente.email || 'No disponible'}</div>
                     </div>
                     <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
-                        <button onclick="contactarCliente('${cliente.nombre}', '${cliente.telefono || ''}', '${cliente.email || ''}')" 
-                                style="background: #3b82f6; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.875rem; cursor: pointer;">
-                            <i class="fas fa-phone"></i> Contactar
-                        </button>
-                        <button onclick="verCliente(${cliente.id})" 
+                        ${waPhoneM ? `<a href="https://wa.me/${waPhoneM}?text=${waMsgM}" target="_blank" style="background: #25d366; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.875rem; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 0.3rem;"><i class="fab fa-whatsapp"></i> WhatsApp</a>` : ''}
+                        <button onclick="verCliente(${cliente.id})"
                                 style="background: #6b7280; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.875rem; cursor: pointer;">
                             <i class="fas fa-eye"></i> Ver
                         </button>
@@ -8774,10 +8774,12 @@ async function showInactiveClientsModal() {
                     Math.floor((new Date() - new Date(cliente.created_at)) / (1000 * 60 * 60 * 24));
                 
                 const row = document.createElement('tr');
+                const waPhone = (cliente.telefono || '').replace(/\D/g, '');
+                const waMsg = encodeURIComponent(`Hola ${cliente.nombre}${cliente.apellido ? ' ' + cliente.apellido : ''}, te contactamos desde MIMI para retomar contacto. ¿Podemos ayudarte con algún pedido?`);
                 row.innerHTML = `
                     <td>
-                        <div style="font-weight: 600; color: #1f2937;">${cliente.nombre}</div>
-                        <div style="font-size: 0.875rem; color: #6b7280;">${cliente.direccion || 'Sin dirección'}</div>
+                        <div style="font-weight: 600; color: #1f2937;">${cliente.nombre}${cliente.apellido ? ' ' + cliente.apellido : ''}</div>
+                        <div style="font-size: 0.8rem; color: #6b7280;">${cliente.provincia || 'Sin provincia'}</div>
                     </td>
                     <td>${ultimoPedido}</td>
                     <td>
@@ -8792,11 +8794,8 @@ async function showInactiveClientsModal() {
                     </td>
                     <td>
                         <div style="display: flex; gap: 0.25rem;">
-                            <button onclick="contactarCliente('${cliente.nombre}', '${cliente.telefono || ''}', '${cliente.email || ''}')" 
-                                    class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">
-                                <i class="fas fa-phone"></i>
-                            </button>
-                            <button onclick="verCliente(${cliente.id})" 
+                            ${waPhone ? `<a href="https://wa.me/${waPhone}?text=${waMsg}" target="_blank" class="btn btn-success" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;"><i class="fab fa-whatsapp"></i></a>` : ''}
+                            <button onclick="verCliente(${cliente.id})"
                                     class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">
                                 <i class="fas fa-eye"></i>
                             </button>
