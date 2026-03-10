@@ -16,14 +16,14 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 body {
     background-color: #f9fafb;
     color: var(--text-primary);
     line-height: 1.5;
-    font-family: 'Segoe UI', Arial, sans-serif;
+    font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
     background: #f4f6fa;
     margin: 0;
     color: #222;
@@ -1253,63 +1253,237 @@ tr:hover {
     }
 }
 
-/* Notificaciones */
-.notification {
+/* ─── SISTEMA DE NOTIFICACIONES EN COLA ─── */
+#notification-container {
     position: fixed;
     top: 1rem;
     right: 1rem;
     z-index: 10000;
-    animation: slideIn 0.3s ease-out;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    pointer-events: none;
+    max-width: 380px;
+    width: calc(100vw - 2rem);
+}
+
+.notification {
+    pointer-events: all;
+    transform: translateX(110%);
+    opacity: 0;
+    transition: transform 0.35s cubic-bezier(0.34, 1.4, 0.64, 1), opacity 0.3s ease;
+}
+
+.notification.show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.notification.hide {
+    transform: translateX(110%);
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
 .notification-content {
     background-color: white;
-    border-radius: var(--border-radius);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    padding: 1rem;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06);
+    padding: 0.875rem 1rem;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    min-width: 300px;
-    max-width: 400px;
+    gap: 0.625rem;
 }
 
-.notification-success .notification-content {
-    border-left: 4px solid #10b981;
+.notification-content span {
+    flex: 1;
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.4;
 }
 
-.notification-error .notification-content {
-    border-left: 4px solid #ef4444;
+.notification-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #9ca3af;
+    padding: 0.125rem;
+    display: flex;
+    align-items: center;
+    font-size: 0.75rem;
+    border-radius: 4px;
+    transition: color 0.15s;
+}
+.notification-close:hover { color: #374151; }
+
+.notification-success .notification-content { border-left: 3px solid #10b981; }
+.notification-error   .notification-content { border-left: 3px solid #ef4444; }
+.notification-info    .notification-content { border-left: 3px solid #6366f1; }
+.notification-warning .notification-content { border-left: 3px solid #f59e0b; }
+
+.notification i:first-child { font-size: 1.1rem; flex-shrink: 0; }
+.notification-success i:first-child { color: #10b981; }
+.notification-error   i:first-child { color: #ef4444; }
+.notification-info    i:first-child { color: #6366f1; }
+.notification-warning i:first-child { color: #f59e0b; }
+
+/* ─── SKELETON LOADERS ─── */
+@keyframes shimmer {
+    0%   { background-position: -400px 0; }
+    100% { background-position: 400px 0; }
 }
 
-.notification i {
-    font-size: 1.25rem;
+.skeleton-line {
+    height: 14px;
+    border-radius: 6px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 800px 100%;
+    animation: shimmer 1.4s infinite linear;
+    margin-bottom: 6px;
 }
 
-.notification-success i {
-    color: #10b981;
+.skeleton-line.short { height: 11px; margin-top: 4px; }
+
+.skeleton-table {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
 }
 
-.notification-error i {
-    color: #ef4444;
+.skeleton-row-wrapper {
+    padding: 0.875rem 1rem;
+    border-bottom: 1px solid #f3f4f6;
 }
 
-/* Clase especial para notificaciones que aparecen sobre modales */
-.notification.show {
+tr.skeleton-tr td {
+    padding: 0.875rem 1rem;
+}
+
+tr.skeleton-tr td .skeleton-line {
+    margin-bottom: 0;
+}
+
+body.theme-dark .skeleton-line {
+    background: linear-gradient(90deg, #2d2d36 25%, #3a3a45 50%, #2d2d36 75%);
+    background-size: 800px 100%;
+}
+
+/* ─── DIÁLOGO DE CONFIRMACIÓN PREMIUM ─── */
+.confirm-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 20000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    backdrop-filter: blur(2px);
+}
+
+.confirm-overlay.active {
     opacity: 1;
-    transform: translateX(0);
+    pointer-events: all;
 }
 
-@keyframes slideIn {
-    from {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
+.confirm-box {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    max-width: 400px;
+    width: calc(100vw - 2rem);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18), 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: scale(0.92) translateY(8px);
+    transition: transform 0.25s cubic-bezier(0.34, 1.4, 0.64, 1);
+    text-align: center;
 }
+
+.confirm-overlay.active .confirm-box {
+    transform: scale(1) translateY(0);
+}
+
+.confirm-icon-wrap {
+    width: 52px;
+    height: 52px;
+    background: #fef3c7;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+}
+
+.confirm-icon-wrap i {
+    font-size: 1.4rem;
+    color: #d97706;
+}
+
+.confirm-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 0.5rem;
+}
+
+.confirm-message {
+    font-size: 0.9rem;
+    color: #6b7280;
+    line-height: 1.5;
+    margin-bottom: 0;
+}
+
+.confirm-detail {
+    background: #f9fafb;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-top: 0.875rem;
+    font-size: 0.875rem;
+    color: #374151;
+    text-align: left;
+    line-height: 1.5;
+}
+
+.confirm-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+    justify-content: center;
+}
+
+.confirm-actions .btn {
+    min-width: 110px;
+    font-weight: 600;
+}
+
+/* ─── BUTTON STATES ─── */
+.btn-danger {
+    background-color: #dc2626;
+    color: white;
+    border: none;
+}
+
+.btn-danger:hover {
+    background-color: #b91c1c;
+}
+
+.btn[disabled], .btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Dark mode para confirm y notificaciones */
+body.theme-dark .confirm-box {
+    background: #23232a;
+}
+body.theme-dark .confirm-title { color: #f3f4f6; }
+body.theme-dark .confirm-message { color: #9ca3af; }
+body.theme-dark .confirm-detail { background: #18181b; color: #d1d5db; }
+body.theme-dark .notification-content { background: #23232a; }
+body.theme-dark .notification-close:hover { color: #f3f4f6; }
+body.theme-dark .notification-content span { color: #f3f4f6; }
 
 /* Dashboard Cards */
 .dashboard-card {

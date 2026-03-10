@@ -333,128 +333,120 @@ function configurarMenuProduccion() {
 
 // Función para cargar clientes desde la API
 async function loadClients() {
+    showClientsSkeleton();
     try {
         const token = localStorage.getItem('authToken');
         const response = await fetch('/api/clientes', {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
         });
-        
         if (response.ok) {
             clients = await response.json();
             renderClientsTable();
         } else {
             console.error('Error cargando clientes:', response.statusText);
+            showNotification('No se pudieron cargar los clientes. Intentá de nuevo.', 'error');
+            const c = document.getElementById('clients-list');
+            if (c) c.innerHTML = '<p class="text-center" style="padding:2rem;color:#6b7280">Error al cargar clientes</p>';
         }
     } catch (error) {
         console.error('Error cargando clientes:', error);
+        showNotification('Error de conexión al cargar clientes.', 'error');
+        const c = document.getElementById('clients-list');
+        if (c) c.innerHTML = '<p class="text-center" style="padding:2rem;color:#6b7280">Error de conexión</p>';
     }
 }
 
 // Función para cargar productos desde la API
 async function loadProducts() {
+    showTableSkeleton('products-table-body', 4, 5);
     try {
         const token = localStorage.getItem('authToken');
         const response = await fetch('/api/productos', {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
         });
-        
         if (response.ok) {
             products = await response.json();
-            renderProductsTable(); // Renderizar la tabla después de cargar los datos
-            
+            renderProductsTable();
         } else {
             console.error('Error cargando productos:', response.statusText);
+            showNotification('No se pudieron cargar los productos.', 'error');
         }
     } catch (error) {
         console.error('Error cargando productos:', error);
+        showNotification('Error de conexión al cargar productos.', 'error');
     }
 }
 
 // Función para cargar pedidos desde la API
 async function loadOrders() {
+    showTableSkeleton('orders-table-body', 8, 6);
     try {
         const token = localStorage.getItem('authToken');
         const response = await fetch('/api/pedidos', {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
         });
-        
         if (response.ok) {
             orders = await response.json();
-            renderOrdersTable(); // Renderizar la tabla después de cargar los datos
-            
-            // Configurar búsqueda de pedidos si la sección está visible
+            renderOrdersTable();
+
             const pedidosSection = document.getElementById('pedidos-section');
             if (pedidosSection && pedidosSection.style.display !== 'none') {
                 setupOrdersSearch();
             }
-            
-            // Si la sección de fábrica está activa, también actualizarla
+
             const fabricaSection = document.getElementById('fabrica-section');
             if (fabricaSection && fabricaSection.style.display !== 'none') {
                 renderFabricaTable();
             }
-            
-            
         } else {
             console.error('Error cargando pedidos:', response.statusText);
+            showNotification('No se pudieron cargar los pedidos.', 'error');
         }
     } catch (error) {
         console.error('Error cargando pedidos:', error);
+        showNotification('Error de conexión al cargar pedidos.', 'error');
     }
 }
 
 // Función para cargar pagos desde la API
 async function loadPayments() {
+    showTableSkeleton('payments-table-body', 7, 6);
     try {
         const token = localStorage.getItem('authToken');
         const response = await fetch('/api/pagos', {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
         });
-        
         if (response.ok) {
             payments = await response.json();
-            renderPaymentsTable(); // Renderizar la tabla después de cargar los datos
-            
+            renderPaymentsTable();
         } else {
             console.error('Error cargando pagos:', response.statusText);
+            showNotification('No se pudieron cargar los pagos.', 'error');
         }
     } catch (error) {
         console.error('Error cargando pagos:', error);
+        showNotification('Error de conexión al cargar pagos.', 'error');
     }
 }
 
 // Función para cargar contactos desde la API
 async function loadContacts() {
+    showTableSkeleton('contacts-table-body', 7, 5);
     try {
         const token = localStorage.getItem('authToken');
         const response = await fetch('/api/contactos', {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
         });
-        
         if (response.ok) {
             contacts = await response.json();
-            renderContactsTable(); // Renderizar la tabla después de cargar los datos
-            
+            renderContactsTable();
         } else {
             console.error('Error cargando contactos:', response.statusText);
+            showNotification('No se pudieron cargar los contactos.', 'error');
         }
     } catch (error) {
         console.error('Error cargando contactos:', error);
+        showNotification('Error de conexión al cargar contactos.', 'error');
     }
 }
 
@@ -1151,37 +1143,136 @@ function renderContactsTable() {
 
 // === FUNCIONES DE NAVEGACIÓN ===
 
-// Función para mostrar notificaciones
+// Función para mostrar notificaciones (sistema con cola)
 function showNotification(message, type = 'success') {
-    // Crear elemento de notificación
+    let container = document.getElementById('notification-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'notification-container';
+        document.body.appendChild(container);
+    }
+
+    // Limitar a 4 notificaciones simultáneas
+    while (container.children.length >= 4) {
+        dismissNotification(container.firstChild);
+    }
+
+    const icons = {
+        success: 'fa-check-circle',
+        error:   'fa-exclamation-circle',
+        info:    'fa-info-circle',
+        warning: 'fa-exclamation-triangle'
+    };
+
     const notification = document.createElement('div');
     notification.className = `notification notification-${type}`;
-    
-    // Crear contenido de la notificación con la estructura correcta
-    const notificationContent = document.createElement('div');
-    notificationContent.className = 'notification-content';
-    notificationContent.innerHTML = `
-        <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
-        <span>${message}</span>
+    notification.innerHTML = `
+        <div class="notification-content">
+            <i class="fas ${icons[type] || icons.success}"></i>
+            <span>${message}</span>
+            <button class="notification-close" title="Cerrar"><i class="fas fa-times"></i></button>
+        </div>
     `;
-    
-    notification.appendChild(notificationContent);
-    
-    // Agregar al DOM
-    document.body.appendChild(notification);
-    
-    // Mostrar con animación
-    setTimeout(() => notification.classList.add('show'), 100);
-    
-    // Ocultar después de 4 segundos (un poco más de tiempo para leer)
-    setTimeout(() => {
-        notification.classList.remove('show');
-        setTimeout(() => {
-            if (notification.parentNode) {
-                document.body.removeChild(notification);
-            }
-        }, 300);
-    }, 4000);
+
+    container.appendChild(notification);
+
+    // Animar entrada
+    requestAnimationFrame(() => requestAnimationFrame(() => notification.classList.add('show')));
+
+    // Cerrar al hacer clic
+    notification.querySelector('.notification-close').addEventListener('click', () => dismissNotification(notification));
+
+    // Auto-dismiss
+    notification._dismissTimer = setTimeout(() => dismissNotification(notification), 4500);
+}
+
+function dismissNotification(notification) {
+    if (!notification || !notification.parentNode) return;
+    clearTimeout(notification._dismissTimer);
+    notification.classList.add('hide');
+    setTimeout(() => { if (notification.parentNode) notification.remove(); }, 350);
+}
+
+// Diálogo de confirmación premium (reemplaza confirm() nativo)
+function showConfirm({ title = 'Confirmar acción', message = '', detail = '', confirmText = 'Confirmar', confirmClass = 'btn-danger', cancelText = 'Cancelar' } = {}) {
+    return new Promise((resolve) => {
+        const dialog = document.getElementById('confirm-dialog');
+        if (!dialog) { resolve(false); return; }
+
+        dialog.querySelector('#confirm-dialog-title').textContent = title;
+        dialog.querySelector('#confirm-dialog-message').textContent = message;
+
+        const detailEl = dialog.querySelector('#confirm-dialog-detail');
+        if (detail) { detailEl.innerHTML = detail; detailEl.style.display = 'block'; }
+        else { detailEl.textContent = ''; detailEl.style.display = 'none'; }
+
+        const okBtn = dialog.querySelector('#confirm-ok-btn');
+        okBtn.textContent = confirmText;
+        okBtn.className = `btn ${confirmClass}`;
+
+        const cancelBtn = dialog.querySelector('#confirm-cancel-btn');
+        cancelBtn.textContent = cancelText;
+
+        dialog.classList.add('active');
+        setTimeout(() => okBtn.focus(), 50);
+
+        function cleanup() {
+            dialog.classList.remove('active');
+            okBtn.removeEventListener('click', onOk);
+            cancelBtn.removeEventListener('click', onCancel);
+            dialog.removeEventListener('keydown', onKey);
+        }
+        function onOk()    { cleanup(); resolve(true); }
+        function onCancel(){ cleanup(); resolve(false); }
+        function onKey(e)  { if (e.key === 'Escape') { cleanup(); resolve(false); } }
+
+        okBtn.addEventListener('click', onOk);
+        cancelBtn.addEventListener('click', onCancel);
+        dialog.addEventListener('keydown', onKey);
+    });
+}
+
+// Helper para estado de carga en botones de formulario
+function setButtonLoading(btn, loading) {
+    if (!btn) return;
+    if (loading) {
+        btn.disabled = true;
+        btn.dataset.originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+    } else {
+        btn.disabled = false;
+        if (btn.dataset.originalHtml) { btn.innerHTML = btn.dataset.originalHtml; delete btn.dataset.originalHtml; }
+    }
+}
+
+// Helper para mostrar skeleton en tablas (tbody)
+function showTableSkeleton(tbodyId, cols = 5, rows = 6) {
+    const tbody = document.getElementById(tbodyId);
+    if (!tbody) return;
+    const widths = [45, 60, 75, 55, 40, 80, 65, 50];
+    let html = '';
+    for (let i = 0; i < rows; i++) {
+        html += '<tr class="skeleton-tr">';
+        for (let c = 0; c < cols; c++) {
+            const w = widths[(i * cols + c) % widths.length];
+            html += `<td><div class="skeleton-line" style="width:${w}%"></div></td>`;
+        }
+        html += '</tr>';
+    }
+    tbody.innerHTML = html;
+}
+
+// Helper para mostrar skeleton en clients-list (div)
+function showClientsSkeleton() {
+    const container = document.getElementById('clients-list');
+    if (!container) return;
+    const rows = [[65,25],[78,32],[52,28],[70,20],[61,35],[74,22]];
+    let html = '<div class="skeleton-table">';
+    rows.forEach(([w1, w2]) => {
+        html += `<div class="skeleton-row-wrapper"><div class="skeleton-line" style="width:${w1}%"></div><div class="skeleton-line short" style="width:${w2}%"></div></div>`;
+    });
+    html += '</div>';
+    container.innerHTML = html;
 }
 
 // === INICIALIZACIÓN ===
@@ -1853,13 +1944,18 @@ function setupOrderProductHandlers() {
 
         // Botón limpiar productos
         if (clearProductsBtn) {
-            clearProductsBtn.addEventListener('click', () => {
+            clearProductsBtn.addEventListener('click', async () => {
                 if (orderItems.length === 0) {
                     showNotification('No hay productos para limpiar', 'info');
                     return;
                 }
-                
-                if (confirm('¿Está seguro de que desea limpiar todos los productos del pedido?')) {
+                const confirmed = await showConfirm({
+                    title: 'Limpiar productos',
+                    message: '¿Estás seguro de que querés limpiar todos los productos del pedido?',
+                    confirmText: 'Limpiar',
+                    cancelText: 'Cancelar'
+                });
+                if (confirmed) {
                     clearOrderItems();
                     showNotification('Productos limpiados correctamente', 'success');
                 }
@@ -2045,8 +2141,14 @@ function renderOrderProducts() {
     console.log('✅ RENDER - Tabla insertada en DOM');
 }
 
-function removeProductFromOrder(index) {
-    if (confirm('¿Está seguro de que desea eliminar este producto del pedido?')) {
+async function removeProductFromOrder(index) {
+    const confirmed = await showConfirm({
+        title: 'Eliminar producto',
+        message: '¿Querés eliminar este producto del pedido?',
+        confirmText: 'Eliminar',
+        cancelText: 'Cancelar'
+    });
+    if (confirmed) {
         orderItems.splice(index, 1);
         renderOrderProducts();
         updateOrderTotal();
@@ -2634,20 +2736,17 @@ function editClient(clientId) {
     showModal('edit-client-modal');
 }
 
-function deleteClient(clientId) {
-    // Buscar el cliente para mostrar información en la confirmación
+async function deleteClient(clientId) {
     const client = clients.find(c => c.id == clientId);
-    if (!client) {
-        showNotification('Cliente no encontrado', 'error');
-        return;
-    }
-    
-    // Mostrar confirmación con información del cliente
-    const confirmMessage = `¿Está seguro de que desea eliminar este cliente?\n\nNombre: ${client.nombre}\nDocumento: ${client.cuit || client.documento || 'N/A'}\nEmail: ${client.email || 'N/A'}\n\nEsta acción no se puede deshacer y solo es posible si el cliente no tiene pedidos o pagos asociados.`;
-    
-    if (confirm(confirmMessage)) {
-        deleteClientFromServer(clientId);
-    }
+    if (!client) { showNotification('Cliente no encontrado', 'error'); return; }
+
+    const confirmed = await showConfirm({
+        title: 'Eliminar cliente',
+        message: 'Esta acción no se puede deshacer. Solo es posible si el cliente no tiene pedidos ni pagos asociados.',
+        detail: `<strong>${(client.nombre || '') + ' ' + (client.apellido || '')}</strong>${client.email ? '<br>' + client.email : ''}${client.cuit || client.documento ? '<br>Doc: ' + (client.cuit || client.documento) : ''}`,
+        confirmText: 'Eliminar'
+    });
+    if (confirmed) deleteClientFromServer(clientId);
 }
 
 async function deleteClientFromServer(clientId) {
@@ -2760,7 +2859,7 @@ async function editOrder(orderId) {
     }
 }
 
-function deleteOrderFromEditModal() {
+async function deleteOrderFromEditModal() {
     const modal = document.getElementById('edit-order-modal');
     const orderId = modal.getAttribute('data-order-id');
     if (!orderId) return;
@@ -2768,8 +2867,28 @@ function deleteOrderFromEditModal() {
     const order = orders.find(o => o.id == orderId);
     const orderLabel = order ? `#${order.numero_pedido}` : `#${orderId}`;
 
-    if (confirm(`¿Está seguro que quiere eliminar el pedido ${orderLabel}?\n\nEsta acción no se puede deshacer.`)) {
+    const confirmed = await showConfirm({
+        title: 'Eliminar pedido',
+        message: 'Esta acción no se puede deshacer.',
+        detail: `<strong>Pedido ${orderLabel}</strong>${order ? '<br>' + (order.cliente_nombre || '') : ''}`,
+        confirmText: 'Eliminar'
+    });
+    if (confirmed) {
         closeModal('edit-order-modal');
+        deleteOrderFromServer(orderId);
+    }
+}
+
+// Helper para eliminar pedido desde modal de detalles (onclick inline)
+async function confirmAndDeleteOrderFromModal(btn, orderId, orderNum) {
+    const confirmed = await showConfirm({
+        title: 'Eliminar pedido',
+        message: 'Esta acción no se puede deshacer.',
+        detail: `<strong>Pedido #${orderNum}</strong>`,
+        confirmText: 'Eliminar'
+    });
+    if (confirmed) {
+        closeDynamicModal(btn.closest('.modal'));
         deleteOrderFromServer(orderId);
     }
 }
@@ -2828,20 +2947,17 @@ async function loadEditOrderItems(orderId) {
     }
 }
 
-function deleteOrder(orderId) {
-    // Buscar el pedido para mostrar información en la confirmación
+async function deleteOrder(orderId) {
     const order = orders.find(o => o.id == orderId);
-    if (!order) {
-        showNotification('Pedido no encontrado', 'error');
-        return;
-    }
-    
-    // Mostrar confirmación con información del pedido
-    const confirmMessage = `¿Está seguro de que desea eliminar este pedido?\n\nPedido: #${order.numero_pedido}\nMonto: ${formatCurrency(order.monto)}\nCliente: ${order.cliente_nombre || 'N/A'}\n\nEsta acción no se puede deshacer.`;
-    
-    if (confirm(confirmMessage)) {
-        deleteOrderFromServer(orderId);
-    }
+    if (!order) { showNotification('Pedido no encontrado', 'error'); return; }
+
+    const confirmed = await showConfirm({
+        title: 'Eliminar pedido',
+        message: 'Esta acción no se puede deshacer.',
+        detail: `<strong>Pedido #${order.numero_pedido}</strong><br>${order.cliente_nombre || ''}<br>${formatCurrency(order.monto)}`,
+        confirmText: 'Eliminar'
+    });
+    if (confirmed) deleteOrderFromServer(orderId);
 }
 
 async function deleteOrderFromServer(orderId) {
@@ -2946,17 +3062,19 @@ function editPayment(paymentId) {
     // Manejar envío del formulario
     document.getElementById(`edit-payment-form-${payment.id}`).addEventListener('submit', async (e) => {
         e.preventDefault();
-        
+        const submitBtn = e.target.querySelector('[type="submit"]');
+        setButtonLoading(submitBtn, true);
+
         const paymentData = {
-            cliente_id: payment.cliente_id, // Usar el cliente_id original, no del select
+            cliente_id: payment.cliente_id,
             monto: parseFloat(document.getElementById(`edit-payment-amount-${payment.id}`).value),
             metodo: document.getElementById(`edit-payment-method-${payment.id}`).value,
             referencia: document.getElementById(`edit-payment-reference-${payment.id}`).value
         };
-        
+
         try {
             const token = localStorage.getItem('authToken');
-            
+
             const response = await fetch(`/api/pagos/${payment.id}`, {
                 method: 'PUT',
                 headers: {
@@ -2965,7 +3083,7 @@ function editPayment(paymentId) {
                 },
                 body: JSON.stringify(paymentData)
             });
-            
+
             if (response.ok) {
                 showNotification('Pago actualizado exitosamente', 'success');
                 editModal.remove();
@@ -2973,27 +3091,26 @@ function editPayment(paymentId) {
             } else {
                 const errorData = await response.json();
                 showNotification(errorData.message || 'Error al actualizar pago', 'error');
+                setButtonLoading(submitBtn, false);
             }
         } catch (error) {
             showNotification(`Error de conexión: ${error.message}`, 'error');
+            setButtonLoading(submitBtn, false);
         }
     });
 }
 
-function deletePayment(paymentId) {
-    // Buscar el pago para mostrar información en la confirmación
+async function deletePayment(paymentId) {
     const payment = payments.find(p => p.id == paymentId);
-    if (!payment) {
-        showNotification('Pago no encontrado', 'error');
-        return;
-    }
-    
-    // Mostrar confirmación con información del pago
-    const confirmMessage = `¿Está seguro de que desea eliminar este pago?\n\nMonto: ${formatCurrency(payment.monto)}\nMétodo: ${payment.metodo}\nCliente: ${payment.cliente_nombre || 'N/A'}\nReferencia: ${payment.referencia || 'N/A'}\n\nEsta acción no se puede deshacer.`;
-    
-    if (confirm(confirmMessage)) {
-        deletePaymentFromServer(paymentId);
-    }
+    if (!payment) { showNotification('Pago no encontrado', 'error'); return; }
+
+    const confirmed = await showConfirm({
+        title: 'Eliminar pago',
+        message: 'Esta acción no se puede deshacer.',
+        detail: `<strong>${formatCurrency(payment.monto)}</strong> — ${payment.metodo}<br>${payment.cliente_nombre || ''}${payment.referencia ? '<br>Ref: ' + payment.referencia : ''}`,
+        confirmText: 'Eliminar'
+    });
+    if (confirmed) deletePaymentFromServer(paymentId);
 }
 
 async function deletePaymentFromServer(paymentId) {
@@ -3146,23 +3263,18 @@ function editProduct(productId) {
     // Manejar envío del formulario
     document.getElementById(`edit-product-form-${product.id}`).addEventListener('submit', async (e) => {
         e.preventDefault();
-        
+        const submitBtn = e.target.querySelector('[type="submit"]');
+        setButtonLoading(submitBtn, true);
+
         const productData = {
             nombre: document.getElementById(`edit-product-name-${product.id}`).value,
             descripcion: document.getElementById(`edit-product-description-${product.id}`).value,
             precio: parseFloat(document.getElementById(`edit-product-price-${product.id}`).value)
         };
-        
-        console.log('🔍 FRONTEND - Datos a enviar:', productData);
-        console.log('🔍 FRONTEND - Tipos de datos:', {
-            nombre: typeof productData.nombre,
-            descripcion: typeof productData.descripcion,
-            precio: typeof productData.precio
-        });
-        
+
         try {
             const token = localStorage.getItem('authToken');
-            
+
             const response = await fetch(`/api/productos/${product.id}`, {
                 method: 'PUT',
                 headers: {
@@ -3171,7 +3283,7 @@ function editProduct(productId) {
                 },
                 body: JSON.stringify(productData)
             });
-            
+
             if (response.ok) {
                 showNotification('Producto actualizado exitosamente', 'success');
                 editModal.remove();
@@ -3180,28 +3292,27 @@ function editProduct(productId) {
                 const errorData = await response.json();
                 console.error('❌ FRONTEND - Error del servidor:', response.status, errorData);
                 showNotification(errorData.error || errorData.message || 'Error al actualizar producto', 'error');
+                setButtonLoading(submitBtn, false);
             }
         } catch (error) {
             console.error('❌ FRONTEND - Error de conexión:', error);
             showNotification(`Error de conexión: ${error.message}`, 'error');
+            setButtonLoading(submitBtn, false);
         }
     });
 }
 
-function deleteProduct(productId) {
-    // Buscar el producto para mostrar información en la confirmación
+async function deleteProduct(productId) {
     const product = products.find(p => p.id == productId);
-    if (!product) {
-        showNotification('Producto no encontrado', 'error');
-        return;
-    }
-    
-    // Mostrar confirmación con información del producto
-    const confirmMessage = `¿Está seguro de que desea eliminar este producto?\n\nNombre: ${product.nombre}\nPrecio: ${formatCurrency(product.precio)}\nStock: ${product.stock || 0}\nDescripción: ${product.descripcion || 'N/A'}\n\nEsta acción no se puede deshacer.`;
-    
-    if (confirm(confirmMessage)) {
-        deleteProductFromServer(productId);
-    }
+    if (!product) { showNotification('Producto no encontrado', 'error'); return; }
+
+    const confirmed = await showConfirm({
+        title: 'Eliminar producto',
+        message: 'Esta acción no se puede deshacer.',
+        detail: `<strong>${product.nombre}</strong><br>${formatCurrency(product.precio)}${product.descripcion ? '<br>' + product.descripcion : ''}`,
+        confirmText: 'Eliminar'
+    });
+    if (confirmed) deleteProductFromServer(productId);
 }
 
 async function deleteProductFromServer(productId) {
@@ -3312,19 +3423,21 @@ function editContact(contactId) {
     // Manejar envío del formulario
     document.getElementById(`edit-contact-form-${contact.id}`).addEventListener('submit', async (e) => {
         e.preventDefault();
-        
+        const submitBtn = e.target.querySelector('[type="submit"]');
+        setButtonLoading(submitBtn, true);
+
         const contactData = {
-            cliente_id: contact.cliente_id, // Usar el cliente_id original, no del select
+            cliente_id: contact.cliente_id,
             nombre: document.getElementById(`edit-contact-name-${contact.id}`).value,
             email: document.getElementById(`edit-contact-email-${contact.id}`).value,
             telefono: document.getElementById(`edit-contact-phone-${contact.id}`).value,
             cargo: document.getElementById(`edit-contact-position-${contact.id}`).value,
             departamento: document.getElementById(`edit-contact-department-${contact.id}`).value
         };
-        
+
         try {
             const token = localStorage.getItem('authToken');
-            
+
             const response = await fetch(`/api/contactos/${contact.id}`, {
                 method: 'PUT',
                 headers: {
@@ -3333,7 +3446,7 @@ function editContact(contactId) {
                 },
                 body: JSON.stringify(contactData)
             });
-            
+
             if (response.ok) {
                 showNotification('Contacto actualizado exitosamente', 'success');
                 editModal.remove();
@@ -3341,9 +3454,11 @@ function editContact(contactId) {
             } else {
                 const errorData = await response.json();
                 showNotification(errorData.message || 'Error al actualizar contacto', 'error');
+                setButtonLoading(submitBtn, false);
             }
         } catch (error) {
             showNotification(`Error de conexión: ${error.message}`, 'error');
+            setButtonLoading(submitBtn, false);
         }
     });
 }
@@ -3417,20 +3532,17 @@ function viewContactDetails(contactId) {
     openDynamicModal(detailsModal);
 }
 
-function deleteContact(contactId) {
-    // Buscar el contacto para mostrar información en la confirmación
+async function deleteContact(contactId) {
     const contact = contacts.find(c => c.id == contactId);
-    if (!contact) {
-        showNotification('Contacto no encontrado', 'error');
-        return;
-    }
-    
-    // Mostrar confirmación con información del contacto
-    const confirmMessage = `¿Está seguro de que desea eliminar este contacto?\n\nNombre: ${contact.nombre}\nEmail: ${contact.email}\nTeléfono: ${contact.telefono || 'N/A'}\nCargo: ${contact.cargo || 'N/A'}\nCliente: ${contact.cliente_nombre || 'N/A'}\n\nEsta acción no se puede deshacer.`;
-    
-    if (confirm(confirmMessage)) {
-        deleteContactFromServer(contactId);
-    }
+    if (!contact) { showNotification('Contacto no encontrado', 'error'); return; }
+
+    const confirmed = await showConfirm({
+        title: 'Eliminar contacto',
+        message: 'Esta acción no se puede deshacer.',
+        detail: `<strong>${contact.nombre}</strong>${contact.cargo ? ' — ' + contact.cargo : ''}<br>${contact.email || ''}${contact.cliente_nombre ? '<br>' + contact.cliente_nombre : ''}`,
+        confirmText: 'Eliminar'
+    });
+    if (confirmed) deleteContactFromServer(contactId);
 }
 
 async function deleteContactFromServer(contactId) {
@@ -4141,9 +4253,13 @@ function editUser(userId) {
     showNotification('Función de edición de usuarios en desarrollo', 'info');
 }
 
-function deleteUser(userId) {
-    if (confirm('¿Está seguro de que desea eliminar este usuario?')) {
-        
+async function deleteUser(userId) {
+    const confirmed = await showConfirm({
+        title: 'Eliminar usuario',
+        message: '¿Estás seguro de que querés eliminar este usuario? Esta acción no se puede deshacer.',
+        confirmText: 'Eliminar'
+    });
+    if (confirmed) {
         showNotification('Función de eliminación de usuarios en desarrollo', 'info');
     }
 }
@@ -5023,7 +5139,7 @@ function viewOrderDetails(orderId) {
                     </div>
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1.5rem;">
                         ${getCurrentUserFromAuth()?.perfil === 'Administrador' ? `
-                        <button class="btn" onclick="if(confirm('¿Está seguro que quiere eliminar el pedido #${order.numero_pedido}?\\n\\nEsta acción no se puede deshacer.')) { closeDynamicModal(this.closest('.modal')); deleteOrderFromServer(${order.id}); }" style="background: #dc2626; color: white; padding: 0.6rem 1rem; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 0.85rem;" title="Eliminar Pedido">
+                        <button class="btn" onclick="confirmAndDeleteOrderFromModal(this, ${order.id}, '${order.numero_pedido}')" style="background: #dc2626; color: white; padding: 0.6rem 1rem; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 0.85rem;" title="Eliminar Pedido">
                             <i class="fas fa-trash-alt"></i> Eliminar
                         </button>
                         ` : '<div></div>'}
@@ -6270,13 +6386,18 @@ function setupEditOrderProductHandlers() {
 
     // Botón limpiar productos
     if (clearProductsBtn) {
-        clearProductsBtn.addEventListener('click', () => {
+        clearProductsBtn.addEventListener('click', async () => {
             if (editOrderItems.length === 0) {
                 showNotification('No hay productos para limpiar', 'info');
                 return;
             }
-            
-            if (confirm('¿Está seguro de que desea limpiar todos los productos del pedido?')) {
+            const confirmed = await showConfirm({
+                title: 'Limpiar productos',
+                message: '¿Estás seguro de que querés limpiar todos los productos del pedido?',
+                confirmText: 'Limpiar',
+                cancelText: 'Cancelar'
+            });
+            if (confirmed) {
                 clearEditOrderItems();
                 showNotification('Productos limpiados correctamente', 'success');
             }
@@ -6426,8 +6547,14 @@ function renderEditOrderProductsInternal(productsList, noProductsMessage) {
     productsList.innerHTML = productsTable;
 }
 
-function removeProductFromEditOrder(index) {
-    if (confirm('¿Está seguro de que desea eliminar este producto del pedido?')) {
+async function removeProductFromEditOrder(index) {
+    const confirmed = await showConfirm({
+        title: 'Eliminar producto',
+        message: '¿Querés eliminar este producto del pedido?',
+        confirmText: 'Eliminar',
+        cancelText: 'Cancelar'
+    });
+    if (confirmed) {
         editOrderItems.splice(index, 1);
         renderEditOrderProducts();
         updateEditOrderTotal();
@@ -7054,9 +7181,14 @@ function renderFabricaTable() {
 
 // Función para marcar un pedido como producido (cambiar estado a 'sale fabrica')
 async function markAsProduced(orderId) {
-    if (!confirm('¿Confirma que este pedido está terminado y listo para salir de fábrica?')) {
-        return;
-    }
+    const confirmed = await showConfirm({
+        title: 'Confirmar producción',
+        message: '¿Confirmás que este pedido está terminado y listo para salir de fábrica?',
+        confirmText: 'Confirmar',
+        confirmClass: 'btn-primary',
+        cancelText: 'Cancelar'
+    });
+    if (!confirmed) return;
     
     try {
         // Encontrar el pedido en el array local
