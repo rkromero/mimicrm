@@ -239,10 +239,12 @@ function getCurrentUserFromAuth() {
 }
 
 function openDynamicModal(modalEl) {
+    saveScroll();
     document.body.appendChild(modalEl);
     document.body.style.overflow = 'hidden';
     requestAnimationFrame(() => {
         modalEl.classList.add('active');
+        trapFocus(modalEl);
     });
     modalEl.addEventListener('click', (e) => {
         if (e.target === modalEl) {
@@ -254,6 +256,7 @@ function openDynamicModal(modalEl) {
 function closeDynamicModal(modalEl) {
     modalEl.classList.remove('active');
     document.body.style.overflow = '';
+    restoreScroll();
     setTimeout(() => modalEl.remove(), 300);
 }
 
@@ -332,7 +335,8 @@ function configurarMenuProduccion() {
 // === FUNCIONES DE CARGA DE DATOS DESDE API ===
 
 // Función para cargar clientes desde la API
-async function loadClients() {
+async function loadClients(force) {
+    if (!force && isCacheFresh('clients') && clients.length > 0) { renderClientsTable(); return; }
     showClientsSkeleton();
     try {
         const token = localStorage.getItem('authToken');
@@ -341,6 +345,7 @@ async function loadClients() {
         });
         if (response.ok) {
             clients = await response.json();
+            setCache('clients');
             renderClientsTable();
         } else {
             console.error('Error cargando clientes:', response.statusText);
@@ -357,7 +362,8 @@ async function loadClients() {
 }
 
 // Función para cargar productos desde la API
-async function loadProducts() {
+async function loadProducts(force) {
+    if (!force && isCacheFresh('products') && products.length > 0) { renderProductsTable(); return; }
     showTableSkeleton('products-table-body', 4, 5);
     try {
         const token = localStorage.getItem('authToken');
@@ -366,6 +372,7 @@ async function loadProducts() {
         });
         if (response.ok) {
             products = await response.json();
+            setCache('products');
             renderProductsTable();
         } else {
             console.error('Error cargando productos:', response.statusText);
@@ -378,7 +385,8 @@ async function loadProducts() {
 }
 
 // Función para cargar pedidos desde la API
-async function loadOrders() {
+async function loadOrders(force) {
+    if (!force && isCacheFresh('orders') && orders.length > 0) { renderOrdersTable(); return; }
     showTableSkeleton('orders-table-body', 8, 6);
     try {
         const token = localStorage.getItem('authToken');
@@ -387,6 +395,7 @@ async function loadOrders() {
         });
         if (response.ok) {
             orders = await response.json();
+            setCache('orders');
             renderOrdersTable();
 
             const pedidosSection = document.getElementById('pedidos-section');
@@ -409,7 +418,8 @@ async function loadOrders() {
 }
 
 // Función para cargar pagos desde la API
-async function loadPayments() {
+async function loadPayments(force) {
+    if (!force && isCacheFresh('payments') && payments.length > 0) { renderPaymentsTable(); return; }
     showTableSkeleton('payments-table-body', 7, 6);
     try {
         const token = localStorage.getItem('authToken');
@@ -418,6 +428,7 @@ async function loadPayments() {
         });
         if (response.ok) {
             payments = await response.json();
+            setCache('payments');
             renderPaymentsTable();
         } else {
             console.error('Error cargando pagos:', response.statusText);
@@ -430,7 +441,8 @@ async function loadPayments() {
 }
 
 // Función para cargar contactos desde la API
-async function loadContacts() {
+async function loadContacts(force) {
+    if (!force && isCacheFresh('contacts') && contacts.length > 0) { renderContactsTable(); return; }
     showTableSkeleton('contacts-table-body', 7, 5);
     try {
         const token = localStorage.getItem('authToken');
@@ -439,6 +451,7 @@ async function loadContacts() {
         });
         if (response.ok) {
             contacts = await response.json();
+            setCache('contacts');
             renderContactsTable();
         } else {
             console.error('Error cargando contactos:', response.statusText);
@@ -458,9 +471,11 @@ function renderClientsTable() {
     if (!container) return;
     
     if (clients.length === 0) {
-        container.innerHTML = '<p class="text-center text-gray-500">No hay clientes registrados</p>';
+        container.innerHTML = '<div class="empty-state"><i class="fas fa-users empty-state-icon"></i><div class="empty-state-title">Sin clientes registrados</div><div class="empty-state-desc">Usá el botón "Nuevo Cliente" para agregar el primero.</div></div>';
+        updateSectionCount('clientes-count', 0);
         return;
     }
+    updateSectionCount('clientes-count', clients.length);
     
     // Detectar si es móvil
     const isMobile = window.innerWidth <= 768;
@@ -680,7 +695,7 @@ function setupClientsSearch() {
     const newSearchInput = searchInput.cloneNode(true);
     searchInput.parentNode.replaceChild(newSearchInput, searchInput);
     
-    newSearchInput.addEventListener('input', function() {
+    newSearchInput.addEventListener('input', debounce(function() {
         const searchTerm = this.value.toLowerCase().trim();
         const isMobile = window.innerWidth <= 768;
         
@@ -721,7 +736,7 @@ function setupClientsSearch() {
                 }
             });
         }
-    });
+    }, 250));
 }
 
 // Función para renderizar la tabla de pedidos
@@ -733,7 +748,11 @@ function renderOrdersTable(filteredOrders = null) {
     const ordersToRender = filteredOrders || orders;
     
     if (ordersToRender.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center">No hay pedidos registrados</td></tr>';
+        const msg = (filteredOrders !== null) ? 'No hay pedidos que coincidan con tu búsqueda.' : 'Todavía no hay pedidos registrados.';
+        tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><i class="fas fa-shopping-cart empty-state-icon"></i><div class="empty-state-title">Sin pedidos</div><div class="empty-state-desc">' + msg + '</div></div></td></tr>';
+        const pg = document.getElementById('orders-pagination');
+        if (pg) pg.innerHTML = '';
+        updateSectionCount('pedidos-count', 0);
         return;
     }
     
@@ -812,8 +831,15 @@ function renderOrdersTable(filteredOrders = null) {
             existingCards.remove();
         }
         
-        // Renderizar tabla normal
-        tbody.innerHTML = ordersToRender.map(order => `
+        // Paginación
+        if (!paginationState.orders) paginationState.orders = 1;
+        const _totalOrders = ordersToRender.length;
+        const _startO = (paginationState.orders - 1) * PAGE_SIZE;
+        const _pageOrders = ordersToRender.slice(_startO, _startO + PAGE_SIZE);
+        updateSectionCount('pedidos-count', _totalOrders);
+
+        // Renderizar tabla normal (página actual)
+        tbody.innerHTML = _pageOrders.map(order => `
             <tr>
                 <td>${order.numero_pedido}</td>
                 <td>${order.cliente_nombre || 'N/A'}</td>
@@ -825,7 +851,7 @@ function renderOrdersTable(filteredOrders = null) {
                         ${translateOrderStatus(order.estado)}
                     </span>
                 </td>
-                <td>${order.vendedor_asignado_nombre || 'N/A'}</td>
+                <td><div class="vendor-cell">${getInitialsAvatar(order.vendedor_asignado_nombre || '')}${order.vendedor_asignado_nombre || 'N/A'}</div></td>
                 <td>${formatDate(order.fecha)}</td>
                 <td>
                     <button onclick="viewOrderDetails(${order.id})" class="btn-icon" title="Ver detalles">
@@ -840,6 +866,11 @@ function renderOrdersTable(filteredOrders = null) {
                 </td>
             </tr>
         `).join('');
+
+        renderPagination('orders-pagination', paginationState.orders, _totalOrders, function(page) {
+            paginationState.orders = page;
+            renderOrdersTable(filteredOrders);
+        });
     }
     
     // Configurar ordenamiento de columnas después de renderizar
@@ -858,29 +889,29 @@ function setupOrdersSearch() {
     const newSearchInput = searchInput.cloneNode(true);
     searchInput.parentNode.replaceChild(newSearchInput, searchInput);
     
-    newSearchInput.addEventListener('input', function() {
+    newSearchInput.addEventListener('input', debounce(function() {
         const searchTerm = this.value.toLowerCase().trim();
-        
+
         if (!searchTerm) {
             // Si no hay término de búsqueda, mostrar todos los pedidos
             renderOrdersTable();
             return;
         }
-        
+
         // Filtrar pedidos por nombre y apellido del cliente
         const filteredOrders = orders.filter(order => {
             const clientName = (order.cliente_nombre || '').toLowerCase();
             const clientLastName = (order.cliente_apellido || '').toLowerCase();
             const fullName = `${clientName} ${clientLastName}`.trim();
-            
-            return clientName.includes(searchTerm) || 
+
+            return clientName.includes(searchTerm) ||
                    clientLastName.includes(searchTerm) ||
                    fullName.includes(searchTerm);
         });
-        
+
         // Renderizar la tabla con los pedidos filtrados
         renderOrdersTable(filteredOrders);
-    });
+    }, 250));
 }
 
 // Función para configurar el ordenamiento de la tabla de pedidos
@@ -973,10 +1004,23 @@ function renderPaymentsTable() {
     const tbody = document.getElementById('payments-table-body');
     if (!tbody) return;
     
+    updateSectionCount('pagos-count', payments.length);
     if (payments.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center">No hay pagos registrados</td></tr>';
+        const tableContainer = tbody.closest('.table-responsive');
+        if (tableContainer) tableContainer.style.display = 'none';
+        const existingEmpty = tbody.closest('section')?.querySelector('.empty-state');
+        if (!existingEmpty) {
+            const emptyDiv = document.createElement('div');
+            emptyDiv.className = 'empty-state';
+            emptyDiv.innerHTML = `<div class="empty-state-icon"><i class="fas fa-credit-card"></i></div><div class="empty-state-title">Sin pagos registrados</div><div class="empty-state-desc">Los pagos aparecerán aquí una vez registrados.</div>`;
+            tbody.closest('section')?.querySelector('.table-container, .table-responsive')?.parentNode?.appendChild(emptyDiv);
+        }
         return;
     }
+    const existingEmpty2 = tbody.closest('section')?.querySelector('.empty-state');
+    if (existingEmpty2) existingEmpty2.remove();
+    const tableContainer2 = tbody.closest('.table-responsive');
+    if (tableContainer2) tableContainer2.style.display = 'block';
     
     // Detectar si es móvil
     const isMobile = window.innerWidth <= 768;
@@ -1074,17 +1118,10 @@ function renderPaymentsTable() {
 // Función para renderizar la tabla de productos
 function renderProductsTable() {
     const tbody = document.getElementById('products-table-body');
-    
+    updateSectionCount('productos-count', products.length);
+
     if (products.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="4" class="text-center" style="padding: 2rem; color: #6b7280;">
-                    <i class="fas fa-box" style="font-size: 2rem; margin-bottom: 0.5rem; display: block; color: #d1d5db;"></i>
-                    <p style="margin: 0;">No hay productos registrados</p>
-                    <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem;">Usa el botón "Nuevo Producto" para crear el primer producto.</p>
-                </td>
-            </tr>
-        `;
+        tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><div class="empty-state-icon"><i class="fas fa-box"></i></div><div class="empty-state-title">Sin productos registrados</div><div class="empty-state-desc">Usa el botón "Nuevo Producto" para crear el primero.</div></div></td></tr>`;
         return;
     }
     
@@ -1113,8 +1150,9 @@ function renderContactsTable() {
     const tbody = document.getElementById('contacts-table-body');
     if (!tbody) return;
     
+    updateSectionCount('contactos-count', contacts.length);
     if (contacts.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center">No hay contactos registrados</td></tr>';
+        tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-state-icon"><i class="fas fa-address-book"></i></div><div class="empty-state-title">Sin contactos registrados</div><div class="empty-state-desc">Agrega contactos para mantener el seguimiento.</div></div></td></tr>`;
         return;
     }
     
@@ -1275,6 +1313,236 @@ function showClientsSkeleton() {
     container.innerHTML = html;
 }
 
+// === HELPERS PREMIUM — BATCH 2 ===
+
+// ─── DEBOUNCE (Item 2) ───
+function debounce(fn, delay = 300) {
+    let timer;
+    return function(...args) {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn.apply(this, args), delay);
+    };
+}
+
+// ─── CACHE LOCAL (Item 4) ───
+const dataCache = {};
+const CACHE_TTL = 90 * 1000;
+function isCacheFresh(key) { return dataCache[key] && (Date.now() - dataCache[key].timestamp < CACHE_TTL); }
+function setCache(key)      { dataCache[key] = { timestamp: Date.now() }; }
+function invalidateCache(...keys) { keys.forEach(k => delete dataCache[k]); }
+
+// ─── AVATAR INITIALS (Item 22) ───
+function getInitialsAvatar(name, size) {
+    size = size || 26;
+    const colors = ['#6366f1','#8b5cf6','#ec4899','#f59e0b','#10b981','#3b82f6','#ef4444','#14b8a6','#f97316'];
+    const words = (name || '').trim().split(/\s+/);
+    const initials = words.length >= 2
+        ? (words[0][0] + words[words.length-1][0]).toUpperCase()
+        : (words[0] || '?')[0].toUpperCase();
+    const colorIndex = (name || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0) % colors.length;
+    return '<span class="avatar-initials" style="background:' + colors[colorIndex] + ';width:' + size + 'px;height:' + size + 'px">' + initials + '</span>';
+}
+
+// ─── SECTION COUNTER (Item 23) ───
+function updateSectionCount(countId, count) {
+    const el = document.getElementById(countId);
+    if (!el) return;
+    el.textContent = count;
+    el.style.display = count > 0 ? '' : 'none';
+}
+
+// ─── PAGINACIÓN (Item 1) ───
+const PAGE_SIZE = 50;
+const paginationState = {};
+
+function renderPagination(containerId, currentPage, totalItems, onPageChange) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    const totalPages = Math.ceil(totalItems / PAGE_SIZE);
+    if (totalPages <= 1) { container.innerHTML = ''; return; }
+
+    let html = '<div class="pagination">';
+    html += '<button class="pagination-btn" id="' + containerId + '-prev"' + (currentPage === 1 ? ' disabled' : '') + '><i class="fas fa-chevron-left"></i></button>';
+
+    let prevEllipsis = false;
+    for (let i = 1; i <= totalPages; i++) {
+        if (i === 1 || i === totalPages || Math.abs(i - currentPage) <= 1) {
+            prevEllipsis = false;
+            html += '<button class="pagination-btn' + (i === currentPage ? ' active' : '') + '" data-page="' + i + '">' + i + '</button>';
+        } else if (!prevEllipsis && Math.abs(i - currentPage) > 1) {
+            prevEllipsis = true;
+            html += '<span class="pagination-ellipsis">…</span>';
+        }
+    }
+
+    html += '<button class="pagination-btn" id="' + containerId + '-next"' + (currentPage === totalPages ? ' disabled' : '') + '><i class="fas fa-chevron-right"></i></button>';
+    html += '<span class="pagination-info">Página ' + currentPage + ' de ' + totalPages + ' (' + totalItems + ' registros)</span>';
+    html += '</div>';
+
+    container.innerHTML = html;
+    const prevBtn = container.querySelector('#' + containerId + '-prev');
+    const nextBtn = container.querySelector('#' + containerId + '-next');
+    if (prevBtn) prevBtn.addEventListener('click', () => onPageChange(currentPage - 1));
+    if (nextBtn) nextBtn.addEventListener('click', () => onPageChange(currentPage + 1));
+    container.querySelectorAll('.pagination-btn[data-page]').forEach(function(btn) {
+        btn.addEventListener('click', () => onPageChange(parseInt(btn.dataset.page)));
+    });
+}
+
+// ─── FOCUS TRAP (Item 11) ───
+function trapFocus(element) {
+    const selectors = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    const focusable = Array.from(element.querySelectorAll(selectors));
+    if (!focusable.length) return function() {};
+    const first = focusable[0];
+    const last  = focusable[focusable.length - 1];
+    function handler(e) {
+        if (e.key !== 'Tab') return;
+        if (e.shiftKey) { if (document.activeElement === first) { e.preventDefault(); last.focus(); } }
+        else { if (document.activeElement === last) { e.preventDefault(); first.focus(); } }
+    }
+    element.addEventListener('keydown', handler);
+    setTimeout(function() { if (first) first.focus(); }, 50);
+    return function() { element.removeEventListener('keydown', handler); };
+}
+
+// ─── SCROLL RESTORATION (Item 12) ───
+var _savedScrollY = 0;
+function saveScroll()    { _savedScrollY = window.scrollY; }
+function restoreScroll() { setTimeout(function() { window.scrollTo({ top: _savedScrollY, behavior: 'instant' }); }, 10); }
+
+// ─── COMMAND PALETTE (Item 14) ───
+var _cpSelectedIndex = 0;
+var _cpCurrentResults = [];
+
+function initCommandPalette() {
+    const overlay = document.getElementById('command-palette-overlay');
+    const input   = document.getElementById('command-palette-input');
+    if (!overlay || !input) return;
+
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            overlay.classList.contains('active') ? closeCommandPalette() : openCommandPalette();
+        }
+    });
+
+    const hint = document.getElementById('nav-search-hint');
+    if (hint) hint.addEventListener('click', openCommandPalette);
+
+    input.addEventListener('input', debounce(renderCommandResults, 150));
+    input.addEventListener('keydown', handleCommandKey);
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) closeCommandPalette(); });
+}
+
+function openCommandPalette() {
+    const overlay = document.getElementById('command-palette-overlay');
+    const input   = document.getElementById('command-palette-input');
+    if (!overlay || !input) return;
+    overlay.classList.add('active');
+    input.value = '';
+    setTimeout(function() { input.focus(); }, 30);
+    renderCommandResults();
+}
+
+function closeCommandPalette() {
+    const overlay = document.getElementById('command-palette-overlay');
+    if (overlay) overlay.classList.remove('active');
+}
+
+function renderCommandResults() {
+    const input     = document.getElementById('command-palette-input');
+    const container = document.getElementById('command-palette-results');
+    if (!container || !input) return;
+    const query = (input.value || '').toLowerCase().trim();
+
+    _cpCurrentResults = [];
+    let html = '';
+
+    if (!query) {
+        const actions = [
+            { icon: 'fa-user-plus',       label: 'Nuevo Cliente',  action: 'new-client'  },
+            { icon: 'fa-shopping-cart',   label: 'Nuevo Pedido',   action: 'new-order'   },
+            { icon: 'fa-money-bill-wave', label: 'Nuevo Pago',     action: 'new-payment' },
+        ];
+        html += '<div class="command-result-group-label">Acciones rápidas</div>';
+        actions.forEach(function(a, i) {
+            _cpCurrentResults.push({ type: 'action', action: a.action });
+            html += '<div class="command-result-item" data-idx="' + i + '"><i class="fas ' + a.icon + '"></i><span class="command-result-item-title">' + a.label + '</span></div>';
+        });
+    } else {
+        const matchClients = clients.filter(function(c) {
+            const name = ((c.nombre || '') + ' ' + (c.apellido || '')).toLowerCase();
+            return name.includes(query) || (c.cuit || c.documento || '').includes(query);
+        }).slice(0, 5);
+
+        const matchOrders = orders.filter(function(o) {
+            const name = ((o.cliente_nombre || '') + ' ' + (o.cliente_apellido || '')).toLowerCase();
+            return name.includes(query) || (o.numero_pedido || '').toLowerCase().includes(query);
+        }).slice(0, 5);
+
+        if (matchClients.length) {
+            html += '<div class="command-result-group-label">Clientes</div>';
+            matchClients.forEach(function(c) {
+                const idx = _cpCurrentResults.length;
+                _cpCurrentResults.push({ type: 'client', id: c.id });
+                html += '<div class="command-result-item" data-idx="' + idx + '"><i class="fas fa-user"></i><span class="command-result-item-title">' + ((c.nombre||'') + ' ' + (c.apellido||'')).trim() + '</span><span class="command-result-item-sub">' + (c.cuit || c.documento || '') + '</span></div>';
+            });
+        }
+        if (matchOrders.length) {
+            html += '<div class="command-result-group-label">Pedidos</div>';
+            matchOrders.forEach(function(o) {
+                const idx = _cpCurrentResults.length;
+                _cpCurrentResults.push({ type: 'order', id: o.id });
+                html += '<div class="command-result-item" data-idx="' + idx + '"><i class="fas fa-shopping-cart"></i><span class="command-result-item-title">' + o.numero_pedido + ' — ' + ((o.cliente_nombre||'') + ' ' + (o.cliente_apellido||'')).trim() + '</span><span class="command-result-item-sub">' + formatCurrency(o.monto) + '</span></div>';
+            });
+        }
+        if (!matchClients.length && !matchOrders.length) {
+            html = '<div class="command-palette-empty"><i class="fas fa-search"></i>Sin resultados para "' + query + '"</div>';
+        }
+    }
+
+    container.innerHTML = html;
+    _cpSelectedIndex = 0;
+    _updateCpSelection();
+    container.querySelectorAll('.command-result-item').forEach(function(item) {
+        item.addEventListener('click', function() { _executeCpItem(parseInt(item.dataset.idx)); });
+    });
+}
+
+function handleCommandKey(e) {
+    const items = document.querySelectorAll('#command-palette-results .command-result-item');
+    if (e.key === 'ArrowDown')  { e.preventDefault(); _cpSelectedIndex = Math.min(_cpSelectedIndex + 1, items.length - 1); _updateCpSelection(); }
+    else if (e.key === 'ArrowUp')   { e.preventDefault(); _cpSelectedIndex = Math.max(_cpSelectedIndex - 1, 0); _updateCpSelection(); }
+    else if (e.key === 'Enter')     { e.preventDefault(); _executeCpItem(_cpSelectedIndex); }
+    else if (e.key === 'Escape')    { closeCommandPalette(); }
+}
+
+function _updateCpSelection() {
+    document.querySelectorAll('#command-palette-results .command-result-item').forEach(function(item, i) {
+        item.classList.toggle('selected', i === _cpSelectedIndex);
+    });
+}
+
+function _executeCpItem(idx) {
+    const result = _cpCurrentResults[idx];
+    if (!result) return;
+    closeCommandPalette();
+    if (result.type === 'action') {
+        const map = { 'new-client': 'new-client-btn', 'new-order': 'new-order-btn', 'new-payment': 'new-payment-btn' };
+        const btn = document.getElementById(map[result.action]);
+        if (btn) btn.click();
+    } else if (result.type === 'client') {
+        const navItem = Array.from(document.querySelectorAll('.nav-item')).find(function(n) { return n.textContent.includes('Clientes'); });
+        if (navItem) navItem.click();
+        setTimeout(function() { viewClientDetails(result.id).catch(console.error); }, 600);
+    } else if (result.type === 'order') {
+        const navItem = Array.from(document.querySelectorAll('.nav-item')).find(function(n) { return n.textContent.includes('Pedidos'); });
+        if (navItem) navItem.click();
+        setTimeout(function() { viewOrderDetails(result.id); }, 600);
+    }
+}
+
 // === INICIALIZACIÓN ===
 
 // === SISTEMA DE DEBUGGING Y MANEJO DE ERRORES ===
@@ -1352,43 +1620,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
         
         
-        // Cargar datos desde la API con manejo de errores individual
-        
-        
-        try {
-            await loadClients();
-            
-        } catch (error) {
-            console.error('Error cargando clientes:', error);
-        }
-        
-        try {
-            await loadProducts();
-            
-        } catch (error) {
-            console.error('Error cargando productos:', error);
-        }
-        
-        try {
-            await loadOrders();
-            
-        } catch (error) {
-            console.error('Error cargando pedidos:', error);
-        }
-        
-        try {
-            await loadPayments();
-            
-        } catch (error) {
-            console.error('Error cargando pagos:', error);
-        }
-        
-        try {
-            await loadContacts();
-            
-        } catch (error) {
-            console.error('Error cargando contactos:', error);
-        }
+        // Carga inicial: solo clientes y productos (necesarios para selects en formularios)
+        // Pedidos, pagos y contactos se cargan al navegar a cada sección (carga diferida)
+        try { await loadClients(); } catch(e) { console.error('Error cargando clientes:', e); }
+        try { await loadProducts(); } catch(e) { console.error('Error cargando productos:', e); }
         
         // Configurar componentes con manejo de errores
         
@@ -1410,6 +1645,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         setupTransportToggles();
         
         setupDashboardCards();
+        initCommandPalette();
         
         // Configurar menú móvil
         setupMobileMenu();
@@ -2433,7 +2669,7 @@ async function handleNewClientSubmit(e) {
             showNotification('Cliente creado exitosamente', 'success');
             closeModal('new-client-modal');
             e.target.reset();
-            await loadClients(); // Recargar la lista
+            invalidateCache('clients'); await loadClients(true);
         } else {
             console.error('❌ Error del servidor al crear cliente:', response.status, response.statusText);
             try {
@@ -2558,7 +2794,7 @@ async function handleNewPaymentSubmit(e) {
             showNotification('Pago registrado exitosamente', 'success');
             closeModal('new-payment-modal');
             e.target.reset();
-            await loadPayments();
+            invalidateCache('payments'); await loadPayments(true);
         } else {
             const error = await response.json();
             showNotification(error.message || 'Error al registrar pago', 'error');
@@ -2597,7 +2833,7 @@ async function handleNewContactSubmit(e) {
             showNotification('Contacto creado exitosamente', 'success');
             closeModal('new-contact-modal');
             e.target.reset();
-            await loadContacts();
+            invalidateCache('contacts'); await loadContacts(true);
         } else {
             const error = await response.json();
             showNotification(error.message || 'Error al crear contacto', 'error');
@@ -2642,7 +2878,7 @@ async function handleNewProductSubmit(e) {
             showNotification('Producto creado exitosamente', 'success');
             closeModal('new-product-modal');
             document.getElementById('new-product-form').reset();
-            await loadProducts();
+            invalidateCache('products'); await loadProducts(true);
         } else {
             const error = await response.json();
             showNotification(error.message || 'Error al crear producto', 'error');
@@ -2765,7 +3001,7 @@ async function deleteClientFromServer(clientId) {
         
         if (response.ok) {
             showNotification('Cliente eliminado exitosamente', 'success');
-            await loadClients(); // Recargar la lista
+            invalidateCache('clients'); await loadClients(true);
         } else {
             const errorData = await response.json();
             console.error('❌ Error del servidor al eliminar cliente:', response.status, errorData);
@@ -2976,7 +3212,7 @@ async function deleteOrderFromServer(orderId) {
         
         if (response.ok) {
             showNotification('Pedido eliminado exitosamente', 'success');
-            await loadOrders(); // Recargar la lista
+            invalidateCache('orders'); await loadOrders(true);
         } else {
             const errorData = await response.json();
             console.error('❌ Error del servidor al eliminar pedido:', response.status, errorData);
@@ -3087,7 +3323,7 @@ function editPayment(paymentId) {
             if (response.ok) {
                 showNotification('Pago actualizado exitosamente', 'success');
                 editModal.remove();
-                await loadPayments();
+                invalidateCache('payments'); await loadPayments(true);
             } else {
                 const errorData = await response.json();
                 showNotification(errorData.message || 'Error al actualizar pago', 'error');
@@ -3129,7 +3365,7 @@ async function deletePaymentFromServer(paymentId) {
         
         if (response.ok) {
             showNotification('Pago eliminado exitosamente', 'success');
-            await loadPayments(); // Recargar la lista
+            invalidateCache('payments'); await loadPayments(true);
         } else {
             const errorData = await response.json();
             console.error('❌ Error del servidor al eliminar pago:', response.status, errorData);
@@ -3287,7 +3523,7 @@ function editProduct(productId) {
             if (response.ok) {
                 showNotification('Producto actualizado exitosamente', 'success');
                 editModal.remove();
-                await loadProducts();
+                invalidateCache('products'); await loadProducts(true);
             } else {
                 const errorData = await response.json();
                 console.error('❌ FRONTEND - Error del servidor:', response.status, errorData);
@@ -3331,7 +3567,7 @@ async function deleteProductFromServer(productId) {
         
         if (response.ok) {
             showNotification('Producto eliminado exitosamente', 'success');
-            await loadProducts(); // Recargar la lista
+            invalidateCache('products'); await loadProducts(true);
         } else {
             const errorData = await response.json();
             console.error('❌ Error del servidor al eliminar producto:', response.status, errorData);
@@ -3450,7 +3686,7 @@ function editContact(contactId) {
             if (response.ok) {
                 showNotification('Contacto actualizado exitosamente', 'success');
                 editModal.remove();
-                await loadContacts();
+                invalidateCache('contacts'); await loadContacts(true);
             } else {
                 const errorData = await response.json();
                 showNotification(errorData.message || 'Error al actualizar contacto', 'error');
@@ -3561,7 +3797,7 @@ async function deleteContactFromServer(contactId) {
         
         if (response.ok) {
             showNotification('Contacto eliminado exitosamente', 'success');
-            await loadContacts(); // Recargar la lista
+            invalidateCache('contacts'); await loadContacts(true);
         } else {
             const errorData = await response.json();
             console.error('❌ Error del servidor al eliminar contacto:', response.status, errorData);
@@ -3633,7 +3869,7 @@ async function handleEditClientSubmit(e) {
         if (response.ok) {
             showNotification('Cliente actualizado exitosamente', 'success');
             closeModal('edit-client-modal');
-            await loadClients(); // Recargar la lista
+            invalidateCache('clients'); await loadClients(true);
         } else {
             const errorData = await response.json();
             console.error('❌ Error del servidor al actualizar cliente:', response.status, errorData);
@@ -6267,7 +6503,7 @@ async function updateSingleOrder(orderId) {
         console.error('❌ UPDATE SINGLE ORDER - Error:', error);
         console.log('🔄 UPDATE SINGLE ORDER - Fallback: recargando todos los pedidos...');
         // Fallback: recargar todo si falla
-        await loadOrders();
+        invalidateCache('orders'); await loadOrders(true);
     }
 }
 
@@ -6309,7 +6545,7 @@ async function addNewOrderToLocal(orderId) {
         console.error('❌ ADD NEW ORDER - Error:', error);
         console.log('🔄 ADD NEW ORDER - Fallback: recargando todos los pedidos...');
         // Fallback: recargar todo si falla
-        await loadOrders();
+        invalidateCache('orders'); await loadOrders(true);
     }
 }
 
