@@ -221,8 +221,8 @@ tr:hover {
     background: white;
     padding: 0;
     border-radius: 12px 0 0 12px;
-    width: min(95vw, 960px);
-    max-width: 95vw;
+    width: min(98vw, 1200px);
+    max-width: 98vw;
     box-shadow: -4px 0 25px rgba(0, 0, 0, 0.15);
     position: fixed;
     top: 0;
