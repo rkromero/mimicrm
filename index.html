@@ -143,6 +143,23 @@
                             </button>
                         </div>
                     </div>
+                    <!-- Filtros rápidos de pedidos -->
+                    <div id="orders-filters" style="display:flex; flex-wrap:wrap; gap:0.5rem; align-items:center; margin-bottom:0.75rem;">
+                        <span style="font-size:0.8rem; color:#6b7280; font-weight:500;">Estado:</span>
+                        <button class="order-filter-btn active" data-filter-estado="" onclick="setOrderEstadoFilter(this, '')">Todos</button>
+                        <button class="order-filter-btn" data-filter-estado="pendiente de pago" onclick="setOrderEstadoFilter(this, 'pendiente de pago')">Pendiente de pago</button>
+                        <button class="order-filter-btn" data-filter-estado="fabricar" onclick="setOrderEstadoFilter(this, 'fabricar')">Fabricar</button>
+                        <button class="order-filter-btn" data-filter-estado="sale fabrica" onclick="setOrderEstadoFilter(this, 'sale fabrica')">Sale Fábrica</button>
+                        <button class="order-filter-btn" data-filter-estado="completado" onclick="setOrderEstadoFilter(this, 'completado')">Completado</button>
+                        <button class="order-filter-btn" data-filter-estado="cancelado" onclick="setOrderEstadoFilter(this, 'cancelado')">Cancelado</button>
+                        <span style="font-size:0.8rem; color:#6b7280; font-weight:500; margin-left:0.5rem;">Vendedor:</span>
+                        <select id="order-filter-vendedor" class="input" style="width:auto; padding:0.3rem 0.5rem; font-size:0.8rem;" onchange="applyOrdersFilter()">
+                            <option value="">Todos</option>
+                        </select>
+                        <button onclick="resetOrdersFilter()" class="btn btn-secondary" style="font-size:0.75rem; padding:0.3rem 0.6rem; margin-left:auto;">
+                            <i class="fas fa-times"></i> Limpiar
+                        </button>
+                    </div>
                     <!-- Barra de edición masiva (visible solo con selección activa) -->
                     <div id="bulk-toolbar" style="display:none; align-items:center; gap:0.75rem; background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:0.65rem 1rem; margin-bottom:0.75rem;">
                         <span id="bulk-count" style="font-weight:600; color:#1e40af; white-space:nowrap;"></span>

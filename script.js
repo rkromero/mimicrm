@@ -397,6 +397,7 @@ async function loadOrders(force) {
             orders = await response.json();
             setCache('orders');
             renderOrdersTable();
+            populateVendorFilter();
 
             const pedidosSection = document.getElementById('pedidos-section');
             if (pedidosSection && pedidosSection.style.display !== 'none') {
@@ -1559,6 +1560,54 @@ function _executeCpItem(idx) {
         if (navItem) navItem.click();
         setTimeout(function() { viewOrderDetails(result.id); }, 600);
     }
+}
+
+// === FILTROS RÁPIDOS DE PEDIDOS ===
+
+const ordersActiveFilter = { estado: '', vendedor: '' };
+
+function setOrderEstadoFilter(btn, estado) {
+    ordersActiveFilter.estado = estado;
+    document.querySelectorAll('.order-filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    paginationState.orders = 1;
+    applyOrdersFilter();
+}
+
+function applyOrdersFilter() {
+    ordersActiveFilter.vendedor = document.getElementById('order-filter-vendedor')?.value || '';
+    paginationState.orders = 1;
+    let filtered = orders;
+    if (ordersActiveFilter.estado) {
+        filtered = filtered.filter(o => o.estado === ordersActiveFilter.estado);
+    }
+    if (ordersActiveFilter.vendedor) {
+        filtered = filtered.filter(o => (o.vendedor_asignado_nombre || '') === ordersActiveFilter.vendedor);
+    }
+    renderOrdersTable(filtered.length < orders.length ? filtered : null);
+}
+
+function resetOrdersFilter() {
+    ordersActiveFilter.estado = '';
+    ordersActiveFilter.vendedor = '';
+    document.querySelectorAll('.order-filter-btn').forEach(b => b.classList.remove('active'));
+    const allBtn = document.querySelector('.order-filter-btn[data-filter-estado=""]');
+    if (allBtn) allBtn.classList.add('active');
+    const vendSelect = document.getElementById('order-filter-vendedor');
+    if (vendSelect) vendSelect.value = '';
+    const search = document.getElementById('orders-search');
+    if (search) search.value = '';
+    paginationState.orders = 1;
+    renderOrdersTable();
+}
+
+function populateVendorFilter() {
+    const select = document.getElementById('order-filter-vendedor');
+    if (!select) return;
+    const vendors = [...new Set(orders.map(o => o.vendedor_asignado_nombre).filter(Boolean))].sort();
+    const current = select.value;
+    select.innerHTML = '<option value="">Todos</option>' +
+        vendors.map(v => `<option value="${v}"${v === current ? ' selected' : ''}>${v}</option>`).join('');
 }
 
 // === EDICIÓN MASIVA DE PEDIDOS ===

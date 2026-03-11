@@ -3475,3 +3475,21 @@ body.theme-dark .command-palette-footer { background: #1e1e24; border-top-color:
 body.theme-dark .command-result-item:hover,
 body.theme-dark .command-result-item.selected { background: #2d2d36; }
 body.theme-dark .command-result-item-title { color: #f3f4f6; }
+
+/* ─── FILTROS RÁPIDOS PEDIDOS ─── */
+.order-filter-btn {
+    padding: 0.3rem 0.75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 999px;
+    background: white;
+    color: #374151;
+    font-size: 0.78rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+.order-filter-btn:hover { border-color: var(--primary-color); color: var(--primary-color); background: var(--primary-light); }
+.order-filter-btn.active { background: var(--primary-color); color: white; border-color: var(--primary-color); }
+body.theme-dark .order-filter-btn { background: #23232a; border-color: #374151; color: #d1d5db; }
+body.theme-dark .order-filter-btn.active { background: var(--primary-color); color: white; }
