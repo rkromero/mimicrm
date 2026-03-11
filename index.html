@@ -479,6 +479,16 @@
                             </button>
                         </div>
                     </div>
+                    <!-- Filtro rápido por vendedor -->
+                    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem; flex-wrap:wrap;">
+                        <span style="font-size:0.8rem; color:#6b7280; font-weight:500;">Vendedor:</span>
+                        <select id="client-filter-vendedor" class="input" style="width:auto; padding:0.3rem 0.5rem; font-size:0.8rem;" onchange="applyClientsVendorFilter()">
+                            <option value="">Todos</option>
+                        </select>
+                        <button onclick="resetClientsVendorFilter()" class="btn btn-secondary" style="font-size:0.75rem; padding:0.3rem 0.6rem;">
+                            <i class="fas fa-times"></i> Limpiar
+                        </button>
+                    </div>
                     <div id="clients-list"></div>
                 </div>
             </div>

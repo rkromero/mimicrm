@@ -423,24 +423,31 @@ app.get('/api/auth/verify', authenticateToken, async (req, res) => {
 app.get('/api/clientes', authenticateToken, async (req, res) => {
     try {
         let query = `
-            SELECT 
+            SELECT
                 c.*,
                 u.nombre as creado_por_nombre,
                 COALESCE(pedidos_totals.total_pedidos, 0) as total_pedidos,
                 COALESCE(pagos_totals.total_pagos, 0) as total_pagos,
-                (COALESCE(pedidos_totals.total_pedidos, 0) - COALESCE(pagos_totals.total_pagos, 0)) as saldo_real
+                (COALESCE(pedidos_totals.total_pedidos, 0) - COALESCE(pagos_totals.total_pagos, 0)) as saldo_real,
+                last_ped.vendedor_asignado_nombre as ultimo_vendedor
             FROM clientes c
             LEFT JOIN usuarios u ON c.creado_por = u.id
             LEFT JOIN (
-                SELECT cliente_id, SUM(monto) as total_pedidos 
-                FROM pedidos 
+                SELECT cliente_id, SUM(monto) as total_pedidos
+                FROM pedidos
                 GROUP BY cliente_id
             ) pedidos_totals ON c.id = pedidos_totals.cliente_id
             LEFT JOIN (
-                SELECT cliente_id, SUM(monto) as total_pagos 
-                FROM pagos 
+                SELECT cliente_id, SUM(monto) as total_pagos
+                FROM pagos
                 GROUP BY cliente_id
             ) pagos_totals ON c.id = pagos_totals.cliente_id
+            LEFT JOIN (
+                SELECT cliente_id, vendedor_asignado_nombre,
+                       ROW_NUMBER() OVER (PARTITION BY cliente_id ORDER BY fecha DESC) as rn
+                FROM pedidos
+                WHERE vendedor_asignado_nombre IS NOT NULL
+            ) last_ped ON last_ped.cliente_id = c.id AND last_ped.rn = 1
             WHERE c.activo = true
         `;
         

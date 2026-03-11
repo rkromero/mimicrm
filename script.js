@@ -347,6 +347,7 @@ async function loadClients(force) {
             clients = await response.json();
             setCache('clients');
             renderClientsTable();
+            populateClientVendorFilter();
         } else {
             console.error('Error cargando clientes:', response.statusText);
             showNotification('No se pudieron cargar los clientes. Intentá de nuevo.', 'error');
@@ -467,16 +468,40 @@ async function loadContacts(force) {
 // === FUNCIONES DE RENDERIZADO ===
 
 // Función para renderizar la tabla de clientes
-function renderClientsTable() {
+function populateClientVendorFilter() {
+    const select = document.getElementById('client-filter-vendedor');
+    if (!select) return;
+    const vendors = [...new Set(clients.map(c => c.ultimo_vendedor).filter(Boolean))].sort();
+    const current = select.value;
+    select.innerHTML = '<option value="">Todos</option>' +
+        vendors.map(v => `<option value="${v}"${v === current ? ' selected' : ''}>${v}</option>`).join('');
+}
+
+function applyClientsVendorFilter() {
+    const vendedor = document.getElementById('client-filter-vendedor')?.value || '';
+    const filtered = vendedor ? clients.filter(c => c.ultimo_vendedor === vendedor) : null;
+    renderClientsTable(filtered);
+}
+
+function resetClientsVendorFilter() {
+    const select = document.getElementById('client-filter-vendedor');
+    if (select) select.value = '';
+    const search = document.getElementById('clients-search');
+    if (search) search.value = '';
+    renderClientsTable();
+}
+
+function renderClientsTable(clientsToRender = null) {
     const container = document.getElementById('clients-list');
     if (!container) return;
-    
-    if (clients.length === 0) {
+    const list = clientsToRender || clients;
+
+    if (list.length === 0) {
         container.innerHTML = '<div class="empty-state"><i class="fas fa-users empty-state-icon"></i><div class="empty-state-title">Sin clientes registrados</div><div class="empty-state-desc">Usá el botón "Nuevo Cliente" para agregar el primero.</div></div>';
         updateSectionCount('clientes-count', 0);
         return;
     }
-    updateSectionCount('clientes-count', clients.length);
+    updateSectionCount('clientes-count', list.length);
     
     // Detectar si es móvil
     const isMobile = window.innerWidth <= 768;
@@ -539,21 +564,22 @@ function renderClientsTable() {
                     <th>Documento</th>
                     <th>Localidad</th>
                     <th>Teléfono</th>
+                    <th>Vendedor</th>
                     <th>Saldo Pendiente</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
             <tbody id="clients-table-body">
-                ${clients.map(client => {
+                ${list.map(client => {
                     const saldoPendiente = (client.total_pedidos || 0) - (client.total_pagos || 0);
                     const saldoStyle = getSaldoStyle(saldoPendiente);
-                    
                     return `
                         <tr>
                             <td>${(client.nombre || client.name || '') + ' ' + (client.apellido || '')}</td>
                             <td>${client.documento || client.cuit}</td>
                             <td>${client.localidad || '-'}</td>
                             <td>${client.telefono || client.phone}</td>
+                            <td style="color:#6b7280; font-size:0.85rem;">${client.ultimo_vendedor || '-'}</td>
                             <td>
                                 <span style="${saldoStyle}">
                                     ${formatCurrency(saldoPendiente)}
@@ -575,12 +601,12 @@ function renderClientsTable() {
                 }).join('')}
             </tbody>
         `;
-        
+
         // Crear cards para móvil
-        clients.forEach(client => {
+        list.forEach(client => {
             const saldoPendiente = (client.total_pedidos || 0) - (client.total_pagos || 0);
             const saldoStyle = getSaldoStyle(saldoPendiente);
-            
+
             const card = document.createElement('div');
             card.className = 'mobile-card';
             card.innerHTML = `
@@ -599,6 +625,10 @@ function renderClientsTable() {
                     <div class="mobile-card-row">
                         <span class="mobile-card-label">Teléfono:</span>
                         <span class="mobile-card-value">${client.telefono || client.phone}</span>
+                    </div>
+                    <div class="mobile-card-row">
+                        <span class="mobile-card-label">Vendedor:</span>
+                        <span class="mobile-card-value">${client.ultimo_vendedor || '-'}</span>
                     </div>
                     <div class="mobile-card-row">
                         <span class="mobile-card-label">Saldo Pendiente:</span>
@@ -641,21 +671,23 @@ function renderClientsTable() {
                     <th>Documento</th>
                     <th>Localidad</th>
                     <th>Teléfono</th>
+                    <th>Vendedor</th>
                     <th>Saldo Pendiente</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
             <tbody id="clients-table-body">
-                ${clients.map(client => {
+                ${list.map(client => {
                     const saldoPendiente = (client.total_pedidos || 0) - (client.total_pagos || 0);
                     const saldoStyle = getSaldoStyle(saldoPendiente);
-                    
+
                     return `
                         <tr>
                             <td>${(client.nombre || client.name || '') + ' ' + (client.apellido || '')}</td>
                             <td>${client.documento || client.cuit}</td>
                             <td>${client.localidad || '-'}</td>
                             <td>${client.telefono || client.phone}</td>
+                            <td style="color:#6b7280; font-size:0.85rem;">${client.ultimo_vendedor || '-'}</td>
                             <td>
                                 <span style="${saldoStyle}">
                                     ${formatCurrency(saldoPendiente)}
