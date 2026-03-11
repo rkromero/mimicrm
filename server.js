@@ -1073,6 +1073,26 @@ app.delete('/api/pedidos/:orderId', authenticateToken, async (req, res) => {
     }
 });
 
+// Actualizar estado de múltiples pedidos (DEBE IR ANTES de /:orderId/estado)
+app.patch('/api/pedidos/bulk/estado', authenticateToken, async (req, res) => {
+    try {
+        const { ids, estado } = req.body;
+        if (!ids || !Array.isArray(ids) || ids.length === 0 || !estado) {
+            return res.status(400).json({ error: 'ids (array) y estado son requeridos' });
+        }
+        const placeholders = ids.map(() => '?').join(',');
+        await db.execute(
+            `UPDATE pedidos SET estado = ? WHERE id IN (${placeholders})`,
+            [estado, ...ids]
+        );
+        console.log(`✅ Bulk update: ${ids.length} pedidos → estado "${estado}"`);
+        res.json({ message: `${ids.length} pedidos actualizados`, updated: ids.length });
+    } catch (error) {
+        console.error('Error en bulk update de pedidos:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
 // Actualizar solo el estado de un pedido
 app.patch('/api/pedidos/:orderId/estado', authenticateToken, async (req, res) => {
     try {
@@ -1103,26 +1123,6 @@ app.patch('/api/pedidos/:orderId/estado', authenticateToken, async (req, res) =>
         res.json({ message: 'Estado del pedido actualizado exitosamente' });
     } catch (error) {
         console.error('Error actualizando estado del pedido:', error);
-        res.status(500).json({ error: 'Error interno del servidor' });
-    }
-});
-
-// Actualizar estado de múltiples pedidos
-app.patch('/api/pedidos/bulk/estado', authenticateToken, async (req, res) => {
-    try {
-        const { ids, estado } = req.body;
-        if (!ids || !Array.isArray(ids) || ids.length === 0 || !estado) {
-            return res.status(400).json({ error: 'ids (array) y estado son requeridos' });
-        }
-        const placeholders = ids.map(() => '?').join(',');
-        await db.execute(
-            `UPDATE pedidos SET estado = ? WHERE id IN (${placeholders})`,
-            [estado, ...ids]
-        );
-        console.log(`✅ Bulk update: ${ids.length} pedidos → estado "${estado}"`);
-        res.json({ message: `${ids.length} pedidos actualizados`, updated: ids.length });
-    } catch (error) {
-        console.error('Error en bulk update de pedidos:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
