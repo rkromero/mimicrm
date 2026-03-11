@@ -174,10 +174,15 @@ async function createTables() {
             )
         `);
 
-        // Migración: agregar columna comision si no existe
-        await db.execute(`
-            ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS comision DECIMAL(5,2) DEFAULT 0
-        `).catch(() => {});
+        // Migración: agregar columna comision si no existe (compatible con MySQL < 8.0.29)
+        const [cols] = await db.execute(`
+            SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'usuarios' AND COLUMN_NAME = 'comision'
+        `);
+        if (cols[0].cnt === 0) {
+            await db.execute(`ALTER TABLE usuarios ADD COLUMN comision DECIMAL(5,2) DEFAULT 0`);
+            console.log('✅ Columna comision agregada a usuarios');
+        }
 
         console.log('✅ Tablas creadas correctamente');
 
