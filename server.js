@@ -76,6 +76,7 @@ async function createTables() {
                 avatar VARCHAR(255),
                 tema VARCHAR(20) DEFAULT 'light',
                 activo BOOLEAN DEFAULT true,
+                comision DECIMAL(5,2) DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             )
@@ -173,8 +174,13 @@ async function createTables() {
             )
         `);
 
+        // Migración: agregar columna comision si no existe
+        await db.execute(`
+            ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS comision DECIMAL(5,2) DEFAULT 0
+        `).catch(() => {});
+
         console.log('✅ Tablas creadas correctamente');
-        
+
     } catch (error) {
         console.error('❌ Error creando tablas:', error);
     }
@@ -1475,18 +1481,20 @@ app.get('/api/dashboard/ventas-por-vendedor', authenticateToken, async (req, res
         
         // Construir la consulta base
         let query = `
-            SELECT 
+            SELECT
                 u.id as vendedor_id,
                 u.nombre as vendedor_nombre,
                 u.email as vendedor_email,
+                u.comision as comision_porcentaje,
                 COUNT(p.id) as cantidad_pedidos,
                 COALESCE(SUM(p.monto), 0) as total_ventas,
                 COALESCE(AVG(p.monto), 0) as promedio_por_pedido
             FROM usuarios u
-            LEFT JOIN pedidos p ON u.id = p.vendedor_asignado_id 
+            LEFT JOIN pedidos p ON u.id = p.vendedor_asignado_id
                 AND p.fecha BETWEEN ? AND ?
             WHERE u.activo = true
-            GROUP BY u.id, u.nombre, u.email
+              AND u.perfil NOT IN ('Administrador', 'Produccion')
+            GROUP BY u.id, u.nombre, u.email, u.comision
             ORDER BY total_ventas DESC
         `;
         
@@ -1499,7 +1507,8 @@ app.get('/api/dashboard/ventas-por-vendedor', authenticateToken, async (req, res
         // Agregar porcentajes
         const ventasConPorcentaje = result.map(item => ({
             ...item,
-            porcentaje: totalVentas > 0 ? ((parseFloat(item.total_ventas) / totalVentas) * 100).toFixed(2) : '0.00'
+            porcentaje: totalVentas > 0 ? ((parseFloat(item.total_ventas) / totalVentas) * 100).toFixed(2) : '0.00',
+            comision_monto: ((parseFloat(item.total_ventas) * parseFloat(item.comision_porcentaje || 0)) / 100).toFixed(2)
         }));
         
         res.json({
@@ -1623,11 +1632,12 @@ app.put('/api/usuarios/:id', authenticateToken, async (req, res) => {
         }
 
         const { id } = req.params;
-        const { nombre, email, password, perfil } = req.body;
+        const { nombre, email, password, perfil, comision } = req.body;
 
         if (!nombre || !email || !perfil) {
             return res.status(400).json({ error: 'Nombre, email y perfil son requeridos' });
         }
+        const comisionVal = parseFloat(comision) || 0;
 
         // Verificar si el email ya existe en otro usuario
         const [existingUsers] = await db.execute(
@@ -1643,11 +1653,11 @@ app.put('/api/usuarios/:id', authenticateToken, async (req, res) => {
 
         if (password) {
             const hashedPassword = await bcrypt.hash(password, 10);
-            query = 'UPDATE usuarios SET nombre = ?, email = ?, password = ?, perfil = ? WHERE id = ?';
-            params = [nombre, email, hashedPassword, perfil, id];
+            query = 'UPDATE usuarios SET nombre = ?, email = ?, password = ?, perfil = ?, comision = ? WHERE id = ?';
+            params = [nombre, email, hashedPassword, perfil, comisionVal, id];
         } else {
-            query = 'UPDATE usuarios SET nombre = ?, email = ?, perfil = ? WHERE id = ?';
-            params = [nombre, email, perfil, id];
+            query = 'UPDATE usuarios SET nombre = ?, email = ?, perfil = ?, comision = ? WHERE id = ?';
+            params = [nombre, email, perfil, comisionVal, id];
         }
 
         const [result] = await db.execute(query, params);

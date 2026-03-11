@@ -7201,7 +7201,8 @@ async function editUser(userId) {
         document.getElementById('edit-user-nombre').value = user.nombre || '';
         document.getElementById('edit-user-email').value = user.email || '';
         document.getElementById('edit-user-perfil').value = user.perfil || '';
-        document.getElementById('edit-user-password').value = ''; // Limpiar campo de contraseña
+        document.getElementById('edit-user-comision').value = user.comision || 0;
+        document.getElementById('edit-user-password').value = '';
         
         // Guardar el ID del usuario para el submit
         modal.setAttribute('data-user-id', userId);
@@ -7251,7 +7252,8 @@ async function handleEditUserSubmit(e, userId) {
         const userData = {
             nombre: formData.get('nombre') || document.getElementById('edit-user-nombre').value,
             email: formData.get('email') || document.getElementById('edit-user-email').value,
-            perfil: formData.get('perfil') || document.getElementById('edit-user-perfil').value
+            perfil: formData.get('perfil') || document.getElementById('edit-user-perfil').value,
+            comision: parseFloat(document.getElementById('edit-user-comision').value) || 0
         };
         
         // Solo incluir contraseña si se proporciona
@@ -9201,6 +9203,8 @@ function actualizarTablaVentas(ventas) {
                     ${venta.porcentaje}%
                 </span>
             </td>
+            <td style="text-align: center; color: #6b7280;">${parseFloat(venta.comision_porcentaje || 0).toFixed(1)}%</td>
+            <td style="font-weight: 600; color: #7c3aed;">${formatCurrency(venta.comision_monto || 0)}</td>
         `;
         
         // Agregar evento click para mostrar pedidos del vendedor
