@@ -2338,15 +2338,14 @@ function setupOrderProductHandlers() {
 
     if (addProductBtn && productSelector && confirmAddBtn && cancelAddBtn && productSelect) {
         // Botón agregar producto
-        addProductBtn.addEventListener('click', () => {
-            console.log('🔍 Clic en Agregar Producto');
+        addProductBtn.onclick = () => {
             productSelector.style.display = 'block';
             populateProductSelect();
-        });
+        };
 
         // Botón limpiar productos
         if (clearProductsBtn) {
-            clearProductsBtn.addEventListener('click', async () => {
+            clearProductsBtn.onclick = async () => {
                 if (orderItems.length === 0) {
                     showNotification('No hay productos para limpiar', 'info');
                     return;
@@ -2361,20 +2360,19 @@ function setupOrderProductHandlers() {
                     clearOrderItems();
                     showNotification('Productos limpiados correctamente', 'success');
                 }
-            });
+            };
         }
 
         // Botón confirmar agregar
-        confirmAddBtn.addEventListener('click', () => {
-            console.log('🔍 CLIC EN CONFIRMAR AGREGAR PRODUCTO');
+        confirmAddBtn.onclick = () => {
             addProductToOrder();
-        });
+        };
 
         // Botón cancelar agregar
-        cancelAddBtn.addEventListener('click', cancelAddProduct);
+        cancelAddBtn.onclick = cancelAddProduct;
 
         // Cambio en select de producto para actualizar precio
-        productSelect.addEventListener('change', function() {
+        productSelect.onchange = function() {
             const selectedProductId = this.value;
             if (selectedProductId) {
                 const product = products.find(p => p.id == selectedProductId);
@@ -2384,7 +2382,7 @@ function setupOrderProductHandlers() {
             } else {
                 document.getElementById('product-price').value = '';
             }
-        });
+        };
 
         console.log('✅ Event listeners de productos configurados correctamente');
         } else {
