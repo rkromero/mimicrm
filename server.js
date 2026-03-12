@@ -443,10 +443,11 @@ app.get('/api/clientes', authenticateToken, async (req, res) => {
                 GROUP BY cliente_id
             ) pagos_totals ON c.id = pagos_totals.cliente_id
             LEFT JOIN (
-                SELECT cliente_id, vendedor_asignado_nombre,
-                       ROW_NUMBER() OVER (PARTITION BY cliente_id ORDER BY fecha DESC) as rn
-                FROM pedidos
-                WHERE vendedor_asignado_nombre IS NOT NULL
+                SELECT p.cliente_id, uv.nombre as vendedor_asignado_nombre,
+                       ROW_NUMBER() OVER (PARTITION BY p.cliente_id ORDER BY p.fecha DESC) as rn
+                FROM pedidos p
+                JOIN usuarios uv ON uv.id = p.vendedor_asignado_id
+                WHERE p.vendedor_asignado_id IS NOT NULL
             ) last_ped ON last_ped.cliente_id = c.id AND last_ped.rn = 1
             WHERE c.activo = true
         `;
