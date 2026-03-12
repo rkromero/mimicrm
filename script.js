@@ -6,6 +6,7 @@ let products = [];
 let contacts = [];
 let orderItems = []; // Array para almacenar los productos del pedido actual
 let editOrderItems = []; // Array para almacenar los productos del pedido editado
+let modalMousedownTarget = null; // Para evitar cierre de modal al arrastrar texto
 
 // Listado de provincias y localidades de Argentina
 const provinciasYLocalidades = {
@@ -2253,7 +2254,7 @@ function setupForms() {
         });
         
         document.addEventListener('click', function(e) {
-            if (e.target.classList.contains('modal')) {
+            if (e.target.classList.contains('modal') && modalMousedownTarget === e.target) {
                 if (e.target.id) {
                     closeModal(e.target.id);
                 } else {
@@ -7924,12 +7925,17 @@ function setupModals() {
             });
         });
         
+        // Registrar dónde empezó el mousedown para no cerrar al arrastrar texto fuera del campo
+        document.addEventListener('mousedown', function(e) {
+            modalMousedownTarget = e.target;
+        });
+
         // Configurar cierre al hacer click fuera del modal (en el overlay)
         const modales = document.querySelectorAll('.modal');
         modales.forEach(modal => {
             modal.addEventListener('click', function(e) {
-                // Solo cerrar si se hizo click directamente en el modal (overlay), no en su contenido
-                if (e.target === this) {
+                // Solo cerrar si tanto mousedown como mouseup ocurrieron sobre el overlay
+                if (e.target === this && modalMousedownTarget === this) {
                     closeModal(this);
                     console.log(`✅ Modal ${this.id} cerrado por clic fuera`);
                 }
