@@ -248,7 +248,7 @@ function openDynamicModal(modalEl) {
         trapFocus(modalEl);
     });
     modalEl.addEventListener('click', (e) => {
-        if (e.target === modalEl) {
+        if (e.target === modalEl && modalMousedownTarget === modalEl) {
             closeDynamicModal(modalEl);
         }
     });
