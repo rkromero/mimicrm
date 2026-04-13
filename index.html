@@ -474,6 +474,9 @@
                         <h2>Clientes <span class="section-count" id="clientes-count"></span></h2>
                         <div class="flex gap-2">
                             <input type="text" class="input" placeholder="Buscar cliente..." id="clients-search">
+                            <button onclick="exportClientsToCSV()" class="btn btn-secondary">
+                                <i class="fas fa-file-csv"></i> Exportar CSV
+                            </button>
                             <button id="new-client-btn-section" class="btn btn-primary">
                                 <i class="fas fa-plus"></i> Nuevo Cliente
                             </button>

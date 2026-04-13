@@ -492,6 +492,63 @@ function resetClientsVendorFilter() {
     renderClientsTable();
 }
 
+function exportClientsToCSV() {
+    if (!clients || clients.length === 0) {
+        showNotification('No hay clientes para exportar.', 'error');
+        return;
+    }
+
+    const columns = [
+        { key: 'id',               label: 'ID' },
+        { key: 'nombre',           label: 'Nombre' },
+        { key: 'apellido',         label: 'Apellido' },
+        { key: 'cuit',             label: 'CUIT' },
+        { key: 'email',            label: 'Email' },
+        { key: 'telefono',         label: 'Teléfono' },
+        { key: 'direccion',        label: 'Dirección' },
+        { key: 'localidad',        label: 'Localidad' },
+        { key: 'ciudad',           label: 'Ciudad' },
+        { key: 'provincia',        label: 'Provincia' },
+        { key: 'codigo_postal',    label: 'Código Postal' },
+        { key: 'ultimo_vendedor',  label: 'Último Vendedor' },
+        { key: 'total_pedidos',    label: 'Total Pedidos ($)' },
+        { key: 'total_pagos',      label: 'Total Pagos ($)' },
+        { key: 'saldo',            label: 'Saldo ($)' },
+        { key: 'creado_por_nombre',label: 'Creado Por' },
+        { key: 'created_at',       label: 'Fecha Alta' },
+    ];
+
+    // Escapa un valor para CSV: envuelve en comillas dobles si contiene coma, comilla o salto de línea
+    function escapeCsv(val) {
+        if (val === null || val === undefined) return '';
+        const str = String(val);
+        if (str.includes('"') || str.includes(',') || str.includes('\n')) {
+            return '"' + str.replace(/"/g, '""') + '"';
+        }
+        return str;
+    }
+
+    const header = columns.map(c => escapeCsv(c.label)).join(',');
+    const rows = clients.map(client =>
+        columns.map(c => escapeCsv(client[c.key])).join(',')
+    );
+
+    const csvContent = '\uFEFF' + [header, ...rows].join('\r\n'); // BOM para que Excel abra bien en UTF-8
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const fecha = new Date().toISOString().slice(0, 10);
+    link.href = url;
+    link.download = `clientes_${fecha}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    showNotification(`${clients.length} clientes exportados correctamente.`, 'success');
+}
+
 function renderClientsTable(clientsToRender = null) {
     const container = document.getElementById('clients-list');
     if (!container) return;
